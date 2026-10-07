@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 360" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#060c18"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <rect width="800" height="360" rx="16" fill="url(#bgGrad)"/>
+  <!-- Horizon Highway Lines -->
+  <line x1="0" y1="280" x2="800" y2="280" stroke="#00f0ff" stroke-width="2" opacity="0.5"/>
+  <line x1="0" y1="300" x2="800" y2="300" stroke="#f59e0b" stroke-width="3" stroke-dasharray="25,25" filter="url(#glow)"/>
+  
+  <!-- Back Convoy Truck -->
+  <g transform="translate(50, 40) scale(0.65)" opacity="0.75">
+    <rect x="70" y="100" width="380" height="150" fill="#0284c7" rx="4"/>
+    <path d="M 450 140 L 530 100 L 600 160 L 610 250 L 450 250 Z" fill="#1e293b"/>
+    <circle cx="150" cy="260" r="28" fill="#000"/><circle cx="350" cy="260" r="28" fill="#000"/><circle cx="540" cy="260" r="28" fill="#000"/>
+  </g>
+  
+  <!-- Middle Heavy Trailer -->
+  <g transform="translate(180, 80) scale(0.8)" opacity="0.9">
+    <rect x="60" y="160" width="400" height="70" fill="#dc2626" rx="4"/>
+    <circle cx="150" cy="130" r="35" fill="#64748b"/>
+    <circle cx="280" cy="130" r="35" fill="#64748b"/>
+    <path d="M 460 170 L 520 110 L 590 170 L 600 240 L 460 240 Z" fill="#0f172a"/>
+    <circle cx="140" cy="250" r="26" fill="#000"/><circle cx="350" cy="250" r="26" fill="#000"/><circle cx="530" cy="250" r="26" fill="#000"/>
+  </g>
+
+  <!-- Front Flagship Express Container Truck -->
+  <g transform="translate(240, 90) scale(0.85)">
+    <rect x="65" y="85" width="380" height="165" rx="6" fill="#0369a1" stroke="#38bdf8" stroke-width="2"/>
+    <text x="95" y="140" fill="#fff" font-family="'Segoe UI', sans-serif" font-weight="900" font-size="20">TRANCECONNECT FLEET</text>
+    <path d="M 445 130 L 520 85 L 590 140 L 620 250 L 445 250 Z" fill="#0f172a" stroke="#00f0ff" stroke-width="1.5"/>
+    <polygon points="605,230 622,230 618,245 602,245" fill="#00f0ff" filter="url(#glow)"/>
+    <circle cx="145" cy="265" r="28" fill="#000"/><circle cx="355" cy="265" r="28" fill="#000"/><circle cx="545" cy="265" r="28" fill="#000"/>
+  </g>
+
+  <text x="40" y="60" fill="#00f0ff" font-family="'Segoe UI', sans-serif" font-weight="900" font-size="22" letter-spacing="1">PAN-INDIA COMMERCIAL CARGO FLEET</text>
+  <text x="40" y="85" fill="#94a3b8" font-family="sans-serif" font-size="13">Verified FTL, PTL, Multi-Axle Trailers, and Specialized Heavy Carriers</text>
+</svg>

@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+  <meta name="theme-color" content="#060c18">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="manifest.json">
+  <title>Fleet Transporter Command Center | TranceConnect-Prime</title>
+  
+  <!-- Leaflet CSS for Live GPS Radar -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" type="image/svg+xml" href="assets/logo.svg">
+</head>
+<body>
+
+  <!-- Animated Parallax Background & Cursor Spotlight -->
+  <div class="cursor-glow" id="cursorGlow"></div>
+  <div class="parallax-bg" id="parallaxBg"></div>
+  <div class="grid-overlay"></div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Top Navigation Bar -->
+  <header class="navbar">
+    <div style="display: flex; align-items: center; gap: 0.75rem;">
+      <button class="drawer-toggle-btn" onclick="toggleMobileDrawer()" aria-label="Open Navigation">☰</button>
+      <div class="nav-brand" onclick="window.location.href='/transporter'">
+        <img src="assets/logo.svg" alt="TranceConnect-Prime Logo">
+      </div>
+    </div>
+
+    <div class="nav-telemetry">
+      <div class="pulse-dot"></div>
+      <span id="telemetryStatus">LIVE DATABASE SYNCED &bull; FLEET OPERATOR</span>
+    </div>
+
+    <div class="nav-actions">
+      <span class="status-badge hide-on-mobile" style="background: rgba(245, 158, 11, 0.15); border: 1px solid var(--amber); color: var(--amber);">
+        VERIFIED TRANSPORTER
+      </span>
+      <span id="userDisplayName" class="hide-on-mobile" style="font-weight: 600; font-size: 0.9rem; color: var(--text-main);">
+        Loading Company...
+      </span>
+      <button class="btn btn-glass btn-sm" onclick="toggleNotificationsPanel()" title="Notifications" style="padding: 0.42rem 0.65rem; position: relative;">
+        🔔 <span id="transTopNotificationBadge" class="chat-unread-badge" style="display:none; position: absolute; top: -4px; right: -4px; font-size: 0.62rem; padding: 1px 5px;">0</span>
+      </button>
+      <button class="btn btn-glass btn-sm" onclick="openProfileModal()" title="Business Profile">🏢 <span class="hide-on-mobile">Profile</span></button>
+      <button class="btn btn-outline btn-sm hide-on-mobile" onclick="logoutUser()">Sign Out</button>
+    </div>
+  </header>
+
+  <!-- Mobile Drawer Overlay & Slide-in Panel -->
+  <div class="mobile-drawer-overlay" id="mobileDrawerOverlay" onclick="toggleMobileDrawer(false)"></div>
+  <aside class="mobile-drawer" id="mobileDrawer">
+    <div class="mobile-drawer-header">
+      <div class="mobile-drawer-user">
+        <div class="mobile-drawer-user-avatar">🚚</div>
+        <div>
+          <strong id="drawerUserName" style="font-size: 0.92rem; color: var(--text-main);">Transporter Portal</strong>
+          <div style="font-size: 0.72rem; color: var(--amber);">VERIFIED OPERATOR</div>
+        </div>
+      </div>
+      <button class="mobile-drawer-close" onclick="toggleMobileDrawer(false)">✕</button>
+    </div>
+    <div class="sidebar-heading">Fleet Operator</div>
+    <div class="sidebar-item" onclick="switchTab('requests'); toggleMobileDrawer(false);">
+      <span>📦</span> Available & Assigned Loads
+    </div>
+    <div class="sidebar-item" onclick="switchTab('fleet'); toggleMobileDrawer(false);">
+      <span>🚚</span> Fleet Vehicles
+    </div>
+    <div class="sidebar-item" onclick="switchTab('drivers'); toggleMobileDrawer(false);">
+      <span>👨‍✈️</span> Enrolled Drivers
+    </div>
+    <div class="sidebar-item" onclick="switchTab('transitDocs'); toggleMobileDrawer(false);">
+      <span>📋</span> Transit Invoices & DOs
+    </div>
+    <div class="sidebar-item" onclick="switchTab('documents'); toggleMobileDrawer(false);">
+      <span>📑</span> Compliance & KYC Vault
+    </div>
+    <div class="sidebar-item" onclick="switchTab('chat'); toggleMobileDrawer(false);">
+      <span>💬</span> Shipper Chat
+    </div>
+    <div class="sidebar-heading" style="margin-top: 1.25rem;">Logistics Intelligence</div>
+    <div class="sidebar-item" onclick="toggleAIAssistant(); toggleMobileDrawer(false);">
+      <span>🤖</span> AI Freight Specialist
+    </div>
+    <div class="sidebar-item" onclick="openAddVehicleModal(); toggleMobileDrawer(false);">
+      <span>🚚</span> + Register Truck
+    </div>
+    <div class="sidebar-item" onclick="openAddDriverModal(); toggleMobileDrawer(false);">
+      <span>👨‍✈️</span> + Enroll Driver
+    </div>
+    <div class="sidebar-item" onclick="openProfileModal(); toggleMobileDrawer(false);">
+      <span>⚙️</span> Company Profile
+    </div>
+    <div class="sidebar-item" style="color: var(--rose); margin-top: auto; padding-top: 1.5rem;" onclick="logoutUser()">
+      <span>🚪</span> Sign Out
+    </div>
+  </aside>
+
+  <!-- Notifications Dropdown Panel -->
+  <div class="notifications-panel" id="notificationsPanel">
+    <div class="notifications-header">
+      <strong style="font-size: 0.9rem; color: var(--text-main);">🔔 Real-Time Notifications</strong>
+      <button style="background:transparent; border:none; color:var(--text-muted); cursor:pointer; font-size:1.1rem;" onclick="toggleNotificationsPanel(false)">✕</button>
+    </div>
+    <div class="notifications-body" id="notificationsList">
+      <div class="notification-item" style="color: var(--text-dim); text-align: center;">No new notifications</div>
+    </div>
+  </div>
+
+  <!-- Dashboard Container -->
+  <div class="dashboard-container">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="sidebar-heading">Fleet Operator</div>
+      <div class="sidebar-item active" onclick="switchTab('requests')">
+        <span>📦</span> Available & Assigned Loads
+      </div>
+      <div class="sidebar-item" onclick="switchTab('fleet')">
+        <span>🚚</span> Fleet Vehicles
+      </div>
+      <div class="sidebar-item" onclick="switchTab('drivers')">
+        <span>👨‍✈️</span> Enrolled Drivers
+      </div>
+      <div class="sidebar-item" id="sidebarTransitDocsLink" onclick="switchTab('transitDocs')">
+        <span>📋</span> Transit Invoices & DOs
+      </div>
+      <div class="sidebar-item" onclick="switchTab('documents')">
+        <span>📑</span> Compliance & KYC Vault
+      </div>
+      <div class="sidebar-item" id="sidebarTransChatLink" onclick="switchTab('chat')">
+        <span>💬</span> Shipper Real-Time Chat
+        <span id="transTotalUnreadBadge" class="chat-unread-badge" style="display: none; margin-left: auto;">0</span>
+      </div>
+
+      <div class="sidebar-heading" style="margin-top: 1.5rem;">Logistics Intelligence</div>
+      <div class="sidebar-item" onclick="toggleAIAssistant()">
+        <span>🤖</span> AI Freight Specialist
+      </div>
+      <div class="sidebar-item" onclick="openProfileModal()">
+        <span>⚙️</span> Company Profile
+      </div>
+      <div class="sidebar-item" style="color: var(--rose); margin-top: 2rem;" onclick="logoutUser()">
+        <span>🚪</span> Sign Out
+      </div>
+    </aside>
+
+    <!-- Main Dashboard Area -->
+    <main class="dashboard-main">
+      <div class="dash-topbar">
+        <div class="dash-heading">
+          <h1 id="transporterHeaderTitle">Fleet Operations Deck</h1>
+          <p>Accept shipper consignments, allocate fleet trucks & licensed drivers, update GPS checkpoints, and settle trips.</p>
+        </div>
+        <div style="display: flex; gap: 0.75rem;">
+          <button class="btn btn-glass btn-sm" onclick="loadAllTransporterData()">
+            <span>🔄</span> Refresh Telemetry
+          </button>
+          <button class="btn btn-outline" onclick="openAddVehicleModal()">
+            <span>🚚</span> + Add Truck
+          </button>
+          <button class="btn btn-primary" onclick="openAddDriverModal()">
+            <span>👨‍✈️</span> + Enroll Driver
+          </button>
+        </div>
+      </div>
+
+      <!-- Live Database KPI Cards -->
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span>Assigned Loads</span>
+            <div class="kpi-icon" style="background: rgba(59, 130, 246, 0.15); color: #60a5fa;">📥</div>
+          </div>
+          <div class="kpi-val" id="kpiAssigned">0</div>
+          <div class="kpi-sub" style="color: var(--amber);">Awaiting Your Acceptance</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span>In Transit Trips</span>
+            <div class="kpi-icon" style="background: rgba(0, 240, 255, 0.15); color: var(--cyan);">🛣️</div>
+          </div>
+          <div class="kpi-val" id="kpiActive">0</div>
+          <div class="kpi-sub" style="color: var(--cyan);"><span class="pulse-dot"></span> Live Telemetry Active</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span>Completed Trips</span>
+            <div class="kpi-icon" style="background: rgba(16, 185, 129, 0.15); color: var(--emerald);">🏁</div>
+          </div>
+          <div class="kpi-val" id="kpiDelivered">0</div>
+          <div class="kpi-sub" style="color: var(--emerald);">Delivered & Settled</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span>Registered Fleet</span>
+            <div class="kpi-icon" style="background: rgba(245, 158, 11, 0.15); color: var(--amber);">🚛</div>
+          </div>
+          <div class="kpi-val" id="kpiFleet">0</div>
+          <div class="kpi-sub">Commercial Trucks</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span>Total Earnings</span>
+            <div class="kpi-icon" style="background: rgba(139, 92, 246, 0.15); color: #a78bfa;">₹</div>
+          </div>
+          <div class="kpi-val" id="kpiEarnings">₹0</div>
+          <div class="kpi-sub">Completed Trip Revenue</div>
+        </div>
+      <!-- GPS REAL-TIME LOCATION TELEMETRY BROADCASTER -->
+      <div class="gps-sharing-card" id="transGpsBroadcastCard">
+        <div>
+          <div style="display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.35rem;">
+            <h4 style="font-size: 1.05rem; font-weight: 700; color: var(--text-main);">📍 Mobile GPS Dispatch Broadcast</h4>
+            <span id="gpsBroadcastBadge" class="gps-telemetry-badge inactive">● Offline</span>
+          </div>
+          <p style="color: var(--text-muted); font-size: 0.84rem; margin-bottom: 0.5rem;">
+            Broadcast live highway coordinates to shippers and HQ master control using this phone or laptop's GPS.
+          </p>
+          <div style="font-size: 0.78rem; color: var(--cyan); font-family: 'JetBrains Mono', monospace;" id="gpsLastUpdatedText">
+            GPS Status: Standby &bull; Tap Start to broadcast
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+          <select id="gpsSelectActiveShipment" style="background: rgba(10, 18, 34, 0.9); border: 1px solid var(--border-glass); color: var(--text-main); padding: 0.6rem 0.85rem; border-radius: var(--radius-sm); font-size: 0.85rem; max-width: 280px; flex: 1;">
+            <option value="">-- Select Active Transit Load --</option>
+          </select>
+          <button id="btnToggleGpsBroadcast" class="btn btn-primary" onclick="toggleGpsLocationBroadcast()" style="min-width: 175px;">
+            📡 Start GPS Broadcast
+          </button>
+        </div>
+      </div>
+
+      <!-- TAB 1: SHIPMENTS & LOADS -->
+      <div id="tabRequests" class="tab-pane">
+        <div class="card-table">
+          <div class="table-head-action">
+            <h3>Consignment Inquiries & Dispatched Loads</h3>
+            <div style="display: flex; gap: 0.5rem;">
+              <input type="text" id="shipmentSearchInput" placeholder="Filter by load ID, shipper, cargo..." onkeyup="filterTransporterShipments()" style="width: 280px; padding: 0.5rem 0.85rem;">
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Load ID</th>
+                  <th>Shipper / Dealer</th>
+                  <th>Cargo Specifications</th>
+                  <th>Corridor (Origin ➔ Destination)</th>
+                  <th>Trip Payout</th>
+                  <th>Status</th>
+                  <th>Assigned Truck & Driver</th>
+                  <th>Workflow Operations</th>
+                </tr>
+              </thead>
+              <tbody id="transporterShipmentsBody">
+                <tr><td colspan="8" style="text-align: center; color: var(--text-dim); padding: 2.5rem;">Loading consignments from database...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: FLEET VEHICLES -->
+      <div id="tabFleet" class="tab-pane" style="display: none;">
+        <div class="card-table">
+          <div class="table-head-action">
+            <div>
+              <h3>Fleet Vehicles Management</h3>
+              <p style="color: var(--text-muted); font-size: 0.88rem;">Registered commercial trucks, tonnage ratings, RC certificates, and status.</p>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="openAddVehicleModal()">+ Register Vehicle</button>
+          </div>
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Registration No.</th>
+                  <th>Vehicle Type</th>
+                  <th>Capacity (Tons)</th>
+                  <th>Current Location Base</th>
+                  <th>Operational Status</th>
+                  <th>Compliance RC</th>
+                </tr>
+              </thead>
+              <tbody id="transporterFleetBody">
+                <tr><td colspan="6" style="text-align: center; color: var(--text-dim); padding: 2rem;">Loading fleet vehicles...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 3: REGISTERED DRIVERS -->
+      <div id="tabDrivers" class="tab-pane" style="display: none;">
+        <div class="card-table">
+          <div class="table-head-action">
+            <div>
+              <h3>Commercial Drivers Directory</h3>
+              <p style="color: var(--text-muted); font-size: 0.88rem;">Licensed drivers enrolled under your transport firm.</p>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="openAddDriverModal()">+ Enroll Driver</button>
+          </div>
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Driver Name</th>
+                  <th>Mobile Number</th>
+                  <th>Commercial License</th>
+                  <th>Aadhaar Number</th>
+                  <th>Assigned Truck</th>
+                  <th>Duty Status</th>
+                </tr>
+              </thead>
+              <tbody id="transporterDriversBody">
+                <tr><td colspan="6" style="text-align: center; color: var(--text-dim); padding: 2rem;">Loading drivers...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 4: TRANSIT INVOICES & DELIVERY ORDERS (DO) -->
+      <div id="tabTransitDocs" class="tab-pane" style="display: none;">
+        <div class="card-table">
+          <div class="table-head-action">
+            <div>
+              <h3>Authorized Transit Documents & Clearance Gate Passes</h3>
+              <p style="color: var(--text-muted); font-size: 0.88rem;">Official Delivery Orders (DO) and Commercial Invoices issued by shippers for your allocated fleet consignments.</p>
+            </div>
+            <div style="display: flex; gap: 0.5rem;">
+              <input type="text" id="transDocsSearchInput" placeholder="Filter by DO no, shipment, shipper..." onkeyup="filterTransporterTransitDocs()" style="width: 280px; padding: 0.5rem 0.85rem;">
+            </div>
+          </div>
+
+          <div style="margin-bottom: 1.5rem;">
+            <h4 style="font-size: 0.95rem; color: var(--emerald); margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
+              <span>📋</span> Delivery Orders (DO) & Gate Passes
+            </h4>
+            <div class="table-responsive">
+              <table>
+                <thead>
+                  <tr>
+                    <th>DO Number</th>
+                    <th>Date</th>
+                    <th>Shipper (Consignor)</th>
+                    <th>Consignee / Destination</th>
+                    <th>Vehicle Reg No</th>
+                    <th>Gross Wt</th>
+                    <th>Status</th>
+                    <th>Operations</th>
+                  </tr>
+                </thead>
+                <tbody id="transporterDeliveryOrdersBody">
+                  <tr><td colspan="8" style="text-align: center; color: var(--text-dim); padding: 2rem;">Loading authorized delivery orders...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div>
+            <h4 style="font-size: 0.95rem; color: var(--cyan); margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
+              <span>📑</span> Commercial Freight Tax Invoices (GST)
+            </h4>
+            <div class="table-responsive">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Invoice No</th>
+                    <th>Date</th>
+                    <th>Shipper</th>
+                    <th>Consignee</th>
+                    <th>Total Freight (INR)</th>
+                    <th>Status</th>
+                    <th>Operations</th>
+                  </tr>
+                </thead>
+                <tbody id="transporterInvoicesBody">
+                  <tr><td colspan="7" style="text-align: center; color: var(--text-dim); padding: 2rem;">Loading authorized invoices...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 5: COMPLIANCE & KYC VAULT -->
+      <div id="tabDocuments" class="tab-pane" style="display: none;">
+        <div class="card-table">
+          <div class="table-head-action">
+            <div>
+              <h3>Compliance & KYC Vault</h3>
+              <p style="color: var(--text-muted); font-size: 0.88rem;">Upload Aadhaar, Driving License, RC, and Commercial Insurance for Admin verification.</p>
+            </div>
+            <button class="btn btn-outline btn-sm" onclick="openDirectUploadModal('driving_license')">Upload Verification Document</button>
+          </div>
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Doc ID</th>
+                  <th>Document Category</th>
+                  <th>File Name</th>
+                  <th>Verification Status</th>
+                  <th>Uploaded Date</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="transporterDocsBody">
+                <tr><td colspan="6" style="text-align: center; color: var(--text-dim); padding: 2rem;">Loading documents...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 5: REAL-TIME 2-PANE CHAT (TRANSPORTER <-> DEALER) -->
+      <div id="tabChat" class="tab-pane" style="display: none;">
+        <div class="chat-2pane-container" id="transChatContainer">
+          <!-- Left Pane: Conversations List -->
+          <div class="chat-sidebar-pane">
+            <div class="chat-sidebar-head">
+              <h4><span>💬</span> Shipper Conversations</h4>
+            </div>
+            <div style="padding: 0.65rem 0.85rem; border-bottom: 1px solid var(--border-glass);">
+              <input type="text" id="transConvSearch" placeholder="Search shipper..." onkeyup="filterTransporterConversations()" style="width: 100%; padding: 0.45rem 0.75rem; font-size: 0.82rem;">
+            </div>
+            <div id="transConvList" class="chat-conv-list">
+              <div style="padding: 2rem; text-align: center; color: var(--text-dim); font-size: 0.85rem;">Loading conversations...</div>
+            </div>
+          </div>
+
+          <!-- Right Pane: Active Chat Window -->
+          <div class="chat-main-pane">
+            <!-- Empty State -->
+            <div id="transChatEmpty" style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-muted); text-align: center; padding: 2rem;">
+              <div style="font-size: 3rem; margin-bottom: 1rem; filter: drop-shadow(0 0 15px var(--cyan));">💬</div>
+              <h3 style="color: var(--text-main); margin-bottom: 0.5rem;">Direct Shipper Real-Time Chat</h3>
+              <p style="font-size: 0.88rem; max-width: 420px; line-height: 1.5;">Select an active consignment from the left to coordinate with the shipper regarding gate passes, loading status, highway route, and delivery confirmation.</p>
+            </div>
+
+            <!-- Active Chat Box -->
+            <div id="transActiveChatBox" style="display: none; flex-direction: column; height: 100%;">
+              <div class="chat-active-header">
+                <button class="chat-back-btn" id="transChatBackBtn" onclick="closeTransporterMobileChat()">← Chats</button>
+                <div class="chat-active-counterparty">
+                  <div class="chat-conv-avatar" style="width: 40px; height: 40px;">
+                    <img id="transChatActiveAvatar" src="/assets/vehicles/container-truck.svg" alt="Vehicle">
+                    <span id="transChatActivePresenceDot" class="chat-online-dot"></span>
+                  </div>
+                  <div>
+                    <div id="transChatActiveName" class="chat-active-name">Shipper Company</div>
+                    <div style="display: flex; align-items: center; gap: 0.6rem; font-size: 0.76rem;">
+                      <span id="transChatActivePresenceText" class="chat-active-status">● Online</span>
+                      <span id="transChatActiveShipmentTag" style="color: var(--cyan); font-family: 'JetBrains Mono', monospace;">#SHP-1</span>
+                      <span id="transChatActiveVehicleTag" style="color: var(--text-dim);">MH-04-AB-1234</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Message History Scroll -->
+              <div id="transChatMessages" class="chat-messages-scroll">
+                <!-- Messages rendered dynamically -->
+              </div>
+
+              <!-- Typing Indicator Hint -->
+              <div id="transChatTypingHint" class="chat-typing-hint"></div>
+
+              <!-- Message Input Bar -->
+              <form class="chat-input-bar" onsubmit="handleSendTransporterMessage(event)">
+                <input type="text" id="transMsgInput" placeholder="Type a message to shipper (Press Enter to send)..." autocomplete="off" oninput="handleTransporterTyping()">
+                <button type="submit" class="btn btn-primary" style="padding: 0.65rem 1.4rem;">Send ➤</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- ===================================================================
+       MODAL: ADD FLEET VEHICLE
+       =================================================================== -->
+  <div id="addVehicleModal" class="modal-overlay">
+    <div class="modal-container" style="max-width: 520px;">
+      <div class="modal-head">
+        <h2>Register Commercial Vehicle</h2>
+        <button class="close-btn" onclick="closeModal('addVehicleModal')">&times;</button>
+      </div>
+
+      <form onsubmit="handleAddVehicle(event)">
+        <div class="form-group">
+          <label>Registration Number</label>
+          <input type="text" id="vehNumber" required placeholder="e.g. MH-04-AB-9988">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Truck Configuration</label>
+            <select id="vehType" required>
+              <option value="32ft Multi-Axle Truck (MXL)">32ft Multi-Axle Truck (MXL)</option>
+              <option value="20ft Container Truck">20ft Container Truck</option>
+              <option value="14ft Open Body Truck">14ft Open Body Truck</option>
+              <option value="24ft High Cube Container">24ft High Cube Container</option>
+              <option value="40ft Heavy Flatbed Trailer">40ft Heavy Flatbed Trailer</option>
+              <option value="Tata 407 / Pickup">Tata 407 / Pickup</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Payload Capacity (Tons)</label>
+            <input type="number" step="0.1" id="vehCapacity" required placeholder="e.g. 25.0">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Location Base / Depot</label>
+          <input type="text" id="vehLocation" placeholder="e.g. Bhiwandi Warehousing Hub, Mumbai">
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%;">Add to Fleet</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===================================================================
+       MODAL: ENROLL DRIVER
+       =================================================================== -->
+  <div id="addDriverModal" class="modal-overlay">
+    <div class="modal-container" style="max-width: 520px;">
+      <div class="modal-head">
+        <h2>Enroll Commercial Driver</h2>
+        <button class="close-btn" onclick="closeModal('addDriverModal')">&times;</button>
+      </div>
+
+      <form onsubmit="handleAddDriver(event)">
+        <div class="form-group">
+          <label>Full Name</label>
+          <input type="text" id="drvName" required placeholder="e.g. Ramesh Kumar Yadav">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Contact Mobile</label>
+            <input type="tel" id="drvMobile" required placeholder="10-digit mobile number">
+          </div>
+          <div class="form-group">
+            <label>Commercial Driving License</label>
+            <input type="text" id="drvLicense" required placeholder="e.g. MH0420180012345">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Aadhaar Number</label>
+          <input type="text" id="drvAadhaar" placeholder="12-digit UID">
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%;">Enroll Driver</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===================================================================
+       MODAL: LIVE TRACKING & DISPATCH CONTROL
+       =================================================================== -->
+  <div id="trackingModal" class="modal-overlay">
+    <div class="modal-container" style="max-width: 840px;">
+      <div class="modal-head">
+        <div>
+          <h2 id="trackModalHeading">GPS Telemetry & Transit Dispatch</h2>
+          <small id="trackModalRoute" style="color: var(--cyan); font-family: 'JetBrains Mono', monospace;"></small>
+        </div>
+        <button class="close-btn" onclick="closeModal('trackingModal')">&times;</button>
+      </div>
+
+      <div class="tracking-radar-telemetry">
+        <div>
+          <span style="color: var(--text-dim); font-size: 0.72rem;">CURRENT CHECKPOINT</span>
+          <strong id="trackCurLocation" style="color: var(--text-main); font-size: 0.95rem;">-</strong>
+        </div>
+        <div>
+          <span style="color: var(--text-dim); font-size: 0.72rem;">VEHICLE SPEED</span>
+          <strong id="trackSpeed" style="color: var(--cyan); font-size: 0.95rem;">0 KM/H</strong>
+        </div>
+        <div>
+          <span style="color: var(--text-dim); font-size: 0.72rem;">RADAR STREAM</span>
+          <strong id="trackStatusNote" style="color: var(--emerald); font-size: 0.95rem;">Active</strong>
+        </div>
+      </div>
+
+      <div id="trackingMap"></div>
+
+      <!-- Quick Checkpoint Dispatch -->
+      <div style="background: rgba(13, 23, 42, 0.85); border: 1px solid var(--border-glass); border-radius: var(--radius-sm); padding: 1.25rem; margin-top: 1rem;">
+        <h4 style="font-size: 0.95rem; margin-bottom: 0.75rem; color: var(--amber);">Dispatch Real-Time Location Ping</h4>
+        <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
+          <input type="text" id="quickLocationName" placeholder="Checkpoint (e.g. Lonavala Toll Plaza, Km 56)" style="flex: 2;">
+          <input type="number" id="quickSpeed" placeholder="Speed km/h" value="58" style="width: 120px;">
+          <button class="btn btn-primary btn-sm" onclick="submitQuickLocationPing()">Update GPS Position</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================
+       MODAL: LIVE CHAT (TRANSPORTER <-> DEALER)
+       =================================================================== -->
+  <div id="chatModal" class="modal-overlay">
+    <div class="modal-container" style="max-width: 580px;">
+      <div class="modal-head">
+        <div>
+          <h2 id="chatCounterpartName">Shipper Live Chat</h2>
+          <small id="chatShipmentTag" style="color: var(--cyan); font-family: 'JetBrains Mono', monospace;"></small>
+        </div>
+        <button class="close-btn" onclick="closeModal('chatModal')">&times;</button>
+      </div>
+
+      <div class="chat-window">
+        <div class="chat-history" id="chatMessageHistory"></div>
+
+        <div style="padding: 0.45rem 1rem; background: rgba(10, 18, 34, 0.95); display: flex; gap: 0.4rem; overflow-x: auto;">
+          <button class="btn btn-glass btn-sm" style="font-size: 0.72rem; white-space: nowrap;" onclick="sendQuickChatMessage('Driver has arrived at pickup terminal.')">Arrived at Terminal</button>
+          <button class="btn btn-glass btn-sm" style="font-size: 0.72rem; white-space: nowrap;" onclick="sendQuickChatMessage('Loading completed. Cargo lashed and covered.')">Cargo Secured</button>
+          <button class="btn btn-glass btn-sm" style="font-size: 0.72rem; white-space: nowrap;" onclick="sendQuickChatMessage('Departed origin. In transit on expressway.')">On The Highway</button>
+          <button class="btn btn-glass btn-sm" style="font-size: 0.72rem; white-space: nowrap;" onclick="sendQuickChatMessage('Reached destination gate. Unloading in progress.')">At Unloading Gate</button>
+        </div>
+
+        <form class="chat-input-bar" onsubmit="handleSendChatMessage(event)">
+          <input type="text" id="chatInputMessage" placeholder="Message shipper..." style="flex: 1;">
+          <button type="submit" class="btn btn-primary btn-sm">Send ➤</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================
+       MODAL: DIRECT DOCUMENT UPLOAD (KYC)
+       =================================================================== -->
+  <div id="uploadDocModal" class="modal-overlay">
+    <div class="modal-container" style="max-width: 480px;">
+      <div class="modal-head">
+        <h2>Upload Compliance Document</h2>
+        <button class="close-btn" onclick="closeModal('uploadDocModal')">&times;</button>
+      </div>
+
+      <form onsubmit="handleDirectUpload(event)">
+        <div class="form-group">
+          <label>Document Category</label>
+          <select id="directDocType" required>
+            <option value="driving_license">Driving License (Commercial)</option>
+            <option value="aadhaar">Aadhaar Card (Owner / Driver UID)</option>
+            <option value="rc">Vehicle RC (Registration Certificate)</option>
+            <option value="insurance">Commercial Vehicle Insurance Policy</option>
+            <option value="other">Other Regulatory Permit</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Select File (PDF, JPG, PNG)</label>
+          <div class="file-dropzone">
+            <span>📁 Click or Drag Document File Here</span>
+            <input type="file" id="directDocFile" required accept=".pdf,.png,.jpg,.jpeg">
+          </div>
+          <small id="uploadFileNameDisplay" style="color: var(--cyan); margin-top: 0.4rem; display: block;"></small>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%;">Upload for Verification</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===================================================================
+       MODAL: USER PROFILE
+       =================================================================== -->
+  <div id="profileModal" class="modal-overlay">
+    <div class="modal-container" style="max-width: 520px;">
+      <div class="modal-head">
+        <h2>Transporter Business Profile</h2>
+        <button class="close-btn" onclick="closeModal('profileModal')">&times;</button>
+      </div>
+
+      <form onsubmit="handleUpdateProfile(event)">
+        <div class="form-group">
+          <label>Company Legal Name</label>
+          <input type="text" id="profCompany" required>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Contact Person</label>
+            <input type="text" id="profContact">
+          </div>
+          <div class="form-group">
+            <label>Mobile Number</label>
+            <input type="tel" id="profMobile" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>GSTIN Number</label>
+          <input type="text" id="profGst">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>City Base</label>
+            <input type="text" id="profCity">
+          </div>
+          <div class="form-group">
+            <label>State</label>
+            <input type="text" id="profState">
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%;">Save Changes</button>
+      </form>
+    </div>
+  <!-- ===================================================================
+       MODAL: UNIVERSAL DOCUMENT INSPECTION & PRINT VIEWER
+       =================================================================== -->
+  <div id="docViewerModal" class="modal-overlay">
+    <div class="modal-container doc-studio-modal" style="max-width: 900px !important;">
+      <div class="doc-studio-header">
+        <div class="doc-studio-title-wrap">
+          <span style="font-size: 1.8rem;" id="docViewerIcon">📄</span>
+          <div>
+            <h2 id="docViewerHeading">Transit Document Viewer</h2>
+            <div style="font-size: 0.8rem; color: var(--cyan); margin-top: 2px;" id="docViewerSub">
+              Cryptographically verified &bull; Direct MySQL backend record
+            </div>
+          </div>
+        </div>
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+          <a id="docViewerPdfBtn" href="#" target="_blank" class="btn btn-primary btn-sm">📥 Download Vector PDF</a>
+          <button type="button" class="btn btn-outline btn-sm" onclick="printTransporterDocument('docViewerSheet')">🖨️ Print</button>
+          <a id="docViewerQrBtn" href="#" target="_blank" class="btn btn-glass btn-sm">🔗 Verify Online</a>
+          <button class="close-btn" onclick="closeModal('docViewerModal')">&times;</button>
+        </div>
+      </div>
+
+      <div style="flex: 1; overflow-y: auto; background: #070d18; padding: 1.5rem; display: flex; justify-content: center; border-radius: var(--radius-md);">
+        <div id="docViewerSheet" class="a4-document-sheet">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================
+       FLOATING AI LOGISTICS SPECIALIST
+       =================================================================== -->
+  <div class="ai-orb-btn" onclick="toggleAIAssistant()" title="Ask TranceConnect AI Logistics Assistant">
+    🤖
+  </div>
+
+  <div class="ai-widget" id="aiWidget">
+    <div class="ai-head">
+      <div class="ai-title">
+        <span class="pulse-dot"></span> TranceConnect AI Specialist
+      </div>
+      <button class="close-btn" onclick="toggleAIAssistant()">&times;</button>
+    </div>
+
+    <div class="ai-messages" id="aiChatFeed">
+      <div class="chat-bubble bubble-theirs">
+        👋 Hello! I am your <strong>AI Logistics & Fleet Specialist</strong>. Ask me about truck sizing, weight limits, E-Way Bill regulations, freight rate factors, or trip workflows!
+      </div>
+    </div>
+
+    <div style="padding: 0.4rem 0.85rem; display: flex; gap: 0.35rem; overflow-x: auto; background: #090e17;">
+      <button class="btn btn-glass btn-sm" style="font-size: 0.7rem; white-space: nowrap;" onclick="askAiQuestion('Which truck is required for 25 tons steel?')">25T Truck?</button>
+      <button class="btn btn-glass btn-sm" style="font-size: 0.7rem; white-space: nowrap;" onclick="askAiQuestion('What documents are required for inter-state transit?')">Interstate Docs?</button>
+      <button class="btn btn-glass btn-sm" style="font-size: 0.7rem; white-space: nowrap;" onclick="askAiQuestion('How does live tracking telemetry work?')">Tracking?</button>
+    </div>
+
+    <form class="chat-input-bar" onsubmit="handleSendAiMessage(event)">
+      <input type="text" id="aiUserInput" placeholder="Ask logistics assistant..." style="flex: 1;">
+      <button type="submit" class="btn btn-primary btn-sm">Ask ➤</button>
+    </form>
+  </div>
+
+  <!-- Mobile Bottom Navigation Bar (Visible only on <= 768px) -->
+  <nav class="mobile-bottom-nav" id="transMobileBottomNav">
+    <div class="bottom-nav-item active" id="trans-bnav-loads" onclick="switchTab('requests')">
+      <span class="icon">📦</span>
+      <span>Loads</span>
+    </div>
+    <div class="bottom-nav-item" id="trans-bnav-fleet" onclick="switchTab('fleet')">
+      <span class="icon">🚚</span>
+      <span>Fleet</span>
+    </div>
+    <div class="bottom-nav-item" id="trans-bnav-gps" onclick="focusTransporterGps()">
+      <span class="icon">📍</span>
+      <span>Live GPS</span>
+    </div>
+    <div class="bottom-nav-item" id="trans-bnav-chat" onclick="switchTab('chat')">
+      <span class="icon">💬</span>
+      <span>Chat</span>
+      <span id="transBnavChatBadge" class="bottom-nav-badge" style="display: none;">0</span>
+    </div>
+    <div class="bottom-nav-item" id="trans-bnav-menu" onclick="toggleMobileDrawer(true)">
+      <span class="icon">☰</span>
+      <span>Menu</span>
+    </div>
+  </nav>
+
+  <!-- Leaflet Map JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <!-- Socket.IO Real-Time Engine -->
+  <script src="socket.io.min.js"></script>
+  <!-- Dedicated Transporter Script -->
+  <script src="transporter.js"></script>
+</body>
+</html>

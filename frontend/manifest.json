@@ -1,0 +1,19 @@
+{
+  "name": "TranceConnect-Prime Logistics",
+  "short_name": "TranceConnect",
+  "description": "Next-Gen Autonomous Freight & Commercial Logistics Platform",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#060c18",
+  "theme_color": "#060c18",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/assets/logo.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "logistics", "productivity"]
+}

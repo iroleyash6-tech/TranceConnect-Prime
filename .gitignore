@@ -1,0 +1,49 @@
+# Environment and Secret configurations
+.env
+*.env
+backend/.env
+.env.local
+.env.*.local
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Vercel & Deployment artifacts
+.vercel/
+.vercel
+
+# Uploaded documents & binaries
+uploads/documents/*.pdf
+uploads/documents/*.html
+uploads/documents/qr/*.png
+cloudflared.exe
+*.log
+
+# Operating System files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE & Editor folders
+sem 5/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln

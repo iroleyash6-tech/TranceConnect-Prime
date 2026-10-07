@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 380" width="100%" height="100%">
+  <defs>
+    <linearGradient id="pickGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0284c7"/>
+      <stop offset="100%" stop-color="#0369a1"/>
+    </linearGradient>
+    <filter id="shadow"><feDropShadow dx="0" dy="10" stdDeviation="8" flood-color="#000" flood-opacity="0.4"/></filter>
+  </defs>
+  <ellipse cx="350" cy="330" rx="270" ry="18" fill="#000" opacity="0.4"/>
+  <g filter="url(#shadow)">
+    <!-- Cargo Tray / Bed -->
+    <rect x="120" y="175" width="280" height="90" rx="5" fill="#f8fafc" stroke="#94a3b8" stroke-width="2"/>
+    <path d="M 120 175 L 400 175" stroke="#0284c7" stroke-width="8"/>
+    <!-- Cargo Boxes Loaded in Tray -->
+    <rect x="140" y="130" width="75" height="45" fill="#d97706" rx="3" stroke="#b45309" stroke-width="2"/>
+    <rect x="225" y="115" width="85" height="60" fill="#b45309" rx="3" stroke="#78350f" stroke-width="2"/>
+    <rect x="320" y="140" width="70" height="35" fill="#d97706" rx="3" stroke="#b45309" stroke-width="2"/>
+
+    <!-- Cab Unit -->
+    <path d="M 395 195 L 420 135 L 535 135 L 585 205 L 595 275 L 395 275 Z" fill="url(#pickGrad)" stroke="#38bdf8" stroke-width="2"/>
+    <path d="M 435 145 L 515 145 L 555 200 L 440 200 Z" fill="#38bdf8" opacity="0.85"/>
+    <circle cx="585" cy="245" r="9" fill="#fef08a"/>
+
+    <!-- Wheels -->
+    <g transform="translate(220, 285)"><circle cx="0" cy="0" r="34" fill="#090d16"/><circle cx="0" cy="0" r="18" fill="#cbd5e1"/><circle cx="0" cy="0" r="7" fill="#000"/></g>
+    <g transform="translate(515, 285)"><circle cx="0" cy="0" r="34" fill="#090d16"/><circle cx="0" cy="0" r="18" fill="#cbd5e1"/><circle cx="0" cy="0" r="7" fill="#000"/></g>
+  </g>
+</svg>

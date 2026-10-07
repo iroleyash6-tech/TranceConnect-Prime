@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#060c18">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>TranceConnect-Prime | Next-Gen Logistics & Freight Network</title>
+  
+  <!-- Leaflet CSS for Interactive Live GPS Maps -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+  <!-- Main Cyber-Logistics Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" type="image/svg+xml" href="assets/logo.svg">
+  <link rel="manifest" href="manifest.json">
+</head>
+<body>
+
+  <!-- Animated Parallax Background & Cursor Spotlight -->
+  <div class="cursor-glow" id="cursorGlow"></div>
+  <div class="parallax-bg" id="parallaxBg"></div>
+  <div class="grid-overlay"></div>
+
+  <!-- Toast Notification Hub -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Top Navigation Bar -->
+  <header class="navbar">
+    <button class="nav-drawer-toggle" onclick="toggleMobileLandingDrawer()" aria-label="Toggle navigation">
+      ☰
+    </button>
+
+    <div class="nav-brand" onclick="window.location.href='/'">
+      <img src="assets/logo.svg" alt="TranceConnect-Prime Logo">
+    </div>
+
+    <div class="nav-telemetry">
+      <div class="pulse-dot"></div>
+      <span id="telemetryStatus">LIVE DATABASE LINKED &bull; PRODUCTION READY</span>
+    </div>
+
+    <nav class="nav-links">
+      <a href="#hero">Home</a>
+      <a href="#features">Platform Features</a>
+      <a href="#workflow">Workflow</a>
+      <a href="#tracking">Live GPS Radar</a>
+      <a onclick="openAuthModal('login')">Sign In</a>
+    </nav>
+
+    <div class="nav-actions">
+      <button class="btn btn-outline btn-sm" onclick="openAuthModal('login')">Sign In</button>
+      <button class="btn btn-primary btn-sm" onclick="openAuthModal('register')">Register Business</button>
+    </div>
+  </header>
+
+  <!-- Landing Page Mobile Drawer Overlay & Panel -->
+  <div class="mobile-drawer-overlay" id="landingMobileDrawerOverlay" onclick="toggleMobileLandingDrawer(false)"></div>
+  <aside class="mobile-drawer" id="landingMobileDrawer">
+    <div class="mobile-drawer-header">
+      <div class="mobile-drawer-user">
+        <div class="mobile-drawer-user-avatar">🌐</div>
+        <div>
+          <strong style="font-size: 0.92rem; color: var(--text-main);">TranceConnect-Prime</strong>
+          <div style="font-size: 0.72rem; color: var(--cyan);">NEXT-GEN LOGISTICS</div>
+        </div>
+      </div>
+      <button class="mobile-drawer-close" onclick="toggleMobileLandingDrawer(false)">✕</button>
+    </div>
+    <div class="sidebar-heading">Navigation</div>
+    <div class="sidebar-item" onclick="scrollToSection('hero'); toggleMobileLandingDrawer(false);">
+      <span>🏠</span> Home
+    </div>
+    <div class="sidebar-item" onclick="scrollToSection('features'); toggleMobileLandingDrawer(false);">
+      <span>⚡</span> Platform Features
+    </div>
+    <div class="sidebar-item" onclick="scrollToSection('workflow'); toggleMobileLandingDrawer(false);">
+      <span>🔄</span> Workflow & Telemetry
+    </div>
+    <div class="sidebar-item" onclick="scrollToSection('tracking'); toggleMobileLandingDrawer(false);">
+      <span>🛰️</span> Live GPS Radar
+    </div>
+    <div class="sidebar-heading" style="margin-top: 1.25rem;">Access</div>
+    <div class="sidebar-item" onclick="openAuthModal('login'); toggleMobileLandingDrawer(false);">
+      <span>🔐</span> Sign In
+    </div>
+    <div class="sidebar-item" onclick="openAuthModal('register'); toggleMobileLandingDrawer(false);">
+      <span>🏢</span> Register Business
+    </div>
+  </aside>
+
+  <!-- ===================================================================
+       FUTURISTIC ANTI-GRAVITY HERO SECTION
+       =================================================================== -->
+  <section id="hero" class="hero-futuristic">
+    <div class="hero-header-center">
+      <div class="hero-tag">
+        <span class="pulse-dot"></span> NEXT-GEN AUTONOMOUS FREIGHT FLEET
+      </div>
+      <h1 class="hero-title-futuristic">
+        THE FUTURE OF SMART TRANSPORTATION
+      </h1>
+      <p class="hero-subtitle-futuristic">
+        Connecting Dealers, Transporters, and Businesses Worldwide.
+      </p>
+
+      <div class="hero-cta-animated">
+        <button class="btn btn-animated-neon" onclick="openAuthModal('register')">
+          ⚡ Get Started
+        </button>
+        <button class="btn btn-animated-glass" onclick="scrollToSection('features')">
+          🌐 Explore Platform
+        </button>
+        <button class="btn btn-outline" onclick="openAuthModal('login')">
+          🔐 Sign In
+        </button>
+        <button class="btn btn-glass" onclick="document.getElementById('trackingSearchInput').focus()">
+          🛰️ Track Consignment
+        </button>
+      </div>
+    </div>
+
+    <!-- 3D Ultra-Realistic Anti-Gravity Vehicle Stage -->
+    <div class="vehicle-stage-container" id="vehicleStageContainer">
+      <!-- WebGL Canvas Mount -->
+      <div id="vehicle3DCanvasWrapper" class="vehicle-canvas-wrapper">
+        <!-- Three.js Canvas injected dynamically by vehicle-3d.js -->
+        
+        <!-- Fallback if WebGL is disabled or unsupported -->
+        <div id="vehicleFallback" class="vehicle-fallback" style="display: none;">
+          <img src="assets/truck-hero.svg" alt="Futuristic Transport Vehicle Fallback">
+          <p>Interactive 3D Anti-Gravity Vehicle (Hardware Acceleration Recommended)</p>
+        </div>
+      </div>
+
+      <!-- 3D Interactive HUD Overlay -->
+      <div class="vehicle-hud-overlay">
+        <div class="hud-top-left">
+          <div class="hud-badge">
+            <span class="pulse-dot" style="background:#00f0ff;"></span>
+            <span id="hudVehicleName">TRANCECONNECT HYPERHAULER X-1</span>
+          </div>
+          <div class="hud-sub-metric">MAG-LEV PROPULSION &bull; QUAD ION THRUSTERS</div>
+        </div>
+
+        <div class="hud-top-right">
+          <div class="hud-controls-pill">
+            <button class="hud-pill-btn active" id="btnHudAutoRotate" onclick="toggleAutoRotate()" title="Toggle 360° Auto-Rotation">
+              <span>🔄</span> 360° Orbit
+            </button>
+            <button class="hud-pill-btn" id="btnHudBoost" onclick="triggerThrusterBoost()" title="Activate Anti-Gravity Thruster Boost">
+              <span>⚡</span> Boost
+            </button>
+            <button class="hud-pill-btn" id="btnHudColor" onclick="cycleNeonPalette()" title="Cycle Neon Color Scheme">
+              <span>🎨</span> Neon
+            </button>
+            <button class="hud-pill-btn" id="btnHudView" onclick="cycleCameraAngle()" title="Cycle Camera Angles">
+              <span>🎥</span> Camera
+            </button>
+          </div>
+        </div>
+
+        <div class="hud-bottom-hint">
+          <span>🖐️ Click & Drag to Rotate 360° &bull; Mouse Tilt &bull; Touch & Scroll Zoom</span>
+        </div>
+
+        <!-- Real-Time Telemetry Readouts -->
+        <div class="hud-bottom-telemetry">
+          <div class="tele-item">
+            <span>ALTITUDE</span>
+            <strong id="teleAltitude">1.35 M</strong>
+          </div>
+          <div class="tele-item">
+            <span>ENERGY FIELD</span>
+            <strong id="teleEnergy" style="color: var(--cyan);">99.4% STABLE</strong>
+          </div>
+          <div class="tele-item">
+            <span>MAX PAYLOAD</span>
+            <strong>45 TONS</strong>
+          </div>
+          <div class="tele-item">
+            <span>DRIVE MODE</span>
+            <strong id="teleMode" style="color: #a78bfa;">ANTI-GRAV FTL</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Platform Performance Metrics Bar -->
+    <div class="hero-stats-bar">
+      <div class="stat-item">
+        <h3 id="statTransporters">250<span>+</span></h3>
+        <p>Verified Transporters</p>
+      </div>
+      <div class="stat-item">
+        <h3 id="statFreight">₹3.8<span>Cr</span></h3>
+        <p>Active Cargo Value</p>
+      </div>
+      <div class="stat-item">
+        <h3>99.8<span>%</span></h3>
+        <p>On-Time Delivery</p>
+      </div>
+      <div class="stat-item">
+        <h3 style="color: var(--cyan);">0<span> ms</span></h3>
+        <p>Telemetry Latency</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Highway Telemetry Corridor Stage -->
+  <div style="max-width: 1280px; margin: -1rem auto 2.5rem; padding: 0 2rem;">
+    <div class="highway-stage">
+      <div class="stage-header">
+        <div class="route-badge">
+          <span>JNPT NAVI MUMBAI</span>
+          <span class="route-arrow">➔➔</span>
+          <span>CHAKAN INDUSTRIAL HUB</span>
+        </div>
+        <div class="badge-in_transit status-badge">
+          <span class="pulse-dot"></span> LIVE HIGHWAY RADAR
+        </div>
+      </div>
+
+      <!-- Road Canvas with Moving Markings -->
+      <div class="road-canvas">
+        <div class="road-edge-top"></div>
+        <div class="road-lines"></div>
+        <div class="road-edge-bottom"></div>
+
+        <!-- Moving Truck Unit with Glow -->
+        <div class="truck-unit">
+          <img src="assets/truck-hero.svg" alt="Animated Commercial Truck">
+        </div>
+      </div>
+
+      <!-- Live Telemetry Specs -->
+      <div class="stage-telemetry">
+        <div class="telemetry-card">
+          <span>VEHICLE</span>
+          <strong>MH-04-AB-1234</strong>
+        </div>
+        <div class="telemetry-card">
+          <span>SPEED</span>
+          <strong>62 KM/H</strong>
+        </div>
+        <div class="telemetry-card">
+          <span>CARGO</span>
+          <strong>24T STEEL</strong>
+        </div>
+        <div class="telemetry-card">
+          <span>CORRIDOR</span>
+          <strong>NH 48 EXPRESSWAY</strong>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Live Consignment Tracking Search -->
+  <section id="tracking" class="section" style="padding-top: 1rem; padding-bottom: 3rem;">
+    <div style="background: rgba(13, 23, 42, 0.85); border: 1px solid var(--border-glass); border-radius: var(--radius-lg); padding: 2.2rem; max-width: 900px; margin: 0 auto; box-shadow: var(--shadow-glow);">
+      <h3 style="font-size: 1.35rem; margin-bottom: 0.5rem; text-align: center;">Direct Consignment Radar Tracking</h3>
+      <p style="color: var(--text-muted); font-size: 0.9rem; text-align: center; margin-bottom: 1.5rem;">Enter your Consignment Number (e.g. 1, 2) to stream live GPS coordinates and transit milestones directly from MySQL.</p>
+      
+      <form onsubmit="handleLiveSearchTracking(event)" style="display: flex; gap: 0.75rem;">
+        <input type="text" id="trackingSearchInput" required placeholder="Enter Shipment ID (e.g. 1)" style="flex: 1; padding: 0.85rem 1.25rem; font-size: 1rem;">
+        <button type="submit" class="btn btn-primary" style="padding: 0 2rem;">Track Now 🛰️</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- Commercial Transport Categories & Fleet Showcase -->
+  <section id="fleet-categories" class="fleet-showcase-section">
+    <div class="section-head">
+      <p class="section-tag">COMMERCIAL FLEET INVENTORY</p>
+      <h2 class="section-title">Commercial Transport & Vehicle Categories</h2>
+      <p class="section-desc">Accredited commercial freight vehicles engineered for heavy industrial consignments, containerized imports, and express distribution across India.</p>
+    </div>
+
+    <div class="fleet-grid">
+      <!-- 1. Container Truck -->
+      <div class="fleet-card">
+        <div class="fleet-card-img-wrap">
+          <span class="fleet-category-badge">CONTAINERIZED FREIGHT</span>
+          <img src="/assets/vehicles/container-truck.svg" alt="40ft High Cube Container Freight Truck" loading="lazy">
+        </div>
+        <div class="fleet-card-title">40ft High-Cube Container Truck</div>
+        <p class="fleet-card-desc">Heavy-duty multi-axle freight carrier designed for intermodal ISO shipping containers, import-export cargo, and high-cube industrial dry freight.</p>
+        <div class="fleet-spec-pills">
+          <span class="fleet-spec-pill">Payload: <strong>28 - 35 Tons</strong></span>
+          <span class="fleet-spec-pill">Volume: <strong>76 m³ (2,690 cu ft)</strong></span>
+          <span class="fleet-spec-pill">Security: <strong>Tamper-Proof Seal</strong></span>
+        </div>
+        <button class="btn btn-secondary" onclick="openAuthModal('dealer', 'register')" style="width: 100%; margin-top: auto;">Book Container Truck ➔</button>
+      </div>
+
+      <!-- 2. Closed Truck -->
+      <div class="fleet-card">
+        <div class="fleet-card-img-wrap">
+          <span class="fleet-category-badge">EXPRESS SEALED CARGO</span>
+          <img src="/assets/vehicles/closed-truck.svg" alt="Sealed Express Closed Body Cargo Truck" loading="lazy">
+        </div>
+        <div class="fleet-card-title">Express Closed-Body Box Truck</div>
+        <p class="fleet-card-desc">Fully enclosed weather-proof aerodynamic box van built for FMCG goods, high-value electronics, pharmaceuticals, and sensitive commercial consignments.</p>
+        <div class="fleet-spec-pills">
+          <span class="fleet-spec-pill">Payload: <strong>12 - 20 Tons</strong></span>
+          <span class="fleet-spec-pill">Deck: <strong>24ft / 32ft Sealed Box</strong></span>
+          <span class="fleet-spec-pill">Protection: <strong>100% Weatherproof</strong></span>
+        </div>
+        <button class="btn btn-secondary" onclick="openAuthModal('dealer', 'register')" style="width: 100%; margin-top: auto;">Book Closed Truck ➔</button>
+      </div>
+
+      <!-- 3. Open-Body Truck -->
+      <div class="fleet-card">
+        <div class="fleet-card-img-wrap">
+          <span class="fleet-category-badge">BULK COMMODITIES</span>
+          <img src="/assets/vehicles/open-body-truck.svg" alt="High-Side Open-Body Dropside Bulk Truck" loading="lazy">
+        </div>
+        <div class="fleet-card-title">High-Side Open-Body Truck</div>
+        <p class="fleet-card-desc">Reinforced steel dropside carrier built for crane loading of industrial raw materials, bagged cement, agricultural produce, and heavy packaged goods.</p>
+        <div class="fleet-spec-pills">
+          <span class="fleet-spec-pill">Payload: <strong>16 - 25 Tons</strong></span>
+          <span class="fleet-spec-pill">Loading: <strong>Overhead Crane / Forklift</strong></span>
+          <span class="fleet-spec-pill">Chassis: <strong>Heavy Multi-Leaf</strong></span>
+        </div>
+        <button class="btn btn-secondary" onclick="openAuthModal('dealer', 'register')" style="width: 100%; margin-top: auto;">Book Open Truck ➔</button>
+      </div>
+
+      <!-- 4. Trailer Truck -->
+      <div class="fleet-card">
+        <div class="fleet-card-img-wrap">
+          <span class="fleet-category-badge">HEAVY INDUSTRIAL</span>
+          <img src="/assets/vehicles/trailer-truck.svg" alt="Multi-Axle Flatbed Trailer Truck" loading="lazy">
+        </div>
+        <div class="fleet-card-title">Multi-Axle Flatbed Trailer</div>
+        <p class="fleet-card-desc">Heavy articulated low-bed and flatbed tractor-trailers engineered for hot-rolled steel coils, construction girders, pipes, and oversized project cargo.</p>
+        <div class="fleet-spec-pills">
+          <span class="fleet-spec-pill">Payload: <strong>35 - 55 Tons</strong></span>
+          <span class="fleet-spec-pill">Bed Length: <strong>40ft - 50ft Flatbed</strong></span>
+          <span class="fleet-spec-pill">Axles: <strong>3 - 5 High-Tonnage Axles</strong></span>
+        </div>
+        <button class="btn btn-secondary" onclick="openAuthModal('dealer', 'register')" style="width: 100%; margin-top: auto;">Book Flatbed Trailer ➔</button>
+      </div>
+
+      <!-- 5. Pickup Truck -->
+      <div class="fleet-card">
+        <div class="fleet-card-img-wrap">
+          <span class="fleet-category-badge">URBAN FEEDER LCV</span>
+          <img src="/assets/vehicles/pickup-truck.svg" alt="Commercial Light Feeder Pickup Truck" loading="lazy">
+        </div>
+        <div class="fleet-card-title">Light Commercial Urban Pickup</div>
+        <p class="fleet-card-desc">Agile light commercial vehicle ideal for city freight movement, factory-to-hub transfers, local parcel collection, and restricted urban zone transit.</p>
+        <div class="fleet-spec-pills">
+          <span class="fleet-spec-pill">Payload: <strong>1.5 - 3.5 Tons</strong></span>
+          <span class="fleet-spec-pill">Access: <strong>Unrestricted Urban Zones</strong></span>
+          <span class="fleet-spec-pill">Turnaround: <strong>Instant Point-to-Point</strong></span>
+        </div>
+        <button class="btn btn-secondary" onclick="openAuthModal('dealer', 'register')" style="width: 100%; margin-top: auto;">Book Urban Pickup ➔</button>
+      </div>
+
+      <!-- 6. Heavy Commercial Vehicle -->
+      <div class="fleet-card">
+        <div class="fleet-card-img-wrap">
+          <span class="fleet-category-badge">MINING & AGGREGATE</span>
+          <img src="/assets/vehicles/heavy-commercial.svg" alt="14-Wheeler Heavy Multi-Axle Dump Truck" loading="lazy">
+        </div>
+        <div class="fleet-card-title">14-Wheeler Heavy Tipper Dump Truck</div>
+        <p class="fleet-card-desc">High-capacity hydraulic tipping dumper designed for iron ore, coal, construction aggregate, infrastructure minerals, and bulk industrial earthwork.</p>
+        <div class="fleet-spec-pills">
+          <span class="fleet-spec-pill">Payload: <strong>28 - 40 Tons</strong></span>
+          <span class="fleet-spec-pill">Tipping: <strong>Hydraulic Underbody Ram</strong></span>
+          <span class="fleet-spec-pill">Terrain: <strong>Quarry & Heavy Highway</strong></span>
+        </div>
+        <button class="btn btn-secondary" onclick="openAuthModal('dealer', 'register')" style="width: 100%; margin-top: auto;">Book Heavy Tipper ➔</button>
+      </div>
+
+      <!-- 7. Delivery Van -->
+      <div class="fleet-card">
+        <div class="fleet-card-img-wrap">
+          <span class="fleet-category-badge">LAST-MILE COURIER</span>
+          <img src="/assets/vehicles/delivery-van.svg" alt="Zero-Emission Electric Last-Mile Delivery Van" loading="lazy">
+        </div>
+        <div class="fleet-card-title">Last-Mile Express Delivery Van</div>
+        <p class="fleet-card-desc">High-efficiency delivery van dedicated to quick doorstep delivery, retail restocking, e-commerce express dispatches, and warehouse distribution.</p>
+        <div class="fleet-spec-pills">
+          <span class="fleet-spec-pill">Payload: <strong>1.0 - 2.5 Tons</strong></span>
+          <span class="fleet-spec-pill">Volume: <strong>12 - 18 m³ Cargo Bay</strong></span>
+          <span class="fleet-spec-pill">Dispatch: <strong>Same-Day SLA Guaranteed</strong></span>
+        </div>
+        <button class="btn btn-secondary" onclick="openAuthModal('dealer', 'register')" style="width: 100%; margin-top: auto;">Book Delivery Van ➔</button>
+      </div>
+
+      <!-- 8. Transport Fleets -->
+      <div class="fleet-card">
+        <div class="fleet-card-img-wrap">
+          <span class="fleet-category-badge">ENTERPRISE CARRIER</span>
+          <img src="/assets/vehicles/fleet-composite.svg" alt="National Multi-Vehicle Transport Fleet" loading="lazy">
+        </div>
+        <div class="fleet-card-title">Pan-India Freight Fleet Convoy</div>
+        <p class="fleet-card-desc">Multi-vehicle dedicated transport fleets tailored for nationwide supply contracts, recurring plant output contracts, and major industrial freight agreements.</p>
+        <div class="fleet-spec-pills">
+          <span class="fleet-spec-pill">Capacity: <strong>100+ Commercial Trucks</strong></span>
+          <span class="fleet-spec-pill">Coverage: <strong>National Highway Corridors</strong></span>
+          <span class="fleet-spec-pill">Service: <strong>Dedicated Fleet Manager</strong></span>
+        </div>
+        <button class="btn btn-primary" onclick="openAuthModal('dealer', 'register')" style="width: 100%; margin-top: auto;">Contract Full Fleet ➔</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Platform Features Grid -->
+  <section id="features" class="section">
+    <div class="section-head">
+      <p class="section-tag">ENTERPRISE CAPABILITIES</p>
+      <h2 class="section-title">Engineered for High-Volume Freight</h2>
+      <p class="section-desc">Unified digital logistics infrastructure connecting industrial manufacturers, freight aggregators, and commercial truck operators.</p>
+    </div>
+
+    <div class="feature-grid">
+      <div class="feature-card">
+        <div class="feature-icon">📦</div>
+        <h3>Shipper / Dealer Portal</h3>
+        <p>Post freight requirements for any product type, specify axle and tonnage requirements, upload Invoices and Delivery Orders, and select accredited transporters.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">🚛</div>
+        <h3>Fleet Operator Deck</h3>
+        <p>Accept loads, register commercial trucks, enroll verified drivers, upload RC and insurance policies, and track trip milestones in real time.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">🛰️</div>
+        <h3>Live GPS Radar Tracking</h3>
+        <p>Interactive Leaflet map streaming live telemetry coordinates, vehicle speed, highway checkpoint logs, and delivery confirmation.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">📑</div>
+        <h3>Secure Document Vault</h3>
+        <p>Protected digital storage for commercial invoices, Delivery Orders (DO), Driving Licenses, and RC. Master Admin verification with instant audit trails.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">💬</div>
+        <h3>Shipment-Bound Live Chat</h3>
+        <p>Direct real-time communication between Dealer and Transporter for load synchronization, loading gate passes, and delivery receipts.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">🧠</div>
+        <h3>AI Logistics Specialist</h3>
+        <p>Domain-intelligent logistics assistant answering questions on truck sizing (14ft, 20ft, 32ft MXL), E-Way bill regulations, and freight workflows.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- End-to-End Workflow Section -->
+  <section id="workflow" class="section" style="background: rgba(10, 18, 34, 0.5); border-top: 1px solid var(--border-glass); border-bottom: 1px solid var(--border-glass);">
+    <div class="section-head">
+      <p class="section-tag">STRUCTURED EXECUTION</p>
+      <h2 class="section-title">End-to-End Freight Lifecycle</h2>
+      <p class="section-desc">From initial consignment booking to final delivery acknowledgment in four structured stages.</p>
+    </div>
+
+    <div class="workflow-track">
+      <div class="step-card">
+        <div class="step-number">01</div>
+        <h4>Consignment Creation</h4>
+        <p>Shipper specifies product type, cargo weight, required truck configuration, pickup and destination, and attaches commercial invoice & DO.</p>
+      </div>
+
+      <div class="step-card">
+        <div class="step-number">02</div>
+        <h4>Transporter Allocation</h4>
+        <p>Shipper selects a verified transporter from the accredited directory or posts to the open network pool.</p>
+      </div>
+
+      <div class="step-card">
+        <div class="step-number">03</div>
+        <h4>Dispatch & Telemetry</h4>
+        <p>Transporter accepts consignment, binds fleet truck & licensed driver, and initiates transit with live GPS updates.</p>
+      </div>
+
+      <div class="step-card">
+        <div class="step-number">04</div>
+        <h4>Milestone & Delivery</h4>
+        <p>Real-time checkpoint logs, in-app messaging, status progression, and digital delivery receipt for all stakeholders.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================================
+       MODAL: AUTHENTICATION (LOGIN / REGISTER / OTP)
+       =================================================================== -->
+  <div id="authModal" class="modal-overlay">
+    <div class="modal-container" style="max-width: 520px;">
+      <div class="modal-head">
+        <h2 id="authModalTitle">Sign In to TranceConnect</h2>
+        <button class="close-btn" onclick="closeModal('authModal')">&times;</button>
+      </div>
+
+      <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-glass); padding-bottom: 0.5rem;">
+        <button id="btnAuthTabLogin" class="btn btn-primary btn-sm" onclick="setAuthTab('login')">Sign In</button>
+        <button id="btnAuthTabRegDealer" class="btn btn-glass btn-sm" onclick="setAuthTab('reg-dealer')">Register Shipper</button>
+        <button id="btnAuthTabRegTrans" class="btn btn-glass btn-sm" onclick="setAuthTab('reg-trans')">Register Transporter</button>
+      </div>
+
+      <!-- FORM 1: LOGIN -->
+      <form id="formLogin" onsubmit="handleLoginSubmit(event)">
+        <div class="form-group">
+          <label>Email Address</label>
+          <input type="email" id="loginEmail" required placeholder="corporate@company.com">
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <div class="password-wrap">
+            <input type="password" id="loginPassword" required placeholder="Enter password">
+            <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('loginPassword', this)" title="Toggle password visibility">👁️</button>
+          </div>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+          <a style="font-size: 0.82rem; color: var(--cyan); cursor: pointer;" onclick="setAuthTab('forgot')">Forgot Password?</a>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%;">Sign In</button>
+      </form>
+
+      <!-- FORM 2: REGISTER -->
+      <form id="formRegister" style="display: none;" onsubmit="handleRegisterSubmit(event)">
+        <input type="hidden" id="regRole" value="dealer">
+        <div class="form-group">
+          <label>Company / Firm Legal Name</label>
+          <input type="text" id="regCompany" required placeholder="e.g. Bharat Freight Corporation">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Mobile Number</label>
+            <input type="tel" id="regMobile" required placeholder="10-digit mobile number">
+          </div>
+          <div class="form-group">
+            <label>Corporate Email</label>
+            <input type="email" id="regEmail" required placeholder="contact@company.com">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>GSTIN Number</label>
+            <input type="text" id="regGst" placeholder="15-character GSTIN">
+          </div>
+          <div class="form-group">
+            <label>City & State</label>
+            <input type="text" id="regCity" placeholder="e.g. Mumbai, Maharashtra">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Create Password</label>
+          <div class="password-wrap">
+            <input type="password" id="regPassword" required placeholder="Minimum 6 characters">
+            <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('regPassword', this)" title="Toggle password visibility">👁️</button>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%;" id="btnRegisterSubmit">Register Account</button>
+      </form>
+
+      <!-- FORM 3: FORGOT PASSWORD & OTP -->
+      <div id="formForgot" style="display: none;">
+        <div id="otpStep1">
+          <div class="form-group">
+            <label>Enter Registered Email</label>
+            <input type="email" id="forgotEmail" placeholder="registered@company.com">
+          </div>
+          <button class="btn btn-primary" style="width: 100%;" onclick="requestPasswordOtp()">Generate 6-Digit OTP</button>
+        </div>
+
+        <div id="otpStep2" style="display: none; margin-top: 1rem;">
+          <div class="form-group">
+            <label>6-Digit OTP Code</label>
+            <input type="text" id="forgotOtpCode" placeholder="Enter code received">
+          </div>
+          <div class="form-group">
+            <label>New Password</label>
+            <div class="password-wrap">
+              <input type="password" id="forgotNewPassword" placeholder="Enter new password">
+              <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('forgotNewPassword', this)" title="Toggle password visibility">👁️</button>
+            </div>
+          </div>
+          <button class="btn btn-success" style="width: 100%;" onclick="submitPasswordReset()">Confirm Password Reset</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================
+       MODAL: LIVE TRACKING POPUP
+       =================================================================== -->
+  <div id="trackingModal" class="modal-overlay">
+    <div class="modal-container" style="max-width: 840px;">
+      <div class="modal-head">
+        <div>
+          <h2 id="trackModalHeading">Live GPS Radar Telemetry</h2>
+          <small id="trackModalRoute" style="color: var(--cyan); font-family: 'JetBrains Mono', monospace;"></small>
+        </div>
+        <button class="close-btn" onclick="closeModal('trackingModal')">&times;</button>
+      </div>
+
+      <div class="tracking-radar-telemetry">
+        <div>
+          <span style="color: var(--text-dim); font-size: 0.72rem;">CURRENT CHECKPOINT</span>
+          <strong id="trackCurLocation" style="color: var(--text-main); font-size: 0.95rem;">-</strong>
+        </div>
+        <div>
+          <span style="color: var(--text-dim); font-size: 0.72rem;">VEHICLE SPEED</span>
+          <strong id="trackSpeed" style="color: var(--cyan); font-size: 0.95rem;">0 KM/H</strong>
+        </div>
+        <div>
+          <span style="color: var(--text-dim); font-size: 0.72rem;">TELEMETRY STATUS</span>
+          <strong id="trackStatusNote" style="color: var(--emerald); font-size: 0.95rem;">Active</strong>
+        </div>
+      </div>
+
+      <div id="trackingMap"></div>
+    </div>
+  </div>
+
+  <!-- Floating AI Logistics Specialist Orb -->
+  <div class="ai-orb-btn" onclick="toggleAIAssistant()" title="Ask TranceConnect AI Logistics Assistant">
+    🤖
+  </div>
+
+  <div class="ai-widget" id="aiWidget">
+    <div class="ai-head">
+      <div class="ai-title">
+        <span class="pulse-dot"></span> TranceConnect AI Specialist
+      </div>
+      <button class="close-btn" onclick="toggleAIAssistant()">&times;</button>
+    </div>
+
+    <div class="ai-messages" id="aiChatFeed">
+      <div class="chat-bubble bubble-theirs">
+        👋 Hello! I am your <strong>AI Logistics Specialist</strong>. Ask me about truck capacities, E-Way bill regulations, freight rate factors, or trip workflows!
+      </div>
+    </div>
+
+    <div style="padding: 0.4rem 0.85rem; display: flex; gap: 0.35rem; overflow-x: auto; background: #090e17;">
+      <button class="btn btn-glass btn-sm" style="font-size: 0.7rem; white-space: nowrap;" onclick="askAiQuestion('Which truck is best for 15 tons of steel?')">15T Truck?</button>
+      <button class="btn btn-glass btn-sm" style="font-size: 0.7rem; white-space: nowrap;" onclick="askAiQuestion('What are E-Way bill rules for freight in India?')">E-Way Bill?</button>
+      <button class="btn btn-glass btn-sm" style="font-size: 0.7rem; white-space: nowrap;" onclick="askAiQuestion('How does the shipment workflow work?')">Workflow?</button>
+    </div>
+
+    <form class="chat-input-bar" onsubmit="handleSendAiMessage(event)">
+      <input type="text" id="aiUserInput" placeholder="Ask logistics assistant..." style="flex: 1;">
+      <button type="submit" class="btn btn-primary btn-sm">Ask ➤</button>
+    </form>
+  </div>
+
+  <!-- Leaflet Map JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <!-- Three.js 3D WebGL Library (Local with CDN Fallback) -->
+  <script src="three.min.js"></script>
+  <script>
+    if (typeof THREE === 'undefined') {
+      document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>');
+    }
+  </script>
+  <!-- Futuristic 3D Anti-Gravity Vehicle Engine -->
+  <script src="vehicle-3d.js"></script>
+  <!-- Landing Script -->
+  <script src="app.js"></script>
+</body>
+</html>

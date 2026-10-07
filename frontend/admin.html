@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#060c18">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>HQ Master Control Deck | TranceConnect-Prime</title>
+  
+  <!-- Leaflet CSS for Live GPS Radar -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" type="image/svg+xml" href="assets/logo.svg">
+  <link rel="manifest" href="manifest.json">
+</head>
+<body>
+
+  <!-- Animated Parallax Background & Cursor Spotlight -->
+  <div class="cursor-glow" id="cursorGlow"></div>
+  <div class="parallax-bg" id="parallaxBg"></div>
+  <div class="grid-overlay"></div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Top Navigation Bar -->
+  <header class="navbar">
+    <button class="nav-drawer-toggle" onclick="toggleMobileDrawer()" aria-label="Toggle navigation">
+      ☰
+    </button>
+
+    <div class="nav-brand" onclick="window.location.href='/admin'">
+      <img src="assets/logo.svg" alt="TranceConnect-Prime Logo">
+    </div>
+
+    <div class="nav-telemetry">
+      <div class="pulse-dot"></div>
+      <span id="telemetryStatus">LIVE DATABASE SYNCED &bull; HQ MASTER CONTROL</span>
+    </div>
+
+    <div class="nav-actions">
+      <span class="status-badge hide-on-mobile" style="background: rgba(16, 185, 129, 0.15); border: 1px solid var(--emerald); color: var(--emerald);">
+        MASTER ADMINISTRATOR
+      </span>
+      <span id="adminDisplayName" class="hide-on-mobile" style="font-weight: 600; font-size: 0.9rem; color: var(--text-main);">
+        TranceConnect HQ Control
+      </span>
+      <button class="btn btn-outline btn-sm" onclick="logoutUser()">Sign Out</button>
+    </div>
+  </header>
+
+  <!-- Mobile Drawer Overlay & Slide-in Panel -->
+  <div class="mobile-drawer-overlay" id="mobileDrawerOverlay" onclick="toggleMobileDrawer(false)"></div>
+  <aside class="mobile-drawer" id="mobileDrawer">
+    <div class="mobile-drawer-header">
+      <div class="mobile-drawer-user">
+        <div class="mobile-drawer-user-avatar">🛡️</div>
+        <div>
+          <strong id="adminDrawerName" style="font-size: 0.92rem; color: var(--text-main);">HQ Master Control</strong>
+          <div style="font-size: 0.72rem; color: var(--emerald);">MASTER ADMINISTRATOR</div>
+        </div>
+      </div>
+      <button class="mobile-drawer-close" onclick="toggleMobileDrawer(false)">✕</button>
+    </div>
+    <div class="sidebar-heading">Master Control</div>
+    <div class="sidebar-item" onclick="switchTab('fleetMap'); toggleMobileDrawer(false);">
+      <span>🛰️</span> Live Fleet Radar
+    </div>
+    <div class="sidebar-item" onclick="switchTab('verifications'); toggleMobileDrawer(false);">
+      <span>✅</span> Document Verifications
+    </div>
+    <div class="sidebar-item" onclick="switchTab('dealers'); toggleMobileDrawer(false);">
+      <span>🏭</span> Shippers & Dealers
+    </div>
+    <div class="sidebar-item" onclick="switchTab('transporters'); toggleMobileDrawer(false);">
+      <span>🚛</span> Fleet Transporters
+    </div>
+    <div class="sidebar-item" onclick="switchTab('shipments'); toggleMobileDrawer(false);">
+      <span>📦</span> Master Shipments Log
+    </div>
+    <div class="sidebar-item" onclick="switchTab('documentsMaster'); toggleMobileDrawer(false);">
+      <span>📑</span> Master Invoices & DOs
+    </div>
+    <div class="sidebar-item" onclick="switchTab('vehicles'); toggleMobileDrawer(false);">
+      <span>🚚</span> Network Fleet
+    </div>
+    <div class="sidebar-item" onclick="switchTab('database'); toggleMobileDrawer(false);">
+      <span>💾</span> Live Database Explorer
+    </div>
+    <div class="sidebar-heading" style="margin-top: 1.25rem;">System</div>
+    <div class="sidebar-item" onclick="checkApiHealth(); toggleMobileDrawer(false);">
+      <span>🩺</span> API Health Diagnostics
+    </div>
+    <div class="sidebar-item" style="color: var(--rose); margin-top: auto; padding-top: 1.5rem;" onclick="logoutUser()">
+      <span>🚪</span> Sign Out
+    </div>
+  </aside>
+
+  <!-- Dashboard Container -->
+  <div class="dashboard-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-heading">Master Control</div>
+      <div class="sidebar-item active" onclick="switchTab('fleetMap')">
+        <span>🛰️</span> Live Fleet Radar
+      </div>
+      <div class="sidebar-item" onclick="switchTab('verifications')">
+        <span>✅</span> Document Verifications
+      </div>
+      <div class="sidebar-item" onclick="switchTab('dealers')">
+        <span>🏭</span> Shippers & Dealers
+      </div>
+      <div class="sidebar-item" onclick="switchTab('transporters')">
+        <span>🚛</span> Fleet Transporters
+      </div>
+      <div class="sidebar-item" onclick="switchTab('shipments')">
+        <span>📦</span> Master Shipments Log
+      </div>
+      <div class="sidebar-item" id="sidebarAdminDocsLink" onclick="switchTab('documentsMaster')">
+        <span>📑</span> Master Invoices & DOs
+      </div>
+      <div class="sidebar-item" onclick="switchTab('vehicles')">
+        <span>🚚</span> Network Fleet
+      </div>
+      <div class="sidebar-item" onclick="switchTab('database')">
+        <span>💾</span> Live Database Explorer
+      </div>
+
+      <div class="sidebar-heading" style="margin-top: 1.5rem;">System</div>
+      <div class="sidebar-item" onclick="checkApiHealth()">
+        <span>🩺</span> API Health Diagnostics
+      </div>
+      <div class="sidebar-item" style="color: var(--rose); margin-top: 2rem;" onclick="logoutUser()">
+        <span>🚪</span> Sign Out
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="dashboard-main">
+      <div class="dash-topbar">
+        <div class="dash-heading">
+          <h1>Platform Administration</h1>
+          <p>Real-time governance of shippers, accredited fleet operators, KYC document verifications, and dispatches.</p>
+        </div>
+        <div style="display: flex; gap: 0.75rem;">
+          <button class="btn btn-glass btn-sm" onclick="loadAllAdminData()">
+            <span>🔄</span> Refresh Telemetry
+          </button>
+        </div>
+      </div>
+
+      <!-- Real Database KPI Cards -->
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-header"><span>Total Shippers</span><div class="kpi-icon" style="color:#60a5fa;">🏭</div></div>
+          <div class="kpi-val" id="kpiDealers">0</div>
+          <div class="kpi-sub">Registered Dealers</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-header"><span>Transporters</span><div class="kpi-icon" style="color:var(--amber);">🚛</div></div>
+          <div class="kpi-val" id="kpiTransporters">0</div>
+          <div class="kpi-sub">Accredited Fleet Partners</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-header"><span>Total Shipments</span><div class="kpi-icon" style="color:var(--cyan);">📦</div></div>
+          <div class="kpi-val" id="kpiShipments">0</div>
+          <div class="kpi-sub">Lifetime Freight Bookings</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-header"><span>Pending KYC</span><div class="kpi-icon" style="color:var(--rose);">📑</div></div>
+          <div class="kpi-val" id="kpiDocs">0</div>
+          <div class="kpi-sub" style="color:var(--rose);">Docs Awaiting Approval</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-header"><span>Network Fleet</span><div class="kpi-icon" style="color:var(--emerald);">🚚</div></div>
+          <div class="kpi-val" id="kpiVehicles">0</div>
+          <div class="kpi-sub">Registered Trucks</div>
+        </div>
+      </div>
+
+      <!-- TAB 1: LIVE FLEET RADAR MAP -->
+      <div id="tabFleetMap" class="tab-pane">
+        <div class="card-table" style="margin-bottom: 1.5rem;">
+          <div class="table-head-action">
+            <div>
+              <h3>🛰️ Pan-India Live Commercial Fleet Radar</h3>
+              <p style="color: var(--text-muted); font-size: 0.88rem;">Live GPS telemetry streamed via Socket.IO directly from active transport vehicles across India.</p>
+            </div>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+              <span id="fleetLiveActiveCount" class="status-badge badge-accepted" style="padding: 0.35rem 0.75rem; font-size: 0.82rem;">0 Trucks En-Route</span>
+              <button class="btn btn-glass btn-sm" onclick="loadLiveFleetMap()">🔄 Refresh Radar</button>
+            </div>
+          </div>
+          <div id="adminFleetMap" style="height: 520px; width: 100%; border-radius: 12px; margin-top: 1rem; border: 1px solid rgba(255,255,255,0.08); background: #050b14; z-index: 1;"></div>
+        </div>
+
+        <!-- Live Fleet Telemetry Table -->
+        <div class="card-table">
+          <div class="table-head-action">
+            <h3>Active En-Route Consignments</h3>
+            <span style="font-size: 0.82rem; color: var(--cyan);">Real-time Telemetry Feed</span>
+          </div>
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Vehicle</th>
+                  <th>Trip #</th>
+                  <th>Transporter</th>
+                  <th>Route</th>
+                  <th>Last Checkpoint</th>
+                  <th>Speed</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="adminLiveFleetTableBody">
+                <tr><td colspan="7" style="text-align: center; color: var(--text-dim); padding: 2rem;">Connecting to fleet radar...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: KYC / VERIFICATIONS CENTER -->
+      <div id="tabVerifications" class="tab-pane" style="display: none;">
+        <div class="card-table">
+          <div class="table-head-action">
+            <div>
+              <h3>KYC & Regulatory Compliance Verification Center</h3>
+              <p style="color: var(--text-muted); font-size: 0.88rem;">Review Aadhaar cards, commercial driving licenses, vehicle RC documents, and freight invoices.</p>
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Doc ID</th>
+                  <th>User & Role</th>
+                  <th>Document Type</th>
+                  <th>File Attachment</th>
+                  <th>Status</th>
+                  <th>Verification Actions</th>
+                </tr>
+              </thead>
+              <tbody id="adminDocsBody">
+                <tr><td colspan="6" style="text-align: center; color: var(--text-dim); padding: 2.5rem;">Loading verification queue...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: DEALERS / SHIPPERS -->
+      <div id="tabDealers" class="tab-pane" style="display: none;">
+        <div class="card-table">
+          <div class="table-head-action">
+            <h3>Registered Shippers & Dealers</h3>
+          </div>
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Company Name</th>
+                  <th>Contact Person</th>
+                  <th>Contact Phone & Email</th>
+                  <th>GST Number</th>
+                  <th>Location</th>
+                  <th>Status</th>
+                  <th>Access Control</th>
+                </tr>
+              </thead>
+              <tbody id="adminDealersBody">
+                <tr><td colspan="8" style="text-align: center; color: var(--text-dim); padding: 2rem;">Loading dealers...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 3: TRANSPORTERS -->
+      <div id="tabTransporters" class="tab-pane" style="display: none;">
+        <div class="card-table">
+          <div class="table-head-action">
+            <h3>Fleet Transporters Directory</h3>
+          </div>
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Company Name</th>
+                  <th>Representative</th>
+                  <th>Contact Phone & Email</th>
+                  <th>GSTIN</th>
+                  <th>City / Base</th>
+                  <th>Verification</th>
+                  <th>Account Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="adminTransportersBody">
+                <tr><td colspan="9" style="text-align: center; color: var(--text-dim); padding: 2rem;">Loading transporters...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 4: MASTER SHIPMENTS LOG -->
+      <div id="tabShipments" class="tab-pane" style="display: none;">
+        <div class="card-table">
+          <div class="table-head-action">
+            <h3>Master Consignments Log</h3>
+          </div>
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Shipper</th>
+                  <th>Transporter</th>
+                  <th>Cargo Specs</th>
+                  <th>Highway Corridor</th>
+                  <th>Fare Payout</th>
+                  <th>Status</th>
+                  <th>Telemetry Action</th>
+                </tr>
+              </thead>
+              <tbody id="adminShipmentsBody">
+                <tr><td colspan="8" style="text-align: center; color: var(--text-dim); padding: 2rem;">Loading master shipments...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 5: MASTER COMMERCIAL INVOICES & DELIVERY ORDERS -->
+      <div id="tabDocumentsMaster" class="tab-pane" style="display: none;">
+        <div class="card-table">
+          <div class="table-head-action">
+            <div>
+              <h3>Master Commercial Invoices & Delivery Orders Governance</h3>
+              <p style="color: var(--text-muted); font-size: 0.88rem;">Complete platform audit log of all legal B2B tax invoices, intra/inter-state tax breakdown, tripartite Delivery Orders, and verification QR links.</p>
+            </div>
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+              <input type="text" id="adminDocsMasterSearchInput" placeholder="Filter by doc no, buyer, seller, consignment..." onkeyup="filterAdminMasterDocs()" style="width: 300px; padding: 0.5rem 0.85rem;">
+              <button class="btn btn-glass btn-sm" onclick="loadAdminMasterDocs()">🔄 Refresh Records</button>
+            </div>
+          </div>
+
+          <!-- Commercial Invoices Section -->
+          <div style="margin-bottom: 2rem;">
+            <h4 style="font-size: 1rem; color: var(--cyan); margin-bottom: 0.85rem; display: flex; align-items: center; gap: 0.5rem;">
+              <span>📑</span> Commercial Tax Invoices (GST)
+            </h4>
+            <div class="table-responsive">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Invoice No</th>
+                    <th>Date</th>
+                    <th>Seller (Shipper)</th>
+                    <th>Buyer (Consignee)</th>
+                    <th>Shipment</th>
+                    <th>Taxable Val</th>
+                    <th>Total (INR)</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="adminInvoicesMasterBody">
+                  <tr><td colspan="9" style="text-align: center; color: var(--text-dim); padding: 2rem;">Loading commercial tax invoices...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Delivery Orders Section -->
+          <div>
+            <h4 style="font-size: 1rem; color: var(--emerald); margin-bottom: 0.85rem; display: flex; align-items: center; gap: 0.5rem;">
+              <span>📋</span> Tripartite Delivery Orders (DO) & Gate Passes
+            </h4>
+            <div class="table-responsive">
+              <table>
+                <thead>
+                  <tr>
+                    <th>DO Number</th>
+                    <th>Issue Date</th>
+                    <th>Consignor</th>
+                    <th>Consignee</th>
+                    <th>Vehicle Reg</th>
+                    <th>Gross Wt</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="adminDeliveryOrdersMasterBody">
+                  <tr><td colspan="8" style="text-align: center; color: var(--text-dim); padding: 2rem;">Loading delivery orders...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 6: FLEET VEHICLES -->
+      <div id="tabVehicles" class="tab-pane" style="display: none;">
+        <div class="card-table">
+          <div class="table-head-action">
+            <h3>Network Commercial Trucks</h3>
+          </div>
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Vehicle</th>
+                  <th>Reg Number</th>
+                  <th>Fleet Operator</th>
+                  <th>Truck Type</th>
+                  <th>Capacity (Tons)</th>
+                  <th>Depot Location</th>
+                  <th>Operational Status</th>
+                </tr>
+              </thead>
+              <tbody id="adminVehiclesBody">
+                <tr><td colspan="7" style="text-align: center; color: var(--text-dim); padding: 2rem;">Loading fleet vehicles...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 6: LIVE DATABASE EXPLORER -->
+      <div id="tabDatabase" class="tab-pane" style="display: none;">
+        <div class="card-table" style="margin-bottom: 1.5rem;">
+          <div class="table-head-action">
+            <div>
+              <h3>💾 MySQL Live Database Explorer & Telemetry</h3>
+              <p style="color: var(--text-muted); font-size: 0.88rem;">Inspect live tables, real schema columns, row counts, and active transactional records directly from MySQL.</p>
+            </div>
+            <div style="display: flex; gap: 0.5rem;">
+              <button class="btn btn-glass btn-sm" onclick="loadDatabaseExplorer()">🔄 Refresh Database</button>
+            </div>
+          </div>
+
+          <!-- Connection Telemetry Badges -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 1rem;">
+            <div class="telemetry-card">
+              <span>ACTIVE DATABASE</span>
+              <strong id="dbExpName" style="color: var(--cyan);">transconnectlinkx</strong>
+            </div>
+            <div class="telemetry-card">
+              <span>HOST & ENGINE</span>
+              <strong id="dbExpHost" style="color: var(--emerald);">localhost:3306 (MySQL 8.0)</strong>
+            </div>
+            <div class="telemetry-card">
+              <span>TOTAL TABLES</span>
+              <strong id="dbExpTableCount" style="color: var(--amber);">9 Tables</strong>
+            </div>
+            <div class="telemetry-card">
+              <span>DUMP BACKUP</span>
+              <strong style="color: #a78bfa;">database/transconnectlinkx_dump.sql</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- Table Selector Grid -->
+        <div style="margin-bottom: 1.5rem;">
+          <h4 style="font-size: 0.95rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.75rem; letter-spacing: 0.5px;">Click any table to inspect live records:</h4>
+          <div id="dbTableGrid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem;">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+
+        <!-- Table Records Card -->
+        <div class="card-table">
+          <div class="table-head-action">
+            <div>
+              <h3 id="dbCurrentTableTitle">Table: users</h3>
+              <p id="dbCurrentTableSub" style="color: var(--cyan); font-size: 0.82rem; font-family: 'JetBrains Mono', monospace;"></p>
+            </div>
+          </div>
+          <div class="table-responsive" style="max-height: 480px; overflow-y: auto;">
+            <table id="dbInspectTable">
+              <thead id="dbInspectThead">
+                <tr><th>Loading schema...</th></tr>
+              </thead>
+              <tbody id="dbInspectTbody">
+                <tr><td style="text-align: center; color: var(--text-dim); padding: 2rem;">Select a table above to view records.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Instructions for direct MySQL CLI or Workbench -->
+        <div class="card-table" style="margin-top: 1.5rem; background: rgba(10, 18, 34, 0.7);">
+          <h4 style="color: var(--cyan); margin-bottom: 0.5rem;">💻 Direct Terminal & GUI Inspection Options</h4>
+          <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 0.5rem;">You can also inspect the MySQL database directly outside the browser anytime:</p>
+          <div style="background: #030712; padding: 0.85rem 1rem; border-radius: 8px; font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; color: var(--emerald); line-height: 1.6;">
+            # 1. Run root database inspector script in PowerShell:<br>
+            <strong>python check_db.py</strong><br><br>
+            # 2. Or connect via MySQL Command Line / Workbench:<br>
+            <strong>mysql -h localhost -P 3306 -u transconnect -p transconnectlinkx</strong><br>
+            (Password: <strong>Yash@0024</strong>)<br><br>
+            # 3. Complete standalone SQL dump file created at:<br>
+            <strong>database/transconnectlinkx_dump.sql</strong> (39.8 KB)
+          </div>
+        </div>
+      </div>
+    </main>
+  <!-- ===================================================================
+       MODAL: ADMIN MASTER DOCUMENT VIEWER & AUDIT
+       =================================================================== -->
+  <div id="docViewerModal" class="modal-overlay">
+    <div class="modal-container doc-studio-modal" style="max-width: 900px !important;">
+      <div class="doc-studio-header">
+        <div class="doc-studio-title-wrap">
+          <span style="font-size: 1.8rem;" id="docViewerIcon">📄</span>
+          <div>
+            <h2 id="docViewerHeading">Master Document Governance Viewer</h2>
+            <div style="font-size: 0.8rem; color: var(--cyan); margin-top: 2px;" id="docViewerSub">
+              Admin Cryptographic Audit &bull; Direct MySQL backend record
+            </div>
+          </div>
+        </div>
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+          <a id="docViewerPdfBtn" href="#" target="_blank" class="btn btn-primary btn-sm">📥 Download Vector PDF</a>
+          <button type="button" class="btn btn-outline btn-sm" onclick="window.print()">🖨️ Print</button>
+          <a id="docViewerQrBtn" href="#" target="_blank" class="btn btn-glass btn-sm">🔗 Verify Online</a>
+          <button class="close-btn" onclick="closeModal('docViewerModal')">&times;</button>
+        </div>
+      </div>
+
+      <div style="flex: 1; overflow-y: auto; background: #070d18; padding: 1.5rem; display: flex; justify-content: center; border-radius: var(--radius-md);">
+        <div id="docViewerSheet" class="a4-document-sheet">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile Bottom Navigation Bar (Visible only on <= 768px) -->
+  <nav class="mobile-bottom-nav" id="adminMobileBottomNav">
+    <div class="bottom-nav-item active" id="admin-bnav-fleetMap" onclick="switchTab('fleetMap')">
+      <span class="icon">🛰️</span>
+      <span>Radar</span>
+    </div>
+    <div class="bottom-nav-item" id="admin-bnav-verifications" onclick="switchTab('verifications')">
+      <span class="icon">✅</span>
+      <span>KYC</span>
+    </div>
+    <div class="bottom-nav-item" id="admin-bnav-shipments" onclick="switchTab('shipments')">
+      <span class="icon">📦</span>
+      <span>Loads</span>
+    </div>
+    <div class="bottom-nav-item" id="admin-bnav-vehicles" onclick="switchTab('vehicles')">
+      <span class="icon">🚚</span>
+      <span>Fleet</span>
+    </div>
+    <div class="bottom-nav-item" id="admin-bnav-menu" onclick="toggleMobileDrawer(true)">
+      <span class="icon">☰</span>
+      <span>Menu</span>
+    </div>
+  </nav>
+
+  <!-- Socket.IO Real-Time Engine -->
+  <script src="socket.io.min.js"></script>
+  <!-- Leaflet Map JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <!-- Dedicated Admin Script -->
+  <script src="admin.js"></script>
+</body>
+</html>

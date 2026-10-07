@@ -1,0 +1,50 @@
+{
+  "version": 2,
+  "cleanUrls": true,
+  "rewrites": [
+    {
+      "source": "/api/:match*",
+      "destination": "https://these-beast-feelings-ant.trycloudflare.com/api/:match*"
+    },
+    {
+      "source": "/socket.io/:match*",
+      "destination": "https://these-beast-feelings-ant.trycloudflare.com/socket.io/:match*"
+    },
+    {
+      "source": "/verify/:match*",
+      "destination": "/verify.html"
+    },
+    {
+      "source": "/dealer",
+      "destination": "/dealer.html"
+    },
+    {
+      "source": "/transporter",
+      "destination": "/transporter.html"
+    },
+    {
+      "source": "/admin",
+      "destination": "/admin.html"
+    },
+    {
+      "source": "/login",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/register",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/shipments",
+      "destination": "/dealer.html"
+    },
+    {
+      "source": "/invoices",
+      "destination": "/dealer.html"
+    },
+    {
+      "source": "/delivery-orders",
+      "destination": "/dealer.html"
+    }
+  ]
+}

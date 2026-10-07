@@ -1,0 +1,118 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 380" width="100%" height="100%">
+  <defs>
+    <linearGradient id="cabGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1e293b"/>
+      <stop offset="50%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#0284c7"/>
+    </linearGradient>
+    <linearGradient id="contGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0284c7"/>
+      <stop offset="50%" stop-color="#0369a1"/>
+      <stop offset="100%" stop-color="#075985"/>
+    </linearGradient>
+    <linearGradient id="glassGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#0369a1" stop-opacity="0.7"/>
+    </linearGradient>
+    <linearGradient id="chromeGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#94a3b8"/>
+      <stop offset="50%" stop-color="#f8fafc"/>
+      <stop offset="100%" stop-color="#64748b"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="120%">
+      <feDropShadow dx="0" dy="12" stdDeviation="10" flood-color="#000" flood-opacity="0.5"/>
+    </filter>
+  </defs>
+
+  <!-- Ground Shadow -->
+  <ellipse cx="360" cy="340" rx="310" ry="22" fill="#000000" opacity="0.45" filter="url(#glow)"/>
+
+  <!-- Main Vehicle Group -->
+  <g filter="url(#shadow)">
+    <!-- Chassis Rails -->
+    <rect x="70" y="270" width="580" height="24" rx="4" fill="#1e293b"/>
+    <rect x="75" y="274" width="570" height="6" fill="#334155"/>
+
+    <!-- Fuel Tank & Battery Box -->
+    <rect x="220" y="278" width="110" height="28" rx="6" fill="url(#chromeGrad)"/>
+    <rect x="230" y="282" width="90" height="20" rx="4" fill="#475569"/>
+
+    <!-- 40ft Maritime Container Box -->
+    <rect x="65" y="85" width="410" height="185" rx="6" fill="url(#contGrad)" stroke="#38bdf8" stroke-width="2"/>
+    <!-- Corrugated Panel Grooves -->
+    <path d="M 95 90 L 95 265 M 125 90 L 125 265 M 155 90 L 155 265 M 185 90 L 185 265 M 215 90 L 215 265 M 245 90 L 245 265 M 275 90 L 275 265 M 305 90 L 305 265 M 335 90 L 335 265 M 365 90 L 365 265 M 395 90 L 395 265 M 425 90 L 425 265 M 455 90 L 455 265" stroke="#075985" stroke-width="4" opacity="0.7"/>
+    <!-- Container Corner Castings & Decals -->
+    <rect x="65" y="85" width="22" height="22" fill="#0c4a6e"/>
+    <rect x="453" y="85" width="22" height="22" fill="#0c4a6e"/>
+    <rect x="65" y="248" width="22" height="22" fill="#0c4a6e"/>
+    <rect x="453" y="248" width="22" height="22" fill="#0c4a6e"/>
+    <!-- Container Brand Stamp -->
+    <rect x="100" y="105" width="160" height="34" rx="4" fill="#082f49" opacity="0.7"/>
+    <text x="110" y="128" fill="#38bdf8" font-family="'Segoe UI', sans-serif" font-weight="900" font-size="14" letter-spacing="2">TRANCECONNECT</text>
+    <text x="360" y="128" fill="#e0f2fe" font-family="monospace" font-weight="bold" font-size="13">45G1 / MAX 32.5T</text>
+
+    <!-- Aerodynamic Cabin -->
+    <!-- Air Deflector / Roof Fairing -->
+    <path d="M 475 140 L 530 85 L 610 85 L 590 140 Z" fill="#0284c7"/>
+    <!-- Main Cab Shell -->
+    <path d="M 475 140 L 590 140 L 635 190 L 645 285 L 475 285 Z" fill="url(#cabGrad)" stroke="#38bdf8" stroke-width="1.5"/>
+    <!-- Windshield -->
+    <path d="M 545 145 L 585 145 L 620 195 L 555 195 Z" fill="url(#glassGrad)"/>
+    <line x1="560" y1="150" x2="605" y2="190" stroke="#fff" stroke-width="3" opacity="0.6"/>
+    <!-- Side Door Window -->
+    <path d="M 495 150 L 540 150 L 545 195 L 495 195 Z" fill="url(#glassGrad)"/>
+    <!-- Side Mirror -->
+    <rect x="548" y="155" width="8" height="28" rx="2" fill="#0f172a" stroke="#38bdf8" stroke-width="1"/>
+    <!-- Chrome Bumper & Grille -->
+    <path d="M 610 230 L 645 230 L 648 285 L 605 285 Z" fill="#0f172a"/>
+    <line x1="615" y1="240" x2="643" y2="240" stroke="url(#chromeGrad)" stroke-width="3"/>
+    <line x1="613" y1="250" x2="644" y2="250" stroke="url(#chromeGrad)" stroke-width="3"/>
+    <line x1="610" y1="260" x2="645" y2="260" stroke="url(#chromeGrad)" stroke-width="3"/>
+    <!-- Headlight Unit -->
+    <polygon points="636,268 650,268 646,282 632,282" fill="#00f0ff" filter="url(#glow)"/>
+    <!-- Amber Marker Lights -->
+    <circle cx="535" cy="90" r="3" fill="#f59e0b"/>
+    <circle cx="570" cy="90" r="3" fill="#f59e0b"/>
+    <circle cx="605" cy="90" r="3" fill="#f59e0b"/>
+
+    <!-- Mudguards -->
+    <path d="M 105 290 A 38 38 0 0 1 185 290" fill="#0f172a" stroke="#334155" stroke-width="3"/>
+    <path d="M 335 290 A 38 38 0 0 1 415 290" fill="#0f172a" stroke="#334155" stroke-width="3"/>
+    <path d="M 425 290 A 38 38 0 0 1 505 290" fill="#0f172a" stroke="#334155" stroke-width="3"/>
+    <path d="M 545 290 A 38 38 0 0 1 625 290" fill="#0f172a" stroke="#334155" stroke-width="3"/>
+
+    <!-- Heavy Duty Wheels & Dual Axles -->
+    <!-- Wheel 1 (Rear Axle 1) -->
+    <g transform="translate(145, 298)">
+      <circle cx="0" cy="0" r="34" fill="#090d16" stroke="#1e293b" stroke-width="4"/>
+      <circle cx="0" cy="0" r="22" fill="url(#chromeGrad)"/>
+      <circle cx="0" cy="0" r="10" fill="#0f172a"/>
+      <circle cx="0" cy="0" r="4" fill="#00f0ff"/>
+    </g>
+    <!-- Wheel 2 (Trailer Axle 2) -->
+    <g transform="translate(375, 298)">
+      <circle cx="0" cy="0" r="34" fill="#090d16" stroke="#1e293b" stroke-width="4"/>
+      <circle cx="0" cy="0" r="22" fill="url(#chromeGrad)"/>
+      <circle cx="0" cy="0" r="10" fill="#0f172a"/>
+      <circle cx="0" cy="0" r="4" fill="#00f0ff"/>
+    </g>
+    <!-- Wheel 3 (Drive Axle) -->
+    <g transform="translate(465, 298)">
+      <circle cx="0" cy="0" r="34" fill="#090d16" stroke="#1e293b" stroke-width="4"/>
+      <circle cx="0" cy="0" r="22" fill="url(#chromeGrad)"/>
+      <circle cx="0" cy="0" r="10" fill="#0f172a"/>
+      <circle cx="0" cy="0" r="4" fill="#00f0ff"/>
+    </g>
+    <!-- Wheel 4 (Steer Axle) -->
+    <g transform="translate(585, 298)">
+      <circle cx="0" cy="0" r="34" fill="#090d16" stroke="#1e293b" stroke-width="4"/>
+      <circle cx="0" cy="0" r="22" fill="url(#chromeGrad)"/>
+      <circle cx="0" cy="0" r="10" fill="#0f172a"/>
+      <circle cx="0" cy="0" r="4" fill="#00f0ff"/>
+    </g>
+  </g>
+</svg>

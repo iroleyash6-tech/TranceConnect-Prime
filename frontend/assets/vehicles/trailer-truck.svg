@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 380" width="100%" height="100%">
+  <defs>
+    <linearGradient id="primeMover" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#dc2626"/>
+      <stop offset="100%" stop-color="#7f1d1d"/>
+    </linearGradient>
+    <filter id="shadow"><feDropShadow dx="0" dy="12" stdDeviation="10" flood-color="#000" flood-opacity="0.5"/></filter>
+  </defs>
+  <ellipse cx="360" cy="340" rx="310" ry="20" fill="#000" opacity="0.4"/>
+  <g filter="url(#shadow)">
+    <!-- Long Low Flatbed Deck -->
+    <rect x="60" y="235" width="450" height="22" rx="3" fill="#334155" stroke="#64748b" stroke-width="2"/>
+    <!-- Industrial Steel Coils Loaded on Flatbed Bed -->
+    <g transform="translate(140, 175)">
+      <circle cx="0" cy="0" r="45" fill="#475569" stroke="#94a3b8" stroke-width="6"/>
+      <circle cx="0" cy="0" r="20" fill="#1e293b"/>
+      <!-- Cargo Lashing Tie-down Straps -->
+      <line x1="-35" y1="-25" x2="35" y2="60" stroke="#f59e0b" stroke-width="4"/>
+    </g>
+    <g transform="translate(260, 175)">
+      <circle cx="0" cy="0" r="45" fill="#475569" stroke="#94a3b8" stroke-width="6"/>
+      <circle cx="0" cy="0" r="20" fill="#1e293b"/>
+      <line x1="-35" y1="-25" x2="35" y2="60" stroke="#f59e0b" stroke-width="4"/>
+    </g>
+    <g transform="translate(380, 175)">
+      <circle cx="0" cy="0" r="45" fill="#475569" stroke="#94a3b8" stroke-width="6"/>
+      <circle cx="0" cy="0" r="20" fill="#1e293b"/>
+      <line x1="-35" y1="-25" x2="35" y2="60" stroke="#f59e0b" stroke-width="4"/>
+    </g>
+
+    <!-- Heavy-Duty Prime Mover Tractor -->
+    <path d="M 480 230 L 510 130 L 590 130 L 635 195 L 645 285 L 480 285 Z" fill="url(#primeMover)" stroke="#f87171" stroke-width="1.5"/>
+    <path d="M 535 140 L 580 140 L 620 195 L 560 195 Z" fill="#38bdf8" opacity="0.85"/>
+    <polygon points="630,265 645,265 642,280 628,280" fill="#00f0ff"/>
+
+    <!-- 5 Heavy Multi-Axle Wheel Sets -->
+    <g transform="translate(100, 290)"><circle cx="0" cy="0" r="30" fill="#090d16"/><circle cx="0" cy="0" r="16" fill="#cbd5e1"/><circle cx="0" cy="0" r="6" fill="#000"/></g>
+    <g transform="translate(170, 290)"><circle cx="0" cy="0" r="30" fill="#090d16"/><circle cx="0" cy="0" r="16" fill="#cbd5e1"/><circle cx="0" cy="0" r="6" fill="#000"/></g>
+    <g transform="translate(240, 290)"><circle cx="0" cy="0" r="30" fill="#090d16"/><circle cx="0" cy="0" r="16" fill="#cbd5e1"/><circle cx="0" cy="0" r="6" fill="#000"/></g>
+    <g transform="translate(485, 290)"><circle cx="0" cy="0" r="30" fill="#090d16"/><circle cx="0" cy="0" r="16" fill="#cbd5e1"/><circle cx="0" cy="0" r="6" fill="#000"/></g>
+    <g transform="translate(585, 290)"><circle cx="0" cy="0" r="30" fill="#090d16"/><circle cx="0" cy="0" r="16" fill="#cbd5e1"/><circle cx="0" cy="0" r="6" fill="#000"/></g>
+  </g>
+</svg>

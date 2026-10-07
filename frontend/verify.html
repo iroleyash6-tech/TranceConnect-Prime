@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Document Authenticity Registry | TranceConnect-Prime</title>
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="icon" type="image/svg+xml" href="/assets/logo.svg">
+  <style>
+    body {
+      background: #030712;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    .verify-card {
+      background: #0a1324;
+      border: 1px solid rgba(0, 240, 255, 0.3);
+      box-shadow: 0 0 50px rgba(0, 240, 255, 0.15), 0 20px 40px rgba(0, 0, 0, 0.8);
+      border-radius: 16px;
+      max-width: 580px;
+      width: 100%;
+      padding: 2.2rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .verify-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid #10b981;
+      color: #10b981;
+      padding: 0.45rem 1rem;
+      border-radius: 9999px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      margin-bottom: 1.25rem;
+    }
+    .verify-badge.error {
+      background: rgba(239, 68, 68, 0.15);
+      border-color: #ef4444;
+      color: #ef4444;
+    }
+    .field-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      font-size: 0.9rem;
+    }
+    .field-row:last-child {
+      border-bottom: none;
+    }
+    .field-label {
+      color: var(--text-muted);
+    }
+    .field-val {
+      color: var(--text-main);
+      font-weight: 600;
+      text-align: right;
+    }
+  </style>
+</head>
+<body>
+  <div class="cursor-glow" id="cursorGlow"></div>
+  <div class="parallax-bg" id="parallaxBg"></div>
+
+  <div class="verify-card">
+    <div style="text-align: center; margin-bottom: 1.5rem;">
+      <img src="/assets/logo.svg" alt="TranceConnect-Prime" style="height: 40px; margin-bottom: 0.75rem;">
+      <h2 style="font-size: 1.4rem; color: var(--text-main); font-weight: 800; margin-bottom: 0.35rem;">
+        Official Transit Document Registry
+      </h2>
+      <p style="color: var(--cyan); font-size: 0.82rem; font-family: 'JetBrains Mono', monospace;">
+        Cryptographic Anti-Tamper Verification
+      </p>
+    </div>
+
+    <div style="text-align: center;">
+      <div id="verifyBadge" class="verify-badge">
+        <span class="pulse-dot"></span> Verifying document signature...
+      </div>
+    </div>
+
+    <div id="verifyDetails" style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-glass); border-radius: 12px; padding: 1.25rem; margin-bottom: 1.5rem;">
+      <div class="field-row">
+        <span class="field-label">Document Type</span>
+        <span class="field-val" id="docType">-</span>
+      </div>
+      <div class="field-row">
+        <span class="field-label">Reference Number</span>
+        <span class="field-val" id="docNumber" style="color: var(--cyan); font-family: 'JetBrains Mono', monospace;">-</span>
+      </div>
+      <div class="field-row">
+        <span class="field-label">Date of Issue</span>
+        <span class="field-val" id="docDate">-</span>
+      </div>
+      <div class="field-row">
+        <span class="field-label">Issuer / Consignor</span>
+        <span class="field-val" id="docIssuer">-</span>
+      </div>
+      <div class="field-row">
+        <span class="field-label">Recipient / Consignee</span>
+        <span class="field-val" id="docRecipient">-</span>
+      </div>
+      <div class="field-row" id="docAmountRow">
+        <span class="field-label">Authorized Value</span>
+        <span class="field-val" id="docAmount" style="color: var(--emerald); font-family: 'JetBrains Mono', monospace;">-</span>
+      </div>
+      <div class="field-row" id="docVehicleRow" style="display: none;">
+        <span class="field-label">Carrier Vehicle</span>
+        <span class="field-val" id="docVehicle">-</span>
+      </div>
+      <div class="field-row">
+        <span class="field-label">Registry Status</span>
+        <span class="field-val" id="docStatus">-</span>
+      </div>
+      <div class="field-row">
+        <span class="field-label">Trust Network</span>
+        <span class="field-val" style="color: var(--cyan); font-size: 0.8rem;">TranceConnect-Prime Live DB</span>
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 0.75rem; justify-content: center;">
+      <button class="btn btn-primary btn-sm" onclick="window.location.href='/'">
+        🌐 TranceConnect Portal
+      </button>
+      <button class="btn btn-outline btn-sm" onclick="window.print()">
+        🖨️ Print Certificate
+      </button>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      const path = window.location.pathname;
+      const isInvoice = path.includes('/invoice/');
+      const isDO = path.includes('/do/');
+
+      let docRef = '';
+      if (isInvoice) {
+        docRef = path.split('/invoice/')[1];
+      } else if (isDO) {
+        docRef = path.split('/do/')[1];
+      }
+
+      const badge = document.getElementById('verifyBadge');
+
+      if (!docRef) {
+        badge.className = 'verify-badge error';
+        badge.innerHTML = '❌ Invalid verification link';
+        return;
+      }
+
+      try {
+        const apiUrl = isInvoice ? `/api/verify/invoice/${docRef}` : `/api/verify/do/${docRef}`;
+        const res = await fetch(apiUrl);
+        const data = await res.json();
+
+        if (res.ok && data.verified) {
+          badge.className = 'verify-badge';
+          badge.innerHTML = '✔ OFFICIALLY VERIFIED & GENUINE';
+
+          document.getElementById('docType').textContent = data.document_type;
+          document.getElementById('docNumber').textContent = data.invoice_number || data.do_number;
+          document.getElementById('docDate').textContent = data.invoice_date || data.do_date;
+          document.getElementById('docIssuer').textContent = data.seller_company || data.consignor_company;
+          document.getElementById('docRecipient').textContent = data.buyer_company || data.consignee_company;
+
+          if (isInvoice) {
+            document.getElementById('docAmount').textContent = '₹' + Number(data.total_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 });
+          } else {
+            document.getElementById('docAmountRow').querySelector('.field-label').textContent = 'Authorized Tonnage';
+            document.getElementById('docAmount').textContent = Number(data.total_weight).toFixed(2) + ' Tons';
+            if (data.vehicle_number) {
+              document.getElementById('docVehicleRow').style.display = 'flex';
+              document.getElementById('docVehicle').textContent = data.vehicle_number;
+            }
+          }
+
+          document.getElementById('docStatus').textContent = data.status || 'Verified';
+        } else {
+          badge.className = 'verify-badge error';
+          badge.innerHTML = '❌ DOCUMENT UNVERIFIED / NOT FOUND';
+          document.getElementById('docStatus').textContent = 'Record not found in central database';
+        }
+      } catch (err) {
+        badge.className = 'verify-badge error';
+        badge.innerHTML = '⚠️ Verification Server Connection Error';
+      }
+    });
+  </script>
+</body>
+</html>

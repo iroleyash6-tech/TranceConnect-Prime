@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <filter id="marker-glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#00f0ff" flood-opacity="0.8"/>
+    </filter>
+  </defs>
+  <!-- Pulsing Outer Beacon -->
+  <circle cx="32" cy="32" r="28" fill="rgba(0, 240, 255, 0.15)" stroke="#00f0ff" stroke-width="2" filter="url(#marker-glow)"/>
+  <circle cx="32" cy="32" r="20" fill="#0f172a" stroke="#38bdf8" stroke-width="2"/>
+  <!-- Truck Icon in center -->
+  <path d="M22,26 L36,26 L42,32 L44,32 L44,38 L22,38 Z" fill="#00f0ff"/>
+  <rect x="23" y="27" width="10" height="9" fill="#0284c7"/>
+  <circle cx="27" cy="39" r="3" fill="#ffffff"/>
+  <circle cx="39" cy="39" r="3" fill="#ffffff"/>
+</svg>
