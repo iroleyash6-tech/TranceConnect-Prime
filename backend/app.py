@@ -101,11 +101,16 @@ def get_default_vehicle_image(v_type):
 # ==========================================
 
 @app.route('/')
+@app.route('/login')
+@app.route('/register')
 def index():
     """Serves the main landing page and authentication entrypoint."""
     return send_from_directory(FRONTEND_DIR, 'index.html')
 
 @app.route('/dealer')
+@app.route('/shipments')
+@app.route('/invoices')
+@app.route('/delivery-orders')
 def dealer_page():
     """Serves the dedicated live Dealer / Shipper Dashboard."""
     return send_from_directory(FRONTEND_DIR, 'dealer.html')
