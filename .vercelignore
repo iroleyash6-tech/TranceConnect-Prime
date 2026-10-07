@@ -1,0 +1,16 @@
+backend/
+database/
+uploads/
+*.sql
+*.py
+*.bat
+check_db.py
+generate_vehicle_assets.py
+cloudflared.exe
+Procfile
+runtime.txt
+requirements.txt
+__pycache__/
+.git/
+.env*
+sem 5/

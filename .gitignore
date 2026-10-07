@@ -47,3 +47,6 @@ sem 5/
 *.ntvs*
 *.njsproj
 *.sln
+
+.vercel
+.env*
