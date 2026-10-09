@@ -4,11 +4,11 @@
   "rewrites": [
     {
       "source": "/api/:match*",
-      "destination": "https://gulf-ellis-notices-leader.trycloudflare.com/api/:match*"
+      "destination": "https://runtime-corp-characters-flush.trycloudflare.com/api/:match*"
     },
     {
       "source": "/socket.io/:match*",
-      "destination": "https://gulf-ellis-notices-leader.trycloudflare.com/socket.io/:match*"
+      "destination": "https://runtime-corp-characters-flush.trycloudflare.com/socket.io/:match*"
     },
     {
       "source": "/verify/:match*",
