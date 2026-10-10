@@ -3271,3 +3271,424 @@ input, select, textarea {
     max-height: 600px;
   }
 }
+
+/* ===================================================================
+   TRANCECONNECT-PRIME: FORM VALIDATION & ENHANCED FEEDBACK
+   =================================================================== */
+.form-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+.form-input-wrap input,
+.form-input-wrap select,
+.form-input-wrap textarea {
+  width: 100%;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+.form-input-wrap.has-valid input,
+.form-input-wrap.has-valid select {
+  border-color: rgba(16, 185, 129, 0.7) !important;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.15) !important;
+}
+.form-input-wrap.has-invalid input,
+.form-input-wrap.has-invalid select {
+  border-color: rgba(239, 68, 68, 0.7) !important;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.18) !important;
+}
+.field-validation-icon {
+  position: absolute;
+  right: 0.85rem;
+  font-size: 0.95rem;
+  pointer-events: none;
+  display: none;
+  z-index: 1;
+}
+.form-input-wrap.has-valid .field-validation-icon.valid-icon {
+  display: block;
+  color: #10b981;
+}
+.form-input-wrap.has-invalid .field-validation-icon.invalid-icon {
+  display: block;
+  color: #ef4444;
+}
+.password-wrap .field-validation-icon {
+  right: 2.85rem;
+}
+.field-msg {
+  font-size: 0.76rem;
+  margin-top: 0.35rem;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  line-height: 1.3;
+}
+.field-msg.error-msg {
+  color: #f87171;
+  display: none;
+}
+.field-msg.hint-msg {
+  color: var(--text-dim);
+}
+.form-input-wrap.has-invalid ~ .field-msg.error-msg {
+  display: flex;
+}
+.form-input-wrap.has-invalid ~ .field-msg.hint-msg {
+  display: none;
+}
+
+/* ===================================================================
+   PASSWORD STRENGTH METER & LIVE CHECKLIST
+   =================================================================== */
+.password-meter-wrap {
+  margin-top: 0.5rem;
+  margin-bottom: 0.35rem;
+  padding: 0.55rem 0.75rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-sm);
+}
+.meter-bar-container {
+  height: 5px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 0.4rem;
+}
+.meter-bar-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: 999px;
+  transition: width 0.35s ease, background-color 0.35s ease;
+}
+.meter-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.72rem;
+  color: var(--text-dim);
+}
+.meter-strength-text {
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.strength-weak { background-color: #ef4444 !important; color: #ef4444 !important; }
+.strength-fair { background-color: #f59e0b !important; color: #f59e0b !important; }
+.strength-good { background-color: #3b82f6 !important; color: #3b82f6 !important; }
+.strength-strong { background-color: #10b981 !important; color: #10b981 !important; }
+
+.password-rules-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.35rem 0.6rem;
+  margin-top: 0.5rem;
+  padding: 0;
+  list-style: none;
+  font-size: 0.7rem;
+  color: var(--text-dim);
+}
+.password-rule-item {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  transition: color 0.2s ease;
+}
+.password-rule-item.rule-passed {
+  color: #10b981;
+}
+.password-rule-item.rule-passed .rule-icon {
+  color: #10b981;
+}
+
+/* ===================================================================
+   REGISTRATION ROLE SELECTOR & MULTI-STEP FLOW
+   =================================================================== */
+.role-selector-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+.role-card-btn {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-md);
+  padding: 0.85rem;
+  cursor: pointer;
+  text-align: left;
+  transition: all var(--transition-fast);
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.role-card-btn:hover {
+  background: rgba(0, 240, 255, 0.05);
+  border-color: rgba(0, 240, 255, 0.3);
+}
+.role-card-btn.active {
+  background: rgba(0, 240, 255, 0.09);
+  border-color: var(--cyan);
+  box-shadow: 0 0 16px rgba(0, 240, 255, 0.16);
+}
+.role-card-btn .role-icon-title {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-weight: 600;
+  font-size: 0.88rem;
+  color: var(--text-main);
+}
+.role-card-btn.active .role-icon-title {
+  color: var(--cyan);
+}
+.role-card-btn .role-desc {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  line-height: 1.35;
+}
+.role-card-btn .role-badge {
+  display: inline-block;
+  font-size: 0.65rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-dim);
+  margin-top: 0.2rem;
+  align-self: flex-start;
+}
+.role-card-btn.active .role-badge {
+  background: rgba(0, 240, 255, 0.2);
+  color: var(--cyan);
+}
+
+.reg-stepper-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border-glass);
+}
+.reg-step-item {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  font-weight: 500;
+}
+.reg-step-item.active {
+  color: var(--cyan);
+  font-weight: 600;
+}
+.reg-step-item.completed {
+  color: #10b981;
+}
+.reg-step-number {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  border: 1px solid var(--border-glass);
+}
+.reg-step-item.active .reg-step-number {
+  background: var(--cyan);
+  color: #030712;
+  font-weight: bold;
+  border-color: var(--cyan);
+}
+.reg-step-item.completed .reg-step-number {
+  background: #10b981;
+  color: #ffffff;
+  border-color: #10b981;
+}
+.reg-step-divider {
+  flex: 1;
+  height: 1px;
+  background: var(--border-glass);
+  margin: 0 0.5rem;
+}
+
+/* ===================================================================
+   INTERACTIVE LOGISTICS MILESTONES TIMELINE
+   =================================================================== */
+.tracking-timeline-box {
+  background: rgba(10, 18, 36, 0.7);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+  margin: 1.25rem 0;
+}
+.tracking-timeline-title {
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-dim);
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.timeline-stepper {
+  display: flex;
+  justify-content: space-between;
+  position: relative;
+  margin-bottom: 1.5rem;
+  padding: 0 0.5rem;
+}
+.timeline-stepper::before {
+  content: '';
+  position: absolute;
+  top: 18px;
+  left: 30px;
+  right: 30px;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.1);
+  z-index: 1;
+}
+.timeline-stepper-progress {
+  position: absolute;
+  top: 18px;
+  left: 30px;
+  height: 3px;
+  background: linear-gradient(90deg, var(--cyan), var(--emerald));
+  z-index: 2;
+  transition: width 0.5s ease;
+  max-width: calc(100% - 60px);
+}
+.t-node {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  width: 14%;
+}
+.t-node-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #0e172a;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.95rem;
+  color: var(--text-dim);
+  margin-bottom: 0.45rem;
+  transition: all var(--transition-fast);
+}
+.t-node.done .t-node-icon {
+  background: rgba(16, 185, 129, 0.2);
+  border-color: #10b981;
+  color: #10b981;
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.35);
+}
+.t-node.current .t-node-icon {
+  background: rgba(0, 240, 255, 0.2);
+  border-color: var(--cyan);
+  color: var(--cyan);
+  box-shadow: 0 0 16px rgba(0, 240, 255, 0.5);
+  animation: pulse-ring 2s infinite;
+}
+.t-node.delayed .t-node-icon {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: #ef4444;
+  color: #ef4444;
+  box-shadow: 0 0 14px rgba(239, 68, 68, 0.4);
+}
+.t-node-label {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--text-dim);
+  line-height: 1.25;
+}
+.t-node.done .t-node-label {
+  color: var(--text-main);
+}
+.t-node.current .t-node-label {
+  color: var(--cyan);
+  font-weight: 700;
+}
+.t-node-time {
+  font-size: 0.65rem;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+  margin-top: 0.15rem;
+}
+
+.milestones-log-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-top: 1rem;
+  max-height: 220px;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+.milestone-log-entry {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.6rem 0.85rem;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: var(--radius-sm);
+  border-left: 3px solid var(--border-glass);
+}
+.milestone-log-entry.active {
+  background: rgba(0, 240, 255, 0.05);
+  border-left-color: var(--cyan);
+}
+.milestone-log-entry.completed {
+  border-left-color: #10b981;
+}
+.milestone-log-entry.delayed {
+  border-left-color: #ef4444;
+}
+.milestone-entry-icon {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+.milestone-entry-details {
+  flex: 1;
+}
+.milestone-entry-title {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-main);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.milestone-entry-time {
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+}
+.milestone-entry-desc {
+  font-size: 0.74rem;
+  color: var(--text-dim);
+  margin-top: 0.15rem;
+}
+
+@media (max-width: 600px) {
+  .timeline-stepper {
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+    min-width: 520px;
+  }
+  .role-selector-cards {
+    grid-template-columns: 1fr;
+  }
+  .password-rules-list {
+    grid-template-columns: 1fr;
+  }
+}

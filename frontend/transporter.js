@@ -149,16 +149,37 @@ function renderShipmentsTable(shipments) {
       `;
     } else if (s.status === 'Accepted') {
       operationsHtml = `
-        <button class="btn btn-primary btn-sm" onclick="handleUpdateStatus(${s.id}, 'In Transit')">Start Delivery ➔</button>
-        <button class="btn btn-outline btn-sm" onclick="viewShipmentTransitDocs(${s.id})" title="Inspect Authorized Invoices & Delivery Orders">📋 Transit Docs</button>
+        <button class="btn btn-primary btn-sm" onclick="handleUpdateStatus(${s.id}, 'Pickup', 'Consignment Loaded at Shipper Bay', 'Loaded on truck, gate pass cleared')">Mark Loaded (Pickup) ➔</button>
+        <button class="btn btn-outline btn-sm" onclick="viewShipmentTransitDocs(${s.id})" title="Inspect Authorized Invoices & Delivery Orders">📋 Docs</button>
+        <button class="btn btn-glass btn-sm" onclick="openTransporterChatFromShipment(${s.id})">💬 Chat</button>
+      `;
+    } else if (s.status === 'Pickup') {
+      operationsHtml = `
+        <button class="btn btn-primary btn-sm" onclick="handleUpdateStatus(${s.id}, 'In Transit', 'Corridor Highway Transit', 'Vehicle departed origin terminal, en route')">Start Highway Transit ➔</button>
+        <button class="btn btn-outline btn-sm" onclick="openTrackingModal(${s.id})">🛰️ Dispatch GPS</button>
+        <button class="btn btn-outline btn-sm" onclick="viewShipmentTransitDocs(${s.id})">📋 Docs</button>
         <button class="btn btn-glass btn-sm" onclick="openTransporterChatFromShipment(${s.id})">💬 Chat</button>
       `;
     } else if (s.status === 'In Transit') {
       operationsHtml = `
+        <button class="btn btn-warning btn-sm" onclick="handleUpdateStatus(${s.id}, 'Out for Delivery', 'Destination City Gateway', 'Arrived at destination hub, ready for unloading')">Arrive at Hub ➔</button>
         <button class="btn btn-outline btn-sm" onclick="openTrackingModal(${s.id})">🛰️ Dispatch GPS</button>
-        <button class="btn btn-outline btn-sm" onclick="viewShipmentTransitDocs(${s.id})" title="Inspect Authorized Invoices & Delivery Orders">📋 Transit Docs</button>
-        <button class="btn btn-success btn-sm" onclick="handleUpdateStatus(${s.id}, 'Delivered')">Confirm Delivered ✅</button>
+        <button class="btn btn-danger btn-sm" onclick="reportShipmentDelay(${s.id})" title="Report Delay / Breakdown / Inspection">⚠️ Delay</button>
+        <button class="btn btn-outline btn-sm" onclick="viewShipmentTransitDocs(${s.id})">📋 Docs</button>
         <button class="btn btn-glass btn-sm" onclick="openTransporterChatFromShipment(${s.id})">💬 Chat</button>
+      `;
+    } else if (s.status === 'Out for Delivery') {
+      operationsHtml = `
+        <button class="btn btn-success btn-sm" onclick="handleUpdateStatus(${s.id}, 'Delivered', 'Destination Consignee Warehouse', 'Goods received in good condition, e-POD signed')">Confirm Delivered ✅</button>
+        <button class="btn btn-outline btn-sm" onclick="openTrackingModal(${s.id})">🛰️ GPS</button>
+        <button class="btn btn-outline btn-sm" onclick="viewShipmentTransitDocs(${s.id})">📋 Docs</button>
+        <button class="btn btn-glass btn-sm" onclick="openTransporterChatFromShipment(${s.id})">💬 Chat</button>
+      `;
+    } else if (s.status === 'Exception') {
+      operationsHtml = `
+        <button class="btn btn-primary btn-sm" onclick="handleUpdateStatus(${s.id}, 'In Transit', 'Transit Resumed', 'Exception cleared, trip resumed')">Resume Transit ➔</button>
+        <button class="btn btn-outline btn-sm" onclick="openTrackingModal(${s.id})">🛰️ GPS</button>
+        <button class="btn btn-outline btn-sm" onclick="viewShipmentTransitDocs(${s.id})">📋 Docs</button>
       `;
     } else {
       operationsHtml = `
@@ -223,7 +244,7 @@ function filterTransporterShipments() {
   renderShipmentsTable(filtered);
 }
 
-async function handleUpdateStatus(shipmentId, status) {
+async function handleUpdateStatus(shipmentId, status, checkpoint_name = '', status_note = '') {
   try {
     const res = await fetch(`/api/shipments/${shipmentId}/status`, {
       method: 'PUT',
@@ -231,7 +252,7 @@ async function handleUpdateStatus(shipmentId, status) {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${authToken}`
       },
-      body: JSON.stringify({ status })
+      body: JSON.stringify({ status, checkpoint_name, status_note })
     });
     const data = await res.json();
     if (!res.ok) {
@@ -242,6 +263,13 @@ async function handleUpdateStatus(shipmentId, status) {
     loadAllTransporterData();
   } catch (err) {
     showToast('Status update error: ' + err.message, 'error');
+  }
+}
+
+function reportShipmentDelay(shipmentId) {
+  const reason = prompt('Please specify cause for delay/exception (e.g. Highway congestion, Heavy rain, Flat tyre, Toll inspection):', 'Highway congestion, 2 hrs delay expected');
+  if (reason) {
+    handleUpdateStatus(shipmentId, 'Exception', 'Highway Delay Point', reason);
   }
 }
 

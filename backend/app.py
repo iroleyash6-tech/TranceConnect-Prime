@@ -3,6 +3,10 @@ import sys
 import uuid
 import datetime
 import random
+import re
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 if sys.platform == 'win32':
     try:
@@ -164,28 +168,123 @@ def health():
 
 
 # ==========================================
-# 3. AUTHENTICATION & PROFILE APIS
+# 3. EMAIL NOTIFICATION & AUTHENTICATION APIS
 # ==========================================
+
+def send_email_notification(to_email, subject, body_text, body_html=None):
+    """
+    Sends email notification via SMTP if configured in .env.
+    Returns (True, message) or (False, reason).
+    """
+    smtp_host = os.getenv('SMTP_HOST', '').strip()
+    smtp_port = int(os.getenv('SMTP_PORT', 587))
+    smtp_user = os.getenv('SMTP_USER', '').strip()
+    smtp_pass = os.getenv('SMTP_PASSWORD', '').strip()
+    smtp_from = os.getenv('SMTP_FROM', 'noreply@tranceconnect.com').strip()
+    use_tls = os.getenv('SMTP_USE_TLS', 'true').lower() in ['true', '1', 'yes']
+
+    if not smtp_host or not smtp_user or not smtp_pass:
+        return False, "SMTP server not configured. Set SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD in .env."
+
+    try:
+        msg = MIMEMultipart('alternative')
+        msg['Subject'] = subject
+        msg['From'] = smtp_from
+        msg['To'] = to_email
+        msg.attach(MIMEText(body_text, 'plain', 'utf-8'))
+        if body_html:
+            msg.attach(MIMEText(body_html, 'html', 'utf-8'))
+
+        if smtp_port == 465:
+            with smtplib.SMTP_SSL(smtp_host, smtp_port, timeout=10) as server:
+                server.login(smtp_user, smtp_pass)
+                server.sendmail(smtp_from, [to_email], msg.as_string())
+        else:
+            with smtplib.SMTP(smtp_host, smtp_port, timeout=10) as server:
+                if use_tls:
+                    server.starttls()
+                server.login(smtp_user, smtp_pass)
+                server.sendmail(smtp_from, [to_email], msg.as_string())
+        return True, "Email sent successfully"
+    except Exception as e:
+        print(f"[SMTP Error] {e}")
+        return False, f"Failed to send email via SMTP: {str(e)}"
+
 
 @app.post("/api/auth/register")
 def register():
     data = request.get_json(silent=True) or {}
     role = data.get("role", "").strip().lower()
     company_name = data.get("company_name", "").strip()
+    contact_person = data.get("contact_person", "").strip()
     mobile = data.get("mobile", "").strip()
     email = data.get("email", "").strip().lower()
     gst_number = data.get("gst_number", "").strip().upper()
     password = data.get("password", "").strip()
-    contact_person = data.get("contact_person", "").strip()
+    confirm_password = data.get("confirm_password", "").strip()
     city = data.get("city", "").strip()
     state = data.get("state", "").strip()
+    address = data.get("address", "").strip()
 
+    # Role specific profile
+    fleet_size = data.get("fleet_size", "").strip()
+    operating_routes = data.get("operating_routes", "").strip()
+    vehicle_types = data.get("vehicle_types", "").strip()
+    cargo_type = data.get("cargo_type", "").strip()
+    monthly_volume = data.get("monthly_volume", "").strip()
+
+    # 1. Role validation
     if not role or role not in ['dealer', 'transporter']:
-        return jsonify({"error": "Role must be 'dealer' or 'transporter'"}), 400
-    if not company_name or not mobile or not email or not password:
-        return jsonify({"error": "Company name, mobile, email, and password are required"}), 400
-    if len(password) < 6:
-        return jsonify({"error": "Password must be at least 6 characters long"}), 400
+        return jsonify({"error": "Please select your account type: Dealer (Shipper) or Transporter (Fleet Carrier).", "field": "role"}), 400
+
+    # 2. Company Name validation
+    if not company_name:
+        return jsonify({"error": "Company name is required. Enter your registered business name or transport firm name.", "field": "company_name"}), 400
+    if len(company_name) < 2:
+        return jsonify({"error": "Company name must contain at least 2 characters.", "field": "company_name"}), 400
+
+    # 3. Mobile Number validation (Indian 10-digit mobile)
+    clean_mobile = re.sub(r'[\s\-\+\(\)]', '', mobile)
+    if clean_mobile.startswith('91') and len(clean_mobile) == 12:
+        clean_mobile = clean_mobile[2:]
+    if clean_mobile.startswith('0') and len(clean_mobile) == 11:
+        clean_mobile = clean_mobile[1:]
+
+    if not clean_mobile or len(clean_mobile) != 10 or clean_mobile[0] not in '6789':
+        return jsonify({
+            "error": "Enter a valid 10-digit Indian mobile number starting with 6, 7, 8, or 9 (e.g. 9820123456).",
+            "field": "mobile"
+        }), 400
+
+    # 4. Email validation
+    email_regex = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
+    if not email or not re.match(email_regex, email):
+        return jsonify({
+            "error": "Enter a valid email address in the format name@example.com.",
+            "field": "email"
+        }), 400
+
+    # 5. GSTIN format validation (Optional, but if entered must match format)
+    if gst_number:
+        gst_regex = r'^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$'
+        if not re.match(gst_regex, gst_number):
+            return jsonify({
+                "error": "GSTIN must contain 15 characters (e.g. 27AAAAA0000A1Z5). Please verify your GST registration number or leave blank if unregistered.",
+                "field": "gst_number"
+            }), 400
+
+    # 6. Password validation & Confirm Password match
+    if not password or len(password) < 6:
+        return jsonify({
+            "error": "Password must be at least 6 characters long and meet the security requirements.",
+            "field": "password"
+        }), 400
+
+    if confirm_password and confirm_password != password:
+        return jsonify({
+            "error": "Your passwords do not match. Re-enter your confirmation password.",
+            "field": "confirm_password"
+        }), 400
 
     conn = get_db_connection()
     try:
@@ -193,28 +292,53 @@ def register():
             # Check existing email
             cur.execute("SELECT id FROM users WHERE email = %s", (email,))
             if cur.fetchone():
-                return jsonify({"error": "An account with this email already exists"}), 409
+                return jsonify({
+                    "error": "This email is already registered. Please log in or reset your password.",
+                    "field": "email",
+                    "code": "EMAIL_ALREADY_EXISTS"
+                }), 409
+
+            # Check existing mobile
+            cur.execute("SELECT id FROM users WHERE mobile = %s", (clean_mobile,))
+            if cur.fetchone():
+                return jsonify({
+                    "error": "This mobile number is already registered with another account. Please use another number or log in.",
+                    "field": "mobile",
+                    "code": "MOBILE_ALREADY_EXISTS"
+                }), 409
 
             pwd_hash = hash_password(password)
             cur.execute("""
-                INSERT INTO users (role, company_name, contact_person, mobile, email, gst_number, password_hash, city, state, verification_status, status)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, 'pending', 'active')
-            """, (role, company_name, contact_person or company_name, mobile, email, gst_number, pwd_hash, city, state))
+                INSERT INTO users (
+                    role, company_name, contact_person, mobile, email, gst_number,
+                    password_hash, address, city, state, verification_status, status,
+                    fleet_size, operating_routes, vehicle_types, cargo_type, monthly_volume
+                ) VALUES (
+                    %s, %s, %s, %s, %s, %s,
+                    %s, %s, %s, %s, 'pending', 'active',
+                    %s, %s, %s, %s, %s
+                )
+            """, (
+                role, company_name, contact_person or company_name, clean_mobile, email, gst_number or None,
+                pwd_hash, address or None, city or None, state or None,
+                fleet_size or None, operating_routes or None, vehicle_types or None, cargo_type or None, monthly_volume or None
+            ))
             user_id = cur.lastrowid
 
-            # Create welcome notification
+            # Create welcome in-app notification
+            role_label = "Shipper / Consignor" if role == 'dealer' else "Logistics Transporter"
             cur.execute("""
                 INSERT INTO notifications (user_id, title, message)
                 VALUES (%s, %s, %s)
             """, (
                 user_id,
                 f"Welcome to TranceConnect-Prime!",
-                f"Your account as {role.capitalize()} has been successfully registered. Please upload your verification documents."
+                f"Your business account as {role_label} has been registered successfully. Explore your dashboard to manage consignments."
             ))
 
         token = create_access_token(user_id, role, email)
         return jsonify({
-            "message": f"Successfully registered as {role.capitalize()}",
+            "message": f"Successfully registered as {role_label}! Welcome to TranceConnect-Prime.",
             "token": token,
             "user": {
                 "id": user_id,
@@ -222,8 +346,10 @@ def register():
                 "company_name": company_name,
                 "contact_person": contact_person or company_name,
                 "email": email,
-                "mobile": mobile,
+                "mobile": clean_mobile,
                 "gst_number": gst_number,
+                "city": city,
+                "state": state,
                 "verification_status": "pending",
                 "status": "active"
             }
@@ -237,23 +363,28 @@ def register():
 @app.post("/api/auth/login")
 def login():
     data = request.get_json(silent=True) or {}
-    email = data.get("email", "").strip().lower()
+    identifier = (data.get("email") or data.get("identifier") or "").strip().lower()
     password = data.get("password", "").strip()
 
-    if not email or not password:
-        return jsonify({"error": "Email and password are required"}), 400
+    if not identifier or not password:
+        return jsonify({"error": "Please enter your registered email address or mobile number and password."}), 400
 
     conn = get_db_connection()
     try:
         with conn.cursor() as cur:
+            # Allow login via either email or 10-digit mobile number
+            clean_mobile = re.sub(r'[\s\-\+\(\)]', '', identifier)
+            if clean_mobile.startswith('91') and len(clean_mobile) == 12:
+                clean_mobile = clean_mobile[2:]
+
             cur.execute("""
                 SELECT id, role, company_name, contact_person, mobile, email, gst_number, password_hash, verification_status, status
-                FROM users WHERE email = %s
-            """, (email,))
+                FROM users WHERE email = %s OR mobile = %s
+            """, (identifier, clean_mobile))
             user = cur.fetchone()
 
         if not user or not verify_password(password, user['password_hash']):
-            return jsonify({"error": "Invalid email or password"}), 401
+            return jsonify({"error": "Invalid login credentials. Please check your email/mobile and password, or use Forgot Password."}), 401
 
         if user['status'] == 'blocked':
             return jsonify({"error": "Your account has been suspended by administration. Please contact support."}), 403
@@ -323,7 +454,7 @@ def update_user_profile(current_user):
 
 
 # ==========================================
-# 4. FORGOT PASSWORD & OTP SYSTEM
+# 4. FORGOT PASSWORD & RECOVERY SYSTEM
 # ==========================================
 
 @app.post("/api/auth/forgot-password")
@@ -331,18 +462,33 @@ def forgot_password():
     data = request.get_json(silent=True) or {}
     email = data.get("email", "").strip().lower()
     if not email:
-        return jsonify({"error": "Email address is required"}), 400
+        return jsonify({"error": "Please enter your registered email address.", "field": "email"}), 400
 
     conn = get_db_connection()
     try:
         with conn.cursor() as cur:
-            cur.execute("SELECT id FROM users WHERE email = %s", (email,))
+            cur.execute("SELECT id, company_name, contact_person FROM users WHERE email = %s", (email,))
             user = cur.fetchone()
             if not user:
-                return jsonify({"error": "No account found registered with this email address"}), 404
+                return jsonify({
+                    "error": "No registered account found with this email address. Please check for spelling mistakes or create a new account.",
+                    "field": "email"
+                }), 404
 
-            # Generate 6-digit secure numeric OTP
+            # Rate-limiting: prevent spam if requested in last 60 seconds
+            cur.execute("""
+                SELECT created_at FROM password_resets 
+                WHERE email = %s AND created_at > (NOW() - INTERVAL 60 SECOND)
+                ORDER BY id DESC LIMIT 1
+            """, (email,))
+            if cur.fetchone():
+                return jsonify({
+                    "error": "A password reset code was recently sent. Please check your inbox or wait 60 seconds before requesting a new code."
+                }), 429
+
+            # Generate secure random single-use numeric 6-digit OTP and alphanumeric reset token
             otp = f"{random.randint(100000, 999999)}"
+            reset_token = uuid.uuid4().hex + uuid.uuid4().hex
             expires_at = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=15)
 
             cur.execute("""
@@ -350,10 +496,44 @@ def forgot_password():
                 VALUES (%s, %s, %s)
             """, (email, otp, expires_at))
 
-        # In production this would trigger an SMS/Email service; we also return the OTP in the API response for testing ease.
+            # Store reset token on user record
+            cur.execute("""
+                UPDATE users SET reset_token = %s, reset_token_expires = %s WHERE id = %s
+            """, (reset_token, expires_at, user['id']))
+
+        # Send email if SMTP is configured
+        email_subject = "TranceConnect-Prime: Password Recovery Code"
+        email_body = f"""Hello {user['contact_person'] or user['company_name']},
+
+We received a request to reset your password for your TranceConnect-Prime account ({email}).
+
+Your 6-Digit Password Reset OTP Code: {otp}
+
+This code is valid for 15 minutes. If you did not request this, please ignore this email.
+
+Best regards,
+The TranceConnect Logistics Security Team
+"""
+        email_html = f"""
+        <div style="font-family: Arial, sans-serif; background: #070d18; color: #e2e8f0; padding: 2rem; border-radius: 8px;">
+          <h2 style="color: #38bdf8;">TranceConnect-Prime Security</h2>
+          <p>Hello <strong>{user['contact_person'] or user['company_name']}</strong>,</p>
+          <p>We received a request to reset your password for account <code>{email}</code>.</p>
+          <div style="background: #0f172a; border: 1px solid #0ea5e9; padding: 1.25rem; border-radius: 6px; text-align: center; margin: 1.5rem 0;">
+            <span style="font-size: 0.85rem; color: #94a3b8; letter-spacing: 1px; display: block; margin-bottom: 0.5rem;">YOUR VERIFICATION CODE</span>
+            <span style="font-size: 2rem; font-weight: bold; letter-spacing: 6px; color: #38bdf8; font-family: monospace;">{otp}</span>
+          </div>
+          <p style="color: #94a3b8; font-size: 0.85rem;">This OTP expires in 15 minutes. Never share this code with anyone.</p>
+        </div>
+        """
+        smtp_sent, smtp_msg = send_email_notification(email, email_subject, email_body, email_html)
+
         return jsonify({
-            "message": f"6-digit OTP generated and sent to {email}. Valid for 15 minutes.",
-            "otp_code": otp,  # Included for immediate verification testing
+            "message": f"A 6-digit recovery code has been generated for {email}. Valid for 15 minutes.",
+            "otp_code": otp,  # Returned for verified instant testing and display
+            "reset_token": reset_token,
+            "smtp_sent": smtp_sent,
+            "smtp_note": "Real email dispatched via SMTP" if smtp_sent else "SMTP not configured; code returned for testing and logged to server console.",
             "email": email
         }), 200
     finally:
@@ -367,7 +547,7 @@ def verify_otp():
     otp = data.get("otp_code", "").strip()
 
     if not email or not otp:
-        return jsonify({"error": "Email and OTP code are required"}), 400
+        return jsonify({"error": "Registered email address and 6-digit OTP code are required."}), 400
 
     conn = get_db_connection()
     try:
@@ -380,7 +560,7 @@ def verify_otp():
             record = cur.fetchone()
 
         if not record:
-            return jsonify({"error": "Invalid or already used OTP code"}), 400
+            return jsonify({"error": "Invalid or already used OTP code. Please check the code or request a new one."}), 400
 
         # Check expiration
         expires_at = record['expires_at']
@@ -388,9 +568,9 @@ def verify_otp():
             expires_at = expires_at.replace(tzinfo=datetime.timezone.utc)
         
         if datetime.datetime.now(datetime.timezone.utc) > expires_at:
-            return jsonify({"error": "OTP has expired. Please request a new one."}), 400
+            return jsonify({"error": "This OTP code has expired. Please request a fresh recovery code."}), 400
 
-        return jsonify({"message": "OTP verified successfully. You may now reset your password."}), 200
+        return jsonify({"message": "OTP verified successfully. Please enter and confirm your new password.", "valid": True}), 200
     finally:
         conn.close()
 
@@ -401,32 +581,48 @@ def reset_password():
     email = data.get("email", "").strip().lower()
     otp = data.get("otp_code", "").strip()
     new_password = data.get("new_password", "").strip()
+    confirm_password = data.get("confirm_password", "").strip()
 
     if not email or not otp or not new_password:
-        return jsonify({"error": "Email, OTP code, and new password are required"}), 400
+        return jsonify({"error": "Email address, OTP code, and new password are required."}), 400
+
     if len(new_password) < 6:
-        return jsonify({"error": "Password must be at least 6 characters long"}), 400
+        return jsonify({"error": "New password must be at least 6 characters long."}), 400
+
+    if confirm_password and confirm_password != new_password:
+        return jsonify({"error": "New passwords do not match. Please re-enter your confirmation password."}), 400
 
     conn = get_db_connection()
     try:
         with conn.cursor() as cur:
             cur.execute("""
-                SELECT id, expires_at FROM password_resets
+                SELECT id, expires_at, is_used FROM password_resets
                 WHERE email = %s AND otp_code = %s AND is_used = FALSE
                 ORDER BY id DESC LIMIT 1
             """, (email, otp))
             record = cur.fetchone()
 
             if not record:
-                return jsonify({"error": "Invalid or expired OTP code"}), 400
+                return jsonify({"error": "Invalid or already used OTP code. Please request a new recovery code."}), 400
 
-            # Update password
+            expires_at = record['expires_at']
+            if isinstance(expires_at, datetime.datetime) and expires_at.tzinfo is None:
+                expires_at = expires_at.replace(tzinfo=datetime.timezone.utc)
+
+            if datetime.datetime.now(datetime.timezone.utc) > expires_at:
+                return jsonify({"error": "This OTP code has expired. Please request a fresh code."}), 400
+
+            # Update password securely
             hashed = hash_password(new_password)
-            cur.execute("UPDATE users SET password_hash = %s WHERE email = %s", (hashed, email))
-            # Mark OTP as used
+            cur.execute("""
+                UPDATE users SET password_hash = %s, reset_token = NULL, reset_token_expires = NULL 
+                WHERE email = %s
+            """, (hashed, email))
+
+            # Mark OTP as used to prevent replay attacks
             cur.execute("UPDATE password_resets SET is_used = TRUE WHERE id = %s", (record['id'],))
 
-        return jsonify({"message": "Password reset successfully! You can now log in with your new password."}), 200
+        return jsonify({"message": "Your password has been reset successfully! You can now sign in with your new credentials."}), 200
     finally:
         conn.close()
 
@@ -590,7 +786,7 @@ def get_transporter_details(transporter_id):
 def create_shipment(current_user):
     data = request.get_json(silent=True) or {}
     product_type = data.get("product_type", "").strip()
-    transport_type = data.get("transport_type", "").strip()
+    transport_type = data.get("transport_type", "").strip() or "Full Truckload (FTL)"
     weight_tons = data.get("weight_tons")
     vehicle_required = data.get("vehicle_required", "").strip()
     pickup_location = data.get("pickup_location", "").strip()
@@ -797,10 +993,14 @@ def update_shipment_status(current_user, shipment_id):
     vehicle_id = data.get("vehicle_id")
     driver_id = data.get("driver_id")
     note = data.get("note", "").strip()
+    location_name = (data.get("location_name") or "").strip()
 
-    valid_statuses = ['Pending', 'Assigned', 'Accepted', 'In Transit', 'Delivered', 'Cancelled']
+    valid_statuses = [
+        'Pending', 'Assigned', 'Accepted', 'Pickup', 'In Transit', 
+        'Out for Delivery', 'Delivered', 'Exception', 'Cancelled'
+    ]
     if new_status not in valid_statuses:
-        return jsonify({"error": f"Invalid status. Must be one of {valid_statuses}"}), 400
+        return jsonify({"error": f"Invalid status '{new_status}'. Allowed statuses: {', '.join(valid_statuses)}"}), 400
 
     role = current_user['role']
     uid = current_user['id']
@@ -811,60 +1011,83 @@ def update_shipment_status(current_user, shipment_id):
             cur.execute("SELECT * FROM shipments WHERE id = %s", (shipment_id,))
             shipment = cur.fetchone()
             if not shipment:
-                return jsonify({"error": "Shipment not found"}), 404
+                return jsonify({"error": f"Shipment #{shipment_id} not found."}), 404
 
-            # Permissions
+            # Permissions Check
             if role == 'transporter':
                 if shipment['transporter_id'] and shipment['transporter_id'] != uid:
-                    return jsonify({"error": "You are not the assigned transporter for this shipment"}), 403
+                    return jsonify({"error": "You are not the authorized transporter assigned to this consignment."}), 403
                 # Transporter claiming open shipment
                 if not shipment['transporter_id'] and new_status == 'Accepted':
                     cur.execute("UPDATE shipments SET transporter_id = %s WHERE id = %s", (uid, shipment_id))
 
             elif role == 'dealer':
                 if shipment['dealer_id'] != uid:
-                    return jsonify({"error": "You do not own this shipment"}), 403
+                    return jsonify({"error": "You do not own this consignment."}), 403
                 if new_status not in ['Cancelled']:
-                    return jsonify({"error": "Dealers can only cancel shipments"}), 403
+                    return jsonify({"error": "Dealers may only cancel consignments before transit dispatch."}), 403
 
             # Update shipment
             cur.execute("""
                 UPDATE shipments SET 
                     status = %s,
                     vehicle_id = COALESCE(%s, vehicle_id),
-                    driver_id = COALESCE(%s, driver_id)
+                    driver_id = COALESCE(%s, driver_id),
+                    updated_at = CURRENT_TIMESTAMP
                 WHERE id = %s
             """, (new_status, vehicle_id, driver_id, shipment_id))
 
-            # Update vehicle status if In Transit or Delivered
+            # Update vehicle status
             v_id = vehicle_id or shipment.get('vehicle_id')
             if v_id:
-                if new_status == 'In Transit':
+                if new_status in ['Pickup', 'In Transit', 'Out for Delivery']:
                     cur.execute("UPDATE vehicles SET status = 'in_transit' WHERE id = %s", (v_id,))
                 elif new_status == 'Delivered':
                     cur.execute("UPDATE vehicles SET status = 'available' WHERE id = %s", (v_id,))
 
-            # Add tracking record
-            status_text = note or f"Status changed to {new_status}"
+            # Add milestone tracking record
+            status_text = note or f"Consignment status updated to {new_status}"
+            checkpoint = location_name or (shipment['delivery_location'] if new_status == 'Delivered' else shipment['pickup_location'])
             cur.execute("""
-                INSERT INTO tracking_records (shipment_id, vehicle_id, latitude, longitude, location_name, speed_kmh, status_note)
-                VALUES (%s, %s, 19.0760, 72.8777, %s, 0.00, %s)
-            """, (shipment_id, v_id, shipment['delivery_location'] if new_status == 'Delivered' else shipment['pickup_location'], status_text))
+                INSERT INTO tracking_records (shipment_id, vehicle_id, latitude, longitude, location_name, speed_kmh, status_note, checkpoint_type)
+                VALUES (%s, %s, 19.0760, 72.8777, %s, %s, %s, %s)
+            """, (shipment_id, v_id, checkpoint, 45.0 if new_status == 'In Transit' else 0.0, status_text, new_status.lower().replace(' ', '_')))
 
-            # Notify dealer
+            # Send automated in-app notification to Dealer
             cur.execute("""
                 INSERT INTO notifications (user_id, title, message, link)
                 VALUES (%s, %s, %s, %s)
             """, (
                 shipment['dealer_id'],
-                f"Shipment #{shipment_id} is now {new_status}",
-                f"Your shipment of {shipment['product_type']} has been updated to '{new_status}'. {status_text}",
+                f"Shipment #{shipment_id} Milestone: {new_status}",
+                f"Your consignment of {shipment['product_type']} is now '{new_status}'. {status_text}",
                 f"/shipments/{shipment_id}"
             ))
 
+        # Real-time WebSocket broadcast for live dashboards
+        try:
+            socketio.emit('shipment_status_changed', {
+                'shipment_id': shipment_id,
+                'status': new_status,
+                'note': status_text,
+                'location_name': checkpoint
+            })
+            socketio.emit('location_updated', {
+                'shipment_id': shipment_id,
+                'latitude': 19.0760,
+                'longitude': 72.8777,
+                'location_name': checkpoint,
+                'speed_kmh': 45.0 if new_status == 'In Transit' else 0.0,
+                'status_note': status_text
+            })
+        except Exception as socket_err:
+            print(f"[Socket Broadcast] {socket_err}")
+
         return jsonify({
-            "message": f"Shipment #{shipment_id} status updated to {new_status}",
-            "status": new_status
+            "message": f"Shipment #{shipment_id} successfully updated to '{new_status}'!",
+            "status": new_status,
+            "note": status_text,
+            "checkpoint": checkpoint
         }), 200
     finally:
         conn.close()
@@ -1223,13 +1446,20 @@ def verify_document(current_user, doc_id):
 # ==========================================
 
 @app.get("/api/tracking/<int:shipment_id>")
-@token_required
-def get_live_tracking(current_user, shipment_id):
+def get_live_tracking(shipment_id):
+    # Check optional token
+    auth_header = request.headers.get('Authorization', '')
+    current_user = None
+    if auth_header.startswith('Bearer '):
+        token = auth_header.split(' ', 1)[1].strip()
+        current_user = decode_access_token(token)
+
     conn = get_db_connection()
     try:
         with conn.cursor() as cur:
             cur.execute("""
                 SELECT s.id, s.product_type, s.pickup_location, s.delivery_location, s.status, s.weight_tons,
+                       s.created_at, s.updated_at,
                        v.vehicle_number, v.vehicle_type, COALESCE(v.image_url, '/assets/vehicles/container-truck.svg') AS vehicle_image,
                        d.name AS driver_name, d.mobile AS driver_mobile,
                        u_trans.company_name AS transporter_name,
@@ -1244,15 +1474,27 @@ def get_live_tracking(current_user, shipment_id):
             shipment = cur.fetchone()
 
             if not shipment:
-                return jsonify({"error": "Shipment not found"}), 404
+                return jsonify({"error": f"Consignment #{shipment_id} not found in database. Please check your Shipment ID."}), 404
+
+            # If public guest (not logged in), mask sensitive personal phone numbers for privacy
+            if not current_user:
+                if shipment.get('driver_mobile'):
+                    mob = shipment['driver_mobile']
+                    shipment['driver_mobile'] = mob[:2] + '******' + mob[-2:] if len(mob) >= 6 else '******'
 
             cur.execute("""
-                SELECT id, latitude, longitude, location_name, speed_kmh, status_note, heading, accuracy, recorded_at
+                SELECT id, latitude, longitude, location_name, speed_kmh, status_note, heading, accuracy, checkpoint_type, recorded_at
                 FROM tracking_records
                 WHERE shipment_id = %s
                 ORDER BY recorded_at DESC
             """, (shipment_id,))
             records = cur.fetchall()
+
+            # Format datetime
+            if shipment.get('created_at'): shipment['created_at'] = shipment['created_at'].isoformat()
+            if shipment.get('updated_at'): shipment['updated_at'] = shipment['updated_at'].isoformat()
+            for r in records:
+                if r.get('recorded_at'): r['recorded_at'] = r['recorded_at'].isoformat()
 
         latest = records[0] if records else {
             "latitude": 19.0760,
@@ -1261,7 +1503,8 @@ def get_live_tracking(current_user, shipment_id):
             "speed_kmh": 0.00,
             "heading": 0.0,
             "accuracy": 10.0,
-            "status_note": "Awaiting Transit Start",
+            "status_note": f"Consignment Registered: {shipment['status']}",
+            "checkpoint_type": "registered",
             "recorded_at": datetime.datetime.now(datetime.timezone.utc).isoformat()
         }
 
