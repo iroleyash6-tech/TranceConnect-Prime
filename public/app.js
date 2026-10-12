@@ -1221,16 +1221,34 @@ function renderTrackingModal(shipment, latest_location, history = []) {
 
   openModal('trackingModal');
   setTimeout(() => {
-    initTrackingMap(latest_location.latitude, latest_location.longitude, latest_location.location_name, shipment.vehicle_image);
+    initTrackingMap(latest_location ? latest_location.latitude : null, latest_location ? latest_location.longitude : null, latest_location ? latest_location.location_name : null, shipment.vehicle_image, Boolean(latest_location && latest_location.latitude != null));
   }, 250);
 }
 
-function initTrackingMap(lat, lng, locName, vehicleImgUrl) {
+function initTrackingMap(lat, lng, locName, vehicleImgUrl, hasGps = true) {
   const container = document.getElementById('trackingMap');
   if (!container) return;
 
-  const validLat = Number(lat) || 19.0760;
-  const validLng = Number(lng) || 72.8777;
+  if (!hasGps || lat === null || lat === undefined || lng === null || lng === undefined) {
+    if (trackingMapInstance) {
+      try { trackingMapInstance.remove(); } catch (e) {}
+      trackingMapInstance = null;
+      trackingMarkerInstance = null;
+    }
+    container.innerHTML = `
+      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--text-dim); text-align: center; padding: 1.5rem; background: rgba(10, 18, 34, 0.6); border-radius: var(--radius-sm);">
+        <span style="font-size: 2.2rem; margin-bottom: 0.5rem;">🛰️</span>
+        <strong style="color: var(--text-main); font-size: 0.95rem;">Live GPS Telemetry Awaiting Vehicle Departure</strong>
+        <p style="font-size: 0.8rem; margin-top: 0.35rem; max-width: 480px; line-height: 1.5; color: var(--text-muted);">
+          Real-time GPS coordinates stream once the assigned carrier begins transit and broadcasts location. Checkpoint milestones are logged in the timeline above.
+        </p>
+      </div>
+    `;
+    return;
+  }
+
+  const validLat = Number(lat);
+  const validLng = Number(lng);
 
   if (!trackingMapInstance) {
     trackingMapInstance = L.map('trackingMap').setView([validLat, validLng], 12);

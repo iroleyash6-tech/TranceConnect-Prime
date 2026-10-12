@@ -1680,21 +1680,27 @@ def get_live_tracking(shipment_id):
             for r in records:
                 if r.get('recorded_at'): r['recorded_at'] = r['recorded_at'].isoformat()
 
-        latest = records[0] if records else {
-            "latitude": 19.0760,
-            "longitude": 72.8777,
-            "location_name": shipment['pickup_location'],
-            "speed_kmh": 0.00,
-            "heading": 0.0,
-            "accuracy": 10.0,
-            "status_note": f"Consignment Registered: {shipment['status']}",
-            "checkpoint_type": "registered",
-            "recorded_at": datetime.datetime.now(datetime.timezone.utc).isoformat()
-        }
+        if records:
+            latest = records[0]
+            has_gps = (latest.get('latitude') is not None and latest.get('longitude') is not None)
+        else:
+            latest = {
+                "latitude": None,
+                "longitude": None,
+                "location_name": shipment['pickup_location'],
+                "speed_kmh": 0.00,
+                "heading": 0.0,
+                "accuracy": None,
+                "status_note": f"Consignment Registered: {shipment['status']}",
+                "checkpoint_type": "registered",
+                "recorded_at": shipment.get('created_at')
+            }
+            has_gps = False
 
         return jsonify({
             "shipment": shipment,
             "latest_location": latest,
+            "has_gps": has_gps,
             "history": records
         }), 200
     finally:
