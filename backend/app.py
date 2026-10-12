@@ -458,6 +458,8 @@ def login():
         return jsonify({
             "message": "Login successful. Welcome back!",
             "token": token,
+            "role": user['role'],
+            "redirect": f"/{user['role']}",
             "user": user
         }), 200
     except Exception as e:
