@@ -3692,3 +3692,281 @@ input, select, textarea {
     grid-template-columns: 1fr;
   }
 }
+
+/* ===================================================================
+   TRANCECONNECT-PRO: PROFESSIONAL AUTHENTICATION & OTP RECOVERY STYLES
+   =================================================================== */
+
+/* Auth Sub-Tabs & Segmented Flow Switcher */
+.auth-flow-tabs {
+  display: flex;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-sm);
+  padding: 0.25rem;
+  gap: 0.25rem;
+  margin-bottom: 1.25rem;
+}
+.auth-flow-tab {
+  flex: 1;
+  text-align: center;
+  padding: 0.55rem 0.75rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-dim);
+  border-radius: 4px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+}
+.auth-flow-tab:hover {
+  color: var(--text-main);
+  background: rgba(255, 255, 255, 0.05);
+}
+.auth-flow-tab.active {
+  background: rgba(0, 240, 255, 0.15);
+  color: var(--cyan);
+  box-shadow: 0 0 12px rgba(0, 240, 255, 0.25);
+  border: 1px solid rgba(0, 240, 255, 0.35);
+}
+
+/* 6-Digit OTP Recovery Box Grid */
+.otp-inputs-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 0.6rem;
+  margin: 1.25rem 0;
+  max-width: 420px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.otp-digit-box {
+  width: 100%;
+  height: 56px;
+  background: rgba(15, 23, 42, 0.9);
+  border: 2px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-sm);
+  color: var(--cyan);
+  font-family: 'JetBrains Mono', Consolas, monospace;
+  font-size: 1.65rem;
+  font-weight: 800;
+  text-align: center;
+  outline: none;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+.otp-digit-box:focus {
+  border-color: var(--cyan);
+  box-shadow: 0 0 16px rgba(0, 240, 255, 0.45), inset 0 1px 3px rgba(0, 0, 0, 0.3);
+  transform: translateY(-2px);
+  background: rgba(15, 23, 42, 1);
+}
+.otp-digit-box.has-value {
+  border-color: rgba(0, 240, 255, 0.5);
+  background: rgba(0, 240, 255, 0.05);
+}
+.otp-digit-box.is-invalid {
+  border-color: #ef4444 !important;
+  color: #ef4444 !important;
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.35);
+  animation: otpShake 0.4s ease-in-out;
+}
+@keyframes otpShake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-4px); }
+  40%, 80% { transform: translateX(4px); }
+}
+
+/* OTP Timer & Cooldown Badges */
+.otp-meta-panel {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-sm);
+  padding: 0.65rem 0.85rem;
+  margin-bottom: 1.25rem;
+  font-size: 0.78rem;
+}
+.otp-timer-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--amber);
+  font-weight: 600;
+  font-family: 'JetBrains Mono', monospace;
+}
+.otp-timer-badge.expired {
+  color: #ef4444;
+}
+
+/* Document Upload Zone for Transporter KYC */
+.doc-upload-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+.doc-upload-card {
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem;
+  text-align: center;
+  position: relative;
+  transition: all var(--transition-fast);
+  cursor: pointer;
+}
+.doc-upload-card:hover {
+  border-color: var(--cyan);
+  background: rgba(0, 240, 255, 0.04);
+}
+.doc-upload-card input[type="file"] {
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+.doc-upload-icon {
+  font-size: 1.4rem;
+  margin-bottom: 0.25rem;
+  display: block;
+}
+.doc-upload-title {
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--text-main);
+  display: block;
+}
+.doc-upload-hint {
+  font-size: 0.68rem;
+  color: var(--text-dim);
+  display: block;
+  margin-top: 0.15rem;
+}
+.doc-upload-filename {
+  font-size: 0.72rem;
+  color: var(--emerald);
+  font-weight: 600;
+  margin-top: 0.35rem;
+  display: none;
+  word-break: break-all;
+}
+
+/* Form Action Buttons & Loading States */
+.btn-loading {
+  position: relative;
+  pointer-events: none;
+  opacity: 0.85;
+}
+.btn-loading .btn-text {
+  visibility: hidden;
+}
+.btn-loading::after {
+  content: '';
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  top: 50%;
+  left: 50%;
+  margin-top: -9px;
+  margin-left: -9px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: btnSpin 0.75s linear infinite;
+}
+@keyframes btnSpin {
+  to { transform: rotate(360deg); }
+}
+
+/* High-Impact Logistics Showcase Gallery */
+.logistics-gallery-section {
+  padding: 3.5rem 2rem;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.25rem;
+  margin-top: 1.75rem;
+}
+.gallery-card {
+  background: rgba(13, 23, 42, 0.75);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+}
+.gallery-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(0, 240, 255, 0.4);
+  box-shadow: 0 12px 30px rgba(0, 240, 255, 0.12);
+}
+.gallery-card-img-wrap {
+  width: 100%;
+  height: 175px;
+  background: #09101d;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+.gallery-card-img-wrap img {
+  max-width: 90%;
+  max-height: 85%;
+  object-fit: contain;
+  transition: transform 0.4s ease;
+}
+.gallery-card:hover .gallery-card-img-wrap img {
+  transform: scale(1.04);
+}
+.gallery-card-content {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+.gallery-card-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 0.4rem;
+}
+.gallery-card-desc {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  line-height: 1.5;
+  margin-bottom: 0.75rem;
+}
+
+/* Subtle Fade In Scroll Effect */
+.fade-in-scroll {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.fade-in-scroll.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Accessibility: Respect Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

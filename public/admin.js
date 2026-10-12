@@ -15,8 +15,9 @@ let allAdminDeliveryOrders = [];
 
 // Auth Guard: Only Admins allowed
 if (!authToken || !currentUser || currentUser.role !== 'admin') {
-  alert('Unauthorized. Master Admin access required.');
-  window.location.href = '/';
+  localStorage.removeItem('tc_token');
+  localStorage.removeItem('tc_user');
+  window.location.href = '/?session_expired=1';
 }
 
 document.addEventListener('DOMContentLoaded', () => {

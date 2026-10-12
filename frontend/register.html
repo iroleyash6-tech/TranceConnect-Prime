@@ -402,10 +402,84 @@
           <span class="fleet-spec-pill">Coverage: <strong>National Highway Corridors</strong></span>
           <span class="fleet-spec-pill">Service: <strong>Dedicated Fleet Manager</strong></span>
         </div>
-        <button class="btn btn-primary" onclick="openAuthModal('dealer', 'register')" style="width: 100%; margin-top: auto;">Contract Full Fleet ➔</button>
+        <button class="btn btn-primary" onclick="openAuthModal('dealer')" style="width: 100%; margin-top: auto;">Contract Full Fleet ➔</button>
       </div>
     </div>
   </section>
+
+  <!-- ===================================================================
+       LOGISTICS FACILITIES & INFRASTRUCTURE SHOWCASE
+       =================================================================== -->
+  <section class="logistics-gallery-section" id="infrastructure">
+    <div class="section-head">
+      <p class="section-tag">NATIONAL INFRASTRUCTURE</p>
+      <h2 class="section-title">Strategic Logistics Hubs & Highway Operations</h2>
+      <p class="section-desc">Operating across accredited freight terminals, automated warehouse consolidation facilities, and dedicated national transport corridors.</p>
+    </div>
+
+    <div class="gallery-grid">
+      <!-- 1. Automated Warehouse Hub -->
+      <div class="gallery-card fade-in-scroll">
+        <div class="gallery-card-img-wrap">
+          <img src="assets/warehouse-hub.svg" alt="Automated Logistics Consolidation Facility" loading="lazy">
+        </div>
+        <div class="gallery-card-content">
+          <div class="gallery-card-title">Central Consolidation Warehouses</div>
+          <div class="gallery-card-desc">Equipped with 24/7 loading docks, electronic weighbridges, overhead gantry cranes, and RFID pallet scanning for heavy industrial raw materials.</div>
+          <div style="margin-top: auto; display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 0.72rem; color: var(--cyan); font-weight: 600;">MULTI-DOCK AUTOMATION</span>
+            <button class="btn btn-outline btn-sm" onclick="openAuthModal('dealer')">Book Warehouse ➔</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. Express Delivery Operations -->
+      <div class="gallery-card fade-in-scroll">
+        <div class="gallery-card-img-wrap">
+          <img src="assets/delivery-ops.svg" alt="Rapid Delivery Operations & Barcode Sorting" loading="lazy">
+        </div>
+        <div class="gallery-card-content">
+          <div class="gallery-card-title">Express Dispatch & Delivery Hubs</div>
+          <div class="gallery-card-desc">End-to-end digital barcode tracking, automated gate security clearance passes, and synchronized consignor-to-consignee handoffs.</div>
+          <div style="margin-top: auto; display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 0.72rem; color: var(--emerald); font-weight: 600;">GUARANTEED SLA DISPATCH</span>
+            <button class="btn btn-outline btn-sm" onclick="openAuthModal('transporter')">Join Carrier Fleet ➔</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Highway Transportation Corridor -->
+      <div class="gallery-card fade-in-scroll">
+        <div class="gallery-card-img-wrap">
+          <img src="assets/highway-transport.svg" alt="Express Interstate Highway Freight Transport" loading="lazy">
+        </div>
+        <div class="gallery-card-content">
+          <div class="gallery-card-title">Dedicated National Highway Freight</div>
+          <div class="gallery-card-desc">Continuous high-tonnage transit across Golden Quadrilateral corridors with FASTag toll integration, speed sensors, and transit radar monitoring.</div>
+          <div style="margin-top: auto; display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 0.72rem; color: var(--cyan); font-weight: 600;">REAL-TIME TELEMETRY</span>
+            <button class="btn btn-outline btn-sm" onclick="scrollToSection('tracking')">Track Live Radar ➔</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. Multimodal Logistics Network -->
+      <div class="gallery-card fade-in-scroll">
+        <div class="gallery-card-img-wrap">
+          <img src="assets/logistics-network.svg" alt="Pan-India Connected Logistics Network" loading="lazy">
+        </div>
+        <div class="gallery-card-content">
+          <div class="gallery-card-title">Pan-India Freight Grid</div>
+          <div class="gallery-card-desc">Connecting manufacturing clusters in JNPT, Chakan, Mundra, Delhi NCR, and Chennai into a single verifiable logistics execution network.</div>
+          <div style="margin-top: auto; display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 0.72rem; color: var(--cyan); font-weight: 600;">50,000+ KM COVERAGE</span>
+            <button class="btn btn-primary btn-sm" onclick="openAuthModal('dealer')">Deploy Consignment ➔</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
 
   <!-- Platform Features Grid -->
   <section id="features" class="section">
@@ -493,7 +567,7 @@
        MODAL: AUTHENTICATION (LOGIN / GUIDED REGISTRATION / OTP RECOVERY)
        =================================================================== -->
   <div id="authModal" class="modal-overlay">
-    <div class="modal-container" style="max-width: 580px; max-height: 90vh; overflow-y: auto;">
+    <div class="modal-container" style="max-width: 600px; max-height: 92vh; overflow-y: auto;">
       <div class="modal-head">
         <div>
           <h2 id="authModalTitle" style="font-size: 1.25rem; font-weight: 700; margin: 0;">Sign In to TranceConnect</h2>
@@ -502,11 +576,20 @@
         <button class="close-btn" onclick="closeModal('authModal')">&times;</button>
       </div>
 
-      <!-- Top Tab Navigation -->
-      <div style="display: flex; gap: 0.5rem; margin-bottom: 1.25rem; border-bottom: 1px solid var(--border-glass); padding-bottom: 0.65rem;">
-        <button id="btnAuthTabLogin" class="btn btn-primary btn-sm" onclick="setAuthTab('login')">Sign In</button>
-        <button id="btnAuthTabRegister" class="btn btn-glass btn-sm" onclick="setAuthTab('register')">Register Account</button>
-        <button id="btnAuthTabForgot" class="btn btn-glass btn-sm" onclick="setAuthTab('forgot')">Forgot Password</button>
+      <!-- Segmented Flow Tabs -->
+      <div class="auth-flow-tabs">
+        <button id="btnAuthTabLogin" class="auth-flow-tab active" onclick="setAuthTab('login')">
+          <span>🔐</span> Sign In
+        </button>
+        <button id="btnAuthTabDealer" class="auth-flow-tab" onclick="setAuthTab('dealer')">
+          <span>🏢</span> Dealer Reg
+        </button>
+        <button id="btnAuthTabTransporter" class="auth-flow-tab" onclick="setAuthTab('transporter')">
+          <span>🚛</span> Transporter Reg
+        </button>
+        <button id="btnAuthTabForgot" class="auth-flow-tab" onclick="setAuthTab('forgot')">
+          <span>🔑</span> Reset OTP
+        </button>
       </div>
 
       <!-- =========================================================
@@ -519,12 +602,12 @@
             <span class="field-hint-icon" title="You can sign in with your registered corporate email or 10-digit mobile number">ℹ️</span>
           </label>
           <div class="form-input-wrap" id="wrap_loginIdentifier">
-            <input type="text" id="loginIdentifier" required placeholder="corporate@company.com or 9876543210" autocomplete="username">
+            <input type="text" id="loginIdentifier" required placeholder="name@example.com or 9820123456" autocomplete="username">
             <span class="field-validation-icon valid-icon">✓</span>
             <span class="field-validation-icon invalid-icon">✕</span>
           </div>
-          <div class="field-msg hint-msg">Enter your registered company email or 10-digit mobile.</div>
-          <div class="field-msg error-msg" id="err_loginIdentifier">Please enter your email or 10-digit mobile.</div>
+          <div class="field-msg hint-msg">Enter your registered email address or 10-digit mobile number.</div>
+          <div class="field-msg error-msg" id="err_loginIdentifier">Please enter your email or 10-digit mobile number.</div>
         </div>
 
         <div class="form-group">
@@ -542,7 +625,7 @@
           <label style="display: flex; align-items: center; gap: 0.4rem; cursor: pointer; color: var(--text-dim); margin-bottom: 0;">
             <input type="checkbox" id="loginRememberMe" checked style="width: auto;"> Remember this device
           </label>
-          <a style="color: var(--cyan); cursor: pointer; text-decoration: underline;" onclick="setAuthTab('forgot')">Forgot Password?</a>
+          <a style="color: var(--cyan); cursor: pointer; font-weight: 600;" onclick="setAuthTab('forgot')">Forgot Password?</a>
         </div>
 
         <button type="submit" class="btn btn-primary" style="width: 100%;" id="btnLoginSubmit">
@@ -550,341 +633,350 @@
         </button>
 
         <div style="text-align: center; margin-top: 1.25rem; font-size: 0.82rem; color: var(--text-dim);">
-          Don't have an enterprise account? 
-          <a style="color: var(--cyan); cursor: pointer; font-weight: 600;" onclick="setAuthTab('register')">Register Business Free</a>
+          New to TranceConnect? Register as:
+          <div style="margin-top: 0.5rem; display: flex; gap: 0.5rem; justify-content: center;">
+            <button type="button" class="btn btn-outline btn-sm" onclick="setAuthTab('dealer')">🏢 Dealer (Shipper)</button>
+            <button type="button" class="btn btn-outline btn-sm" onclick="setAuthTab('transporter')">🚛 Transporter (Fleet)</button>
+          </div>
         </div>
       </form>
 
       <!-- =========================================================
-           FORM 2: GUIDED REGISTRATION (DEALER & TRANSPORTER)
+           FORM 2: DEALER REGISTRATION (STREAMLINED BUSINESS FLOW)
            ========================================================= -->
-      <form id="formRegister" style="display: none;" onsubmit="handleRegisterSubmit(event)" novalidate>
-        <input type="hidden" id="regRole" value="dealer">
-
-        <!-- 1. Role Selection Cards -->
-        <label style="font-size: 0.82rem; font-weight: 600; color: var(--text-dim); margin-bottom: 0.4rem; display: block;">
-          SELECT YOUR ACCOUNT TYPE:
-        </label>
-        <div class="role-selector-cards">
-          <div class="role-card-btn active" id="roleCardDealer" onclick="selectRegistrationRole('dealer')">
-            <div class="role-icon-title">
-              <span>🏢</span> Shipper / Dealer
-            </div>
-            <div class="role-desc">Load creator, plant owner, freight poster. Books commercial trucks & issues GST invoices.</div>
-            <span class="role-badge">Post Loads & Freight</span>
-          </div>
-          <div class="role-card-btn" id="roleCardTransporter" onclick="selectRegistrationRole('transporter')">
-            <div class="role-icon-title">
-              <span>🚛</span> Transporter / Fleet
-            </div>
-            <div class="role-desc">Fleet carrier, truck owner, logistics operator. Accepts loads, deploys trucks & drivers.</div>
-            <span class="role-badge">Provide Fleet & Transport</span>
+      <form id="formDealerRegister" style="display: none;" onsubmit="handleDealerRegisterSubmit(event)" novalidate>
+        <div style="background: rgba(0, 240, 255, 0.05); border: 1px solid rgba(0, 240, 255, 0.2); border-radius: var(--radius-sm); padding: 0.65rem 0.85rem; margin-bottom: 1.15rem; font-size: 0.8rem; display: flex; align-items: center; gap: 0.5rem;">
+          <span style="font-size: 1.2rem;">🏢</span>
+          <div>
+            <strong style="color: var(--cyan);">Shipper / Dealer Onboarding</strong><br>
+            <span style="color: var(--text-dim);">Post freight consignments, access verified fleet carriers, issue GST invoices & DOs.</span>
           </div>
         </div>
 
-        <!-- 2. Step Progress Header -->
-        <div class="reg-stepper-header">
-          <div class="reg-step-item active" id="regStepBadge1">
-            <div class="reg-step-number">1</div>
-            <span>Legal Entity</span>
+        <div class="form-group">
+          <label for="dealerCompany">
+            <span>Legal Business / Company Name <span class="field-required">*</span></span>
+          </label>
+          <div class="form-input-wrap" id="wrap_dealerCompany">
+            <input type="text" id="dealerCompany" required placeholder="e.g. Apex Industrial Steel Logistics Pvt Ltd">
+            <span class="field-validation-icon valid-icon">✓</span>
+            <span class="field-validation-icon invalid-icon">✕</span>
           </div>
-          <div class="reg-step-divider"></div>
-          <div class="reg-step-item" id="regStepBadge2">
-            <div class="reg-step-number">2</div>
-            <span>Logistics Profile</span>
-          </div>
-          <div class="reg-step-divider"></div>
-          <div class="reg-step-item" id="regStepBadge3">
-            <div class="reg-step-number">3</div>
-            <span>Security & Login</span>
-          </div>
+          <div class="field-msg hint-msg">Example: Bharat Steel Works, Reliance Polymers, Tata Motors Plant.</div>
+          <div class="field-msg error-msg" id="err_dealerCompany">Please enter your registered company name.</div>
         </div>
 
-        <!-- STEP 1: ENTITY DETAILS -->
-        <div id="regStepSection1">
+        <div class="form-row">
           <div class="form-group">
-            <label for="regCompany">
-              <span>Legal Business / Company Name <span class="field-required">*</span></span>
-              <span class="field-hint-icon" title="Registered legal entity name as per GST / MSME certificate">ℹ️</span>
+            <label for="dealerMobile">
+              <span>Mobile Number <span class="field-required">*</span></span>
             </label>
-            <div class="form-input-wrap" id="wrap_regCompany">
-              <input type="text" id="regCompany" required placeholder="e.g. Apex Industrial Steel Logistics Pvt Ltd">
+            <div class="form-input-wrap" id="wrap_dealerMobile">
+              <input type="tel" id="dealerMobile" required placeholder="e.g. 9820123456" maxlength="10">
               <span class="field-validation-icon valid-icon">✓</span>
               <span class="field-validation-icon invalid-icon">✕</span>
             </div>
-            <div class="field-msg hint-msg">Enter full legal firm name as registered on tax documents.</div>
-            <div class="field-msg error-msg" id="err_regCompany">Company name must be at least 3 characters.</div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label for="regGst">
-                <span>GSTIN Number (Optional)</span>
-                <span class="field-hint-icon" title="15-character GST number (e.g. 27ABCDE1234F1Z5) for verified invoices & E-Way bills">ℹ️</span>
-              </label>
-              <div class="form-input-wrap" id="wrap_regGst">
-                <input type="text" id="regGst" placeholder="e.g. 27AAAAA0000A1Z5" maxlength="15" style="text-transform: uppercase;">
-                <span class="field-validation-icon valid-icon">✓</span>
-                <span class="field-validation-icon invalid-icon">✕</span>
-              </div>
-              <div class="field-msg hint-msg">15-digit alphanumeric GST identifier.</div>
-              <div class="field-msg error-msg" id="err_regGst">GSTIN must be 15 valid alphanumeric characters.</div>
-            </div>
-
-            <div class="form-group">
-              <label for="regCity">
-                <span>Operating City & State <span class="field-required">*</span></span>
-              </label>
-              <div class="form-input-wrap" id="wrap_regCity">
-                <input type="text" id="regCity" required placeholder="e.g. Mumbai, Maharashtra">
-                <span class="field-validation-icon valid-icon">✓</span>
-                <span class="field-validation-icon invalid-icon">✕</span>
-              </div>
-              <div class="field-msg hint-msg">Primary operating city hub and state.</div>
-              <div class="field-msg error-msg" id="err_regCity">Please specify your primary city & state.</div>
-            </div>
-          </div>
-
-          <div style="display: flex; justify-content: flex-end; margin-top: 1rem;">
-            <button type="button" class="btn btn-primary" onclick="goToRegStep(2)">
-              Proceed to Logistics Profile ➔
-            </button>
-          </div>
-        </div>
-
-        <!-- STEP 2: LOGISTICS / FLEET PROFILE -->
-        <div id="regStepSection2" style="display: none;">
-          <!-- Dealer Specific Profile -->
-          <div id="dealerProfileFields">
-            <div class="form-group">
-              <label for="regCargoType">
-                <span>Primary Cargo / Commodity Type <span class="field-required">*</span></span>
-              </label>
-              <div class="form-input-wrap" id="wrap_regCargoType">
-                <select id="regCargoType">
-                  <option value="Industrial Dry Freight & Raw Materials">Industrial Dry Freight & Raw Materials</option>
-                  <option value="Steel, Metals & Heavy Infrastructure">Steel, Metals & Heavy Infrastructure</option>
-                  <option value="FMCG & Consumer Goods">FMCG & Consumer Goods</option>
-                  <option value="Agricultural Produce & Commodities">Agricultural Produce & Commodities</option>
-                  <option value="Chemicals & Industrial Liquids">Chemicals & Industrial Liquids</option>
-                  <option value="Heavy Machinery & Project Cargo">Heavy Machinery & Project Cargo</option>
-                  <option value="General Commercial Freight">General Commercial Freight</option>
-                </select>
-              </div>
-              <div class="field-msg hint-msg">Helps match suitable truck configurations with verified capacities.</div>
-            </div>
-
-            <div class="form-group">
-              <label for="regMonthlyVolume">
-                <span>Expected Monthly Dispatch Volume</span>
-              </label>
-              <div class="form-input-wrap" id="wrap_regMonthlyVolume">
-                <select id="regMonthlyVolume">
-                  <option value="1 - 5 Full Truckloads (Spot/Trial)">1 - 5 Full Truckloads (Spot/Trial)</option>
-                  <option value="6 - 20 Full Truckloads / Month">6 - 20 Full Truckloads / Month</option>
-                  <option value="21 - 50 Full Truckloads / Month">21 - 50 Full Truckloads / Month</option>
-                  <option value="50+ Enterprise Dedicated Freight / Month">50+ Enterprise Dedicated Freight / Month</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          <!-- Transporter Specific Profile -->
-          <div id="transporterProfileFields" style="display: none;">
-            <div class="form-row">
-              <div class="form-group">
-                <label for="regFleetSize">
-                  <span>Commercial Fleet Size <span class="field-required">*</span></span>
-                </label>
-                <div class="form-input-wrap" id="wrap_regFleetSize">
-                  <select id="regFleetSize">
-                    <option value="1 - 3 Commercial Trucks">1 - 3 Commercial Trucks</option>
-                    <option value="4 - 10 Fleet Trucks">4 - 10 Fleet Trucks</option>
-                    <option value="11 - 30 Fleet Trucks">11 - 30 Fleet Trucks</option>
-                    <option value="31 - 100 Commercial Carriers">31 - 100 Commercial Carriers</option>
-                    <option value="100+ National Heavy Fleet">100+ National Heavy Fleet</option>
-                  </select>
-                </div>
-              </div>
-
-              <div class="form-group">
-                <label for="regTruckTypes">
-                  <span>Primary Truck Configurations</span>
-                </label>
-                <div class="form-input-wrap" id="wrap_regTruckTypes">
-                  <select id="regTruckTypes">
-                    <option value="Multi-Axle Container & Closed Body">Multi-Axle Container & Closed Body</option>
-                    <option value="Open Body High Side Trucks">Open Body High Side Trucks</option>
-                    <option value="Flatbed & Low-Bed Trailers">Flatbed & Low-Bed Trailers</option>
-                    <option value="Heavy Mining Tipper Dumpers">Heavy Mining Tipper Dumpers</option>
-                    <option value="LCV Pickups & Delivery Vans">LCV Pickups & Delivery Vans</option>
-                    <option value="Mixed Commercial Fleet">Mixed Commercial Fleet</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label for="regOperatingRoutes">
-                <span>Primary Operating Freight Corridors</span>
-              </label>
-              <div class="form-input-wrap" id="wrap_regOperatingRoutes">
-                <input type="text" id="regOperatingRoutes" placeholder="e.g. Western Corridor (MH-GJ), Pan-India National Corridors">
-              </div>
-              <div class="field-msg hint-msg">Corridors where your trucks frequently operate or return empty.</div>
-            </div>
-          </div>
-
-          <div style="display: flex; justify-content: space-between; margin-top: 1rem;">
-            <button type="button" class="btn btn-outline" onclick="goToRegStep(1)">
-              ← Back to Step 1
-            </button>
-            <button type="button" class="btn btn-primary" onclick="goToRegStep(3)">
-              Proceed to Security & Login ➔
-            </button>
-          </div>
-        </div>
-
-        <!-- STEP 3: CREDENTIALS & ACCOUNT SECURITY -->
-        <div id="regStepSection3" style="display: none;">
-          <div class="form-row">
-            <div class="form-group">
-              <label for="regMobile">
-                <span>10-Digit Mobile Number <span class="field-required">*</span></span>
-                <span class="field-hint-icon" title="Indian 10-digit mobile number starting with 6, 7, 8, or 9 for trip alerts & OTP recovery">ℹ️</span>
-              </label>
-              <div class="form-input-wrap" id="wrap_regMobile">
-                <input type="tel" id="regMobile" required placeholder="e.g. 9876543210" maxlength="10">
-                <span class="field-validation-icon valid-icon">✓</span>
-                <span class="field-validation-icon invalid-icon">✕</span>
-              </div>
-              <div class="field-msg hint-msg">10-digit mobile (starts with 6-9).</div>
-              <div class="field-msg error-msg" id="err_regMobile">Must be valid 10-digit mobile starting with 6-9.</div>
-            </div>
-
-            <div class="form-group">
-              <label for="regEmail">
-                <span>Corporate Email Address <span class="field-required">*</span></span>
-              </label>
-              <div class="form-input-wrap" id="wrap_regEmail">
-                <input type="email" id="regEmail" required placeholder="contact@company.com" autocomplete="email">
-                <span class="field-validation-icon valid-icon">✓</span>
-                <span class="field-validation-icon invalid-icon">✕</span>
-              </div>
-              <div class="field-msg hint-msg">Used for dispatch receipts and account recovery.</div>
-              <div class="field-msg error-msg" id="err_regEmail">Enter a valid email address (name@company.com).</div>
-            </div>
+            <div class="field-msg hint-msg">10-digit Indian mobile (starts with 6, 7, 8, or 9).</div>
+            <div class="field-msg error-msg" id="err_dealerMobile">Please enter a valid 10-digit Indian mobile number.</div>
           </div>
 
           <div class="form-group">
-            <label for="regPassword">
-              <span>Create Strong Password <span class="field-required">*</span></span>
+            <label for="dealerEmail">
+              <span>Email Address <span class="field-required">*</span></span>
             </label>
-            <div class="form-input-wrap password-wrap" id="wrap_regPassword">
-              <input type="password" id="regPassword" required placeholder="Minimum 6 characters" autocomplete="new-password">
+            <div class="form-input-wrap" id="wrap_dealerEmail">
+              <input type="email" id="dealerEmail" required placeholder="e.g. name@example.com" autocomplete="email">
               <span class="field-validation-icon valid-icon">✓</span>
               <span class="field-validation-icon invalid-icon">✕</span>
-              <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('regPassword', this)" title="Toggle password visibility">👁️</button>
             </div>
-            <div class="field-msg error-msg" id="err_regPassword">Password must be at least 6 characters.</div>
+            <div class="field-msg hint-msg">Enter a valid email address, for example name@example.com.</div>
+            <div class="field-msg error-msg" id="err_dealerEmail">Enter a valid email address, for example name@example.com.</div>
+          </div>
+        </div>
 
-            <!-- Password Strength Meter -->
-            <div class="password-meter-wrap" id="regPasswordMeter">
-              <div class="meter-bar-container">
-                <div class="meter-bar-fill" id="regStrengthFill"></div>
-              </div>
-              <div class="meter-label-row">
-                <span>Password Strength:</span>
-                <span class="meter-strength-text" id="regStrengthText">Enter Password</span>
-              </div>
-              <ul class="password-rules-list">
-                <li class="password-rule-item" id="ruleMinLen"><span class="rule-icon"></span> At least 6 characters</li>
-                <li class="password-rule-item" id="ruleNumber"><span class="rule-icon"></span> Contains a number (0-9)</li>
-                <li class="password-rule-item" id="ruleUpperLower"><span class="rule-icon"></span> Uppercase & lowercase</li>
-                <li class="password-rule-item" id="ruleSpecial"><span class="rule-icon"></span> Symbol (!@#$%^&*)</li>
-              </ul>
+        <div class="form-group">
+          <label for="dealerGst">
+            <span>GSTIN Number (15 Characters)</span>
+          </label>
+          <div class="form-input-wrap" id="wrap_dealerGst">
+            <input type="text" id="dealerGst" placeholder="e.g. 27AAAAA0000A1Z5" maxlength="15" style="text-transform: uppercase;">
+            <span class="field-validation-icon valid-icon">✓</span>
+            <span class="field-validation-icon invalid-icon">✕</span>
+          </div>
+          <div class="field-msg hint-msg">15-digit alphanumeric GSTIN for verified invoices.</div>
+          <div class="field-msg error-msg" id="err_dealerGst">Please enter a valid 15-character GSTIN.</div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="dealerPassword">
+              <span>Password <span class="field-required">*</span></span>
+            </label>
+            <div class="form-input-wrap password-wrap" id="wrap_dealerPassword">
+              <input type="password" id="dealerPassword" required placeholder="Minimum 6 characters" autocomplete="new-password">
+              <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('dealerPassword', this)" title="Toggle password visibility">👁️</button>
             </div>
+            <div class="field-msg error-msg" id="err_dealerPassword">Password must be at least 6 characters long.</div>
           </div>
 
           <div class="form-group">
-            <label for="regConfirmPassword">
+            <label for="dealerConfirmPassword">
               <span>Confirm Password <span class="field-required">*</span></span>
             </label>
-            <div class="form-input-wrap password-wrap" id="wrap_regConfirmPassword">
-              <input type="password" id="regConfirmPassword" required placeholder="Re-type your password" autocomplete="new-password">
-              <span class="field-validation-icon valid-icon">✓</span>
-              <span class="field-validation-icon invalid-icon">✕</span>
-              <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('regConfirmPassword', this)" title="Toggle password visibility">👁️</button>
+            <div class="form-input-wrap password-wrap" id="wrap_dealerConfirmPassword">
+              <input type="password" id="dealerConfirmPassword" required placeholder="Re-enter password" autocomplete="new-password">
+              <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('dealerConfirmPassword', this)" title="Toggle password visibility">👁️</button>
             </div>
-            <div class="field-msg hint-msg">Both passwords must match exactly.</div>
-            <div class="field-msg error-msg" id="err_regConfirmPassword">Passwords do not match.</div>
-          </div>
-
-          <div style="display: flex; justify-content: space-between; margin-top: 1.25rem;">
-            <button type="button" class="btn btn-outline" onclick="goToRegStep(2)">
-              ← Back to Step 2
-            </button>
-            <button type="submit" class="btn btn-primary" id="btnRegisterSubmit">
-              <span class="btn-text">Complete Verified Registration ✅</span>
-            </button>
+            <div class="field-msg error-msg" id="err_dealerConfirmPassword">Your passwords do not match. Please check both password fields.</div>
           </div>
         </div>
 
-        <div style="text-align: center; margin-top: 1.25rem; font-size: 0.82rem; color: var(--text-dim);">
-          Already registered? 
-          <a style="color: var(--cyan); cursor: pointer; font-weight: 600;" onclick="setAuthTab('login')">Sign In here</a>
+        <!-- Password Strength Meter -->
+        <div class="password-meter-wrap" id="dealerPasswordMeter" style="margin-bottom: 1.25rem;">
+          <div class="meter-bar-container">
+            <div class="meter-bar-fill" id="dealerStrengthFill"></div>
+          </div>
+          <div class="meter-label-row">
+            <span>Password Strength:</span>
+            <span class="meter-strength-text" id="dealerStrengthText">Enter Password</span>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%;" id="btnDealerSubmit">
+          <span class="btn-text">Register as Verified Dealer ➔</span>
+        </button>
+
+        <div style="text-align: center; margin-top: 1rem; font-size: 0.82rem; color: var(--text-dim);">
+          Already have an account? <a style="color: var(--cyan); cursor: pointer; font-weight: 600;" onclick="setAuthTab('login')">Sign In here</a>
         </div>
       </form>
 
       <!-- =========================================================
-           FORM 3: FORGOT PASSWORD & OTP RECOVERY
+           FORM 3: TRANSPORTER REGISTRATION (WITH KYC DOCUMENT UPLOAD)
+           ========================================================= -->
+      <form id="formTransporterRegister" style="display: none;" onsubmit="handleTransporterRegisterSubmit(event)" novalidate>
+        <div style="background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: var(--radius-sm); padding: 0.65rem 0.85rem; margin-bottom: 1.15rem; font-size: 0.8rem; display: flex; align-items: center; gap: 0.5rem;">
+          <span style="font-size: 1.2rem;">🚛</span>
+          <div>
+            <strong style="color: var(--emerald);">Fleet Transporter / Carrier Onboarding</strong><br>
+            <span style="color: var(--text-dim);">Accept commercial loads, deploy trucks & licensed drivers, stream live GPS radar.</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="transCompany">
+            <span>Transport Firm / Company Name <span class="field-required">*</span></span>
+          </label>
+          <div class="form-input-wrap" id="wrap_transCompany">
+            <input type="text" id="transCompany" required placeholder="e.g. SpeedRoad Express Freight Carriers">
+            <span class="field-validation-icon valid-icon">✓</span>
+            <span class="field-validation-icon invalid-icon">✕</span>
+          </div>
+          <div class="field-msg hint-msg">Example: Apex Freight Corp, Mahalaxmi Heavy Haulers, Gujarat Carriers.</div>
+          <div class="field-msg error-msg" id="err_transCompany">Please enter your registered company name.</div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="transMobile">
+              <span>Mobile Number <span class="field-required">*</span></span>
+            </label>
+            <div class="form-input-wrap" id="wrap_transMobile">
+              <input type="tel" id="transMobile" required placeholder="e.g. 9890123456" maxlength="10">
+              <span class="field-validation-icon valid-icon">✓</span>
+              <span class="field-validation-icon invalid-icon">✕</span>
+            </div>
+            <div class="field-msg hint-msg">10-digit Indian mobile (starts with 6, 7, 8, or 9).</div>
+            <div class="field-msg error-msg" id="err_transMobile">Please enter a valid 10-digit Indian mobile number.</div>
+          </div>
+
+          <div class="form-group">
+            <label for="transEmail">
+              <span>Email Address <span class="field-required">*</span></span>
+            </label>
+            <div class="form-input-wrap" id="wrap_transEmail">
+              <input type="email" id="transEmail" required placeholder="e.g. dispatch@carrier.com" autocomplete="email">
+              <span class="field-validation-icon valid-icon">✓</span>
+              <span class="field-validation-icon invalid-icon">✕</span>
+            </div>
+            <div class="field-msg hint-msg">Enter a valid email address, for example name@example.com.</div>
+            <div class="field-msg error-msg" id="err_transEmail">Enter a valid email address, for example name@example.com.</div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="transGst">
+            <span>GSTIN Number (15 Characters)</span>
+          </label>
+          <div class="form-input-wrap" id="wrap_transGst">
+            <input type="text" id="transGst" placeholder="e.g. 27AABCS5678G1Z2" maxlength="15" style="text-transform: uppercase;">
+            <span class="field-validation-icon valid-icon">✓</span>
+            <span class="field-validation-icon invalid-icon">✕</span>
+          </div>
+          <div class="field-msg hint-msg">15-digit GST registration (optional for small fleet carriers).</div>
+          <div class="field-msg error-msg" id="err_transGst">Please enter a valid 15-character GSTIN.</div>
+        </div>
+
+        <!-- Transporter Onboarding KYC Document Upload -->
+        <label style="font-size: 0.82rem; font-weight: 600; color: var(--text-dim); margin-bottom: 0.4rem; display: block;">
+          ONBOARDING VERIFICATION DOCUMENTS (OPTIONAL):
+        </label>
+        <div class="doc-upload-grid">
+          <div class="doc-upload-card" onclick="document.getElementById('transAadhaarFile').click()">
+            <input type="file" id="transAadhaarFile" accept=".pdf,.png,.jpg,.jpeg,.webp" onchange="handleDocSelection(this, 'dispAadhaar')">
+            <span class="doc-upload-icon">🪪</span>
+            <span class="doc-upload-title">Aadhaar Document</span>
+            <span class="doc-upload-hint">PDF or Image (Max 16MB)</span>
+            <span class="doc-upload-filename" id="dispAadhaar"></span>
+          </div>
+
+          <div class="doc-upload-card" onclick="document.getElementById('transLicenseFile').click()">
+            <input type="file" id="transLicenseFile" accept=".pdf,.png,.jpg,.jpeg,.webp" onchange="handleDocSelection(this, 'dispLicense')">
+            <span class="doc-upload-icon">🚗</span>
+            <span class="doc-upload-title">Driving Licence / RC</span>
+            <span class="doc-upload-hint">PDF or Image (Max 16MB)</span>
+            <span class="doc-upload-filename" id="dispLicense"></span>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="transPassword">
+              <span>Password <span class="field-required">*</span></span>
+            </label>
+            <div class="form-input-wrap password-wrap" id="wrap_transPassword">
+              <input type="password" id="transPassword" required placeholder="Minimum 6 characters" autocomplete="new-password">
+              <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('transPassword', this)" title="Toggle password visibility">👁️</button>
+            </div>
+            <div class="field-msg error-msg" id="err_transPassword">Password must be at least 6 characters long.</div>
+          </div>
+
+          <div class="form-group">
+            <label for="transConfirmPassword">
+              <span>Confirm Password <span class="field-required">*</span></span>
+            </label>
+            <div class="form-input-wrap password-wrap" id="wrap_transConfirmPassword">
+              <input type="password" id="transConfirmPassword" required placeholder="Re-enter password" autocomplete="new-password">
+              <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('transConfirmPassword', this)" title="Toggle password visibility">👁️</button>
+            </div>
+            <div class="field-msg error-msg" id="err_transConfirmPassword">Your passwords do not match. Please check both password fields.</div>
+          </div>
+        </div>
+
+        <!-- Password Strength Meter -->
+        <div class="password-meter-wrap" id="transPasswordMeter" style="margin-bottom: 1.25rem;">
+          <div class="meter-bar-container">
+            <div class="meter-bar-fill" id="transStrengthFill"></div>
+          </div>
+          <div class="meter-label-row">
+            <span>Password Strength:</span>
+            <span class="meter-strength-text" id="transStrengthText">Enter Password</span>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%;" id="btnTransSubmit">
+          <span class="btn-text">Register as Fleet Transporter ➔</span>
+        </button>
+
+        <div style="text-align: center; margin-top: 1rem; font-size: 0.82rem; color: var(--text-dim);">
+          Already have an account? <a style="color: var(--cyan); cursor: pointer; font-weight: 600;" onclick="setAuthTab('login')">Sign In here</a>
+        </div>
+      </form>
+
+      <!-- =========================================================
+           FORM 4: FORGOT PASSWORD & 6-BOX OTP RECOVERY
            ========================================================= -->
       <div id="formForgot" style="display: none;">
+        <!-- STEP 1: Enter Email & Request OTP -->
         <div id="otpStep1">
-          <p style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 1.25rem; line-height: 1.45;">
-            Enter your registered corporate email or 10-digit mobile number. We will generate a secure 6-digit one-time password (OTP) valid for 15 minutes.
+          <p style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 1.25rem; line-height: 1.5;">
+            Enter your registered email address. We will generate a secure, 6-digit one-time password (OTP) and dispatch it directly to your email inbox. The code expires in 5 minutes.
           </p>
 
           <div class="form-group">
             <label for="forgotEmail">
-              <span>Registered Email or 10-Digit Mobile <span class="field-required">*</span></span>
+              <span>Registered Email Address <span class="field-required">*</span></span>
             </label>
             <div class="form-input-wrap" id="wrap_forgotEmail">
-              <input type="text" id="forgotEmail" required placeholder="registered@company.com or 9876543210">
+              <input type="email" id="forgotEmail" required placeholder="e.g. name@example.com" autocomplete="email">
+              <span class="field-validation-icon valid-icon">✓</span>
+              <span class="field-validation-icon invalid-icon">✕</span>
             </div>
-            <div class="field-msg error-msg" id="err_forgotEmail">Please enter your registered email or mobile.</div>
+            <div class="field-msg hint-msg">Enter a valid email address, for example name@example.com.</div>
+            <div class="field-msg error-msg" id="err_forgotEmail">Enter a valid email address, for example name@example.com.</div>
           </div>
 
           <button type="button" class="btn btn-primary" style="width: 100%;" id="btnForgotOtpRequest" onclick="requestPasswordOtp()">
-            <span class="btn-text">Generate 6-Digit OTP ➔</span>
+            <span class="btn-text">Send OTP ➔</span>
           </button>
         </div>
 
-        <div id="otpStep2" style="display: none; margin-top: 0.5rem;">
-          <div style="background: rgba(0, 240, 255, 0.08); border: 1px solid rgba(0, 240, 255, 0.25); border-radius: var(--radius-sm); padding: 0.75rem 1rem; margin-bottom: 1.25rem; font-size: 0.82rem;">
-            <strong style="color: var(--cyan);">OTP Sent Successfully!</strong><br>
-            <span style="color: var(--text-dim);">Check your inbox. Code expires in 15 minutes.</span>
+        <!-- STEP 2: Verify 6-Digit OTP with Auto-Focus & Expiration Countdown -->
+        <div id="otpStep2" style="display: none;">
+          <div class="otp-meta-panel">
+            <div>
+              <strong style="color: var(--cyan);">6-Digit OTP Dispatched</strong><br>
+              <span style="color: var(--text-dim); font-size: 0.72rem;" id="otpRecipientDisplay">Check your registered email inbox</span>
+            </div>
+            <div class="otp-timer-badge" id="otpTimerDisplay">
+              ⏱️ <span id="otpCountdownMinutes">05:00</span>
+            </div>
           </div>
 
-          <div class="form-group">
-            <label for="forgotOtpCode">
-              <span>Enter 6-Digit OTP Code <span class="field-required">*</span></span>
-            </label>
-            <div class="form-input-wrap">
-              <input type="text" id="forgotOtpCode" placeholder="Enter 6-digit code" maxlength="6" style="letter-spacing: 0.3em; font-family: 'JetBrains Mono', monospace; font-size: 1.15rem; text-align: center;">
-            </div>
-            <div class="field-msg hint-msg" id="otpTimerDisplay">
-              Resend available in: <strong id="otpCountdownSeconds" style="color: var(--cyan);">60s</strong>
-            </div>
+          <label style="font-size: 0.82rem; font-weight: 600; color: var(--text-dim); display: block; text-align: center; margin-bottom: 0.5rem;">
+            ENTER 6-DIGIT VERIFICATION CODE:
+          </label>
+
+          <!-- Six Separate OTP Input Boxes with Auto-Focus, Paste & Backspace Support -->
+          <div class="otp-inputs-grid" id="otpBoxesContainer">
+            <input type="text" maxlength="1" class="otp-digit-box" id="otpDigit0" inputmode="numeric" pattern="[0-9]*" data-index="0" autocomplete="one-time-code">
+            <input type="text" maxlength="1" class="otp-digit-box" id="otpDigit1" inputmode="numeric" pattern="[0-9]*" data-index="1">
+            <input type="text" maxlength="1" class="otp-digit-box" id="otpDigit2" inputmode="numeric" pattern="[0-9]*" data-index="2">
+            <input type="text" maxlength="1" class="otp-digit-box" id="otpDigit3" inputmode="numeric" pattern="[0-9]*" data-index="3">
+            <input type="text" maxlength="1" class="otp-digit-box" id="otpDigit4" inputmode="numeric" pattern="[0-9]*" data-index="4">
+            <input type="text" maxlength="1" class="otp-digit-box" id="otpDigit5" inputmode="numeric" pattern="[0-9]*" data-index="5">
+          </div>
+
+          <div class="field-msg error-msg" id="err_otpDigits" style="justify-content: center; margin-bottom: 1rem;">
+            Please enter all 6 digits of the verification code.
+          </div>
+
+          <div style="display: flex; gap: 0.75rem; margin-top: 1rem;">
+            <button type="button" class="btn btn-outline" id="btnResendOtp" style="flex: 1;" onclick="resendPasswordOtp()" disabled>
+              Resend OTP (60s)
+            </button>
+            <button type="button" class="btn btn-primary" id="btnVerifyOtp" style="flex: 2;" onclick="verifyOtpCode()">
+              <span class="btn-text">Verify OTP Code ➔</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- STEP 3: Create New Password (Server Authorized) -->
+        <div id="otpStep3" style="display: none;">
+          <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: var(--radius-sm); padding: 0.75rem 1rem; margin-bottom: 1.25rem; font-size: 0.82rem;">
+            <strong style="color: var(--emerald);">✓ OTP Code Verified Successfully</strong><br>
+            <span style="color: var(--text-dim);">Please create and confirm your new secure account password.</span>
           </div>
 
           <div class="form-group">
             <label for="forgotNewPassword">
-              <span>New Account Password <span class="field-required">*</span></span>
+              <span>New Password <span class="field-required">*</span></span>
             </label>
-            <div class="form-input-wrap password-wrap">
-              <input type="password" id="forgotNewPassword" required placeholder="Enter new strong password">
+            <div class="form-input-wrap password-wrap" id="wrap_forgotNewPassword">
+              <input type="password" id="forgotNewPassword" required placeholder="Minimum 6 characters" autocomplete="new-password">
               <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('forgotNewPassword', this)" title="Toggle password visibility">👁️</button>
+            </div>
+            <div class="field-msg error-msg" id="err_forgotNewPassword">Password must be at least 6 characters long.</div>
+          </div>
+
+          <!-- Password Strength Meter -->
+          <div class="password-meter-wrap" id="forgotPasswordMeter" style="margin-bottom: 1rem;">
+            <div class="meter-bar-container">
+              <div class="meter-bar-fill" id="forgotStrengthFill"></div>
+            </div>
+            <div class="meter-label-row">
+              <span>Password Strength:</span>
+              <span class="meter-strength-text" id="forgotStrengthText">Enter Password</span>
             </div>
           </div>
 
@@ -892,25 +984,20 @@
             <label for="forgotConfirmPassword">
               <span>Confirm New Password <span class="field-required">*</span></span>
             </label>
-            <div class="form-input-wrap password-wrap">
-              <input type="password" id="forgotConfirmPassword" required placeholder="Confirm new password">
+            <div class="form-input-wrap password-wrap" id="wrap_forgotConfirmPassword">
+              <input type="password" id="forgotConfirmPassword" required placeholder="Re-enter new password" autocomplete="new-password">
               <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('forgotConfirmPassword', this)" title="Toggle password visibility">👁️</button>
             </div>
-            <div class="field-msg error-msg" id="err_forgotConfirmPassword">Passwords do not match.</div>
+            <div class="field-msg error-msg" id="err_forgotConfirmPassword">Your passwords do not match. Please check both password fields.</div>
           </div>
 
-          <div style="display: flex; gap: 0.75rem; margin-top: 1.25rem;">
-            <button type="button" class="btn btn-outline" id="btnResendOtp" style="flex: 1;" onclick="resendPasswordOtp()" disabled>
-              Resend OTP
-            </button>
-            <button type="button" class="btn btn-success" id="btnSubmitReset" style="flex: 2;" onclick="submitPasswordReset()">
-              <span class="btn-text">Confirm & Reset Password ✅</span>
-            </button>
-          </div>
+          <button type="button" class="btn btn-success" style="width: 100%; margin-top: 1rem;" id="btnSubmitReset" onclick="submitPasswordReset()">
+            <span class="btn-text">Save New Password ✅</span>
+          </button>
         </div>
 
         <div style="text-align: center; margin-top: 1.5rem; font-size: 0.82rem; color: var(--text-dim);">
-          Remembered your password? 
+          Remembered your credentials? 
           <a style="color: var(--cyan); cursor: pointer; font-weight: 600;" onclick="setAuthTab('login')">Return to Sign In</a>
         </div>
       </div>

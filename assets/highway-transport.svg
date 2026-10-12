@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 360" fill="none">
+  <defs>
+    <linearGradient id="hw-sky" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#020617"/>
+      <stop offset="60%" stop-color="#0b172b"/>
+      <stop offset="100%" stop-color="#111f36"/>
+    </linearGradient>
+    <linearGradient id="hw-road" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#090e17"/>
+      <stop offset="100%" stop-color="#020617"/>
+    </linearGradient>
+  </defs>
+  <rect width="600" height="360" rx="8" fill="url(#hw-sky)"/>
+  <polygon points="260,190 340,190 580,360 20,360" fill="url(#hw-road)" stroke="#1e293b" stroke-width="1"/>
+  <line x1="260" y1="190" x2="20" y2="360" stroke="#00f0ff" stroke-width="2" opacity="0.8"/>
+  <line x1="340" y1="190" x2="580" y2="360" stroke="#00f0ff" stroke-width="2" opacity="0.8"/>
+  <polygon points="120,225 240,225 240,295 120,295" fill="#0f172a" stroke="#38bdf8" stroke-width="2"/>
+  <polygon points="240,240 280,240 295,265 295,295 240,295" fill="#0284c7" stroke="#38bdf8" stroke-width="2"/>
+  <circle cx="140" cy="300" r="14" fill="#020617" stroke="#38bdf8" stroke-width="2"/>
+  <circle cx="275" cy="300" r="14" fill="#020617" stroke="#38bdf8" stroke-width="2"/>
+  <text x="300" y="45" font-family="'Inter', sans-serif" font-weight="800" font-size="14" fill="#00f0ff" text-anchor="middle" letter-spacing="2">HIGHWAY FREIGHT CORRIDORS</text>
+</svg>

@@ -15,10 +15,20 @@ document.addEventListener('DOMContentLoaded', () => {
   initStatsCounters();
   setupAuthValidation();
 
-  // Auto-open modal if navigated with hash or path
-  if (window.location.hash === '#register' || window.location.pathname.endsWith('/register')) {
-    openAuthModal('register');
-  } else if (window.location.hash === '#login' || window.location.pathname.endsWith('/login')) {
+  // Auto-open modal or alert if navigated with hash, path or params
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('session_expired')) {
+    showToast('Your session has expired. Please sign in again.', 'warning');
+    openAuthModal('login');
+  } else if (urlParams.get('tab') === 'transporter') {
+    openAuthModal('transporter');
+  } else if (urlParams.get('tab') === 'dealer') {
+    openAuthModal('dealer');
+  } else if (urlParams.get('tab') === 'forgot') {
+    openAuthModal('forgot');
+  } else if (window.location.hash === '#register' || window.location.pathname.endsWith('/register') || window.location.pathname.endsWith('/register.html')) {
+    openAuthModal('dealer');
+  } else if (window.location.hash === '#login' || window.location.pathname.endsWith('/login') || window.location.pathname.endsWith('/login.html')) {
     openAuthModal('login');
   } else if (window.location.hash === '#tracking') {
     const el = document.getElementById('trackingSearchInput');
@@ -79,192 +89,155 @@ async function checkApiHealth() {
 
 let otpCooldownTimer = null;
 let otpCooldownSeconds = 60;
-let currentRegStep = 1;
+let otpExpiryTimer = null;
+let otpExpirySeconds = 300;
+let currentResetSessionToken = null;
 
-function openAuthModal(mode = 'login') {
-  setAuthTab(mode === 'register' ? 'register' : 'login');
+function openAuthModal(initialTab = 'login', mode = null) {
+  let target = initialTab;
+  if (initialTab === 'register') target = 'dealer';
+  setAuthTab(target);
   openModal('authModal');
 }
 
 function setAuthTab(tab) {
-  const loginForm = document.getElementById('formLogin');
-  const regForm = document.getElementById('formRegister');
-  const forgotForm = document.getElementById('formForgot');
+  const formLogin = document.getElementById('formLogin');
+  const formDealer = document.getElementById('formDealerRegister');
+  const formTransporter = document.getElementById('formTransporterRegister');
+  const formForgot = document.getElementById('formForgot');
   const title = document.getElementById('authModalTitle');
   const subtitle = document.getElementById('authModalSubtitle');
 
   const btnLogin = document.getElementById('btnAuthTabLogin');
-  const btnRegister = document.getElementById('btnAuthTabRegister');
+  const btnDealer = document.getElementById('btnAuthTabDealer');
+  const btnTransporter = document.getElementById('btnAuthTabTransporter');
   const btnForgot = document.getElementById('btnAuthTabForgot');
 
-  [btnLogin, btnRegister, btnForgot].forEach(b => {
-    if (b) {
-      b.classList.remove('btn-primary');
-      b.classList.add('btn-glass');
-    }
+  [btnLogin, btnDealer, btnTransporter, btnForgot].forEach(btn => {
+    if (btn) btn.classList.remove('active');
   });
 
+  if (formLogin) formLogin.style.display = 'none';
+  if (formDealer) formDealer.style.display = 'none';
+  if (formTransporter) formTransporter.style.display = 'none';
+  if (formForgot) formForgot.style.display = 'none';
+
   if (tab === 'login') {
-    loginForm.style.display = 'block';
-    regForm.style.display = 'none';
-    forgotForm.style.display = 'none';
+    if (formLogin) formLogin.style.display = 'block';
+    if (btnLogin) btnLogin.classList.add('active');
     if (title) title.textContent = 'Sign In to TranceConnect';
-    if (subtitle) subtitle.textContent = 'Commercial Freight & Fleet Telematics Platform';
-    if (btnLogin) {
-      btnLogin.classList.add('btn-primary');
-      btnLogin.classList.remove('btn-glass');
-    }
+    if (subtitle) subtitle.textContent = 'National Commercial Freight & Telematics Platform';
     setTimeout(() => {
       const el = document.getElementById('loginIdentifier');
       if (el) el.focus();
-    }, 150);
-  } else if (tab === 'register') {
-    loginForm.style.display = 'none';
-    regForm.style.display = 'block';
-    forgotForm.style.display = 'none';
-    if (title) title.textContent = 'Create Verified Business Account';
-    if (subtitle) subtitle.textContent = 'Instant Onboarding for Shippers, Mills & Fleet Carriers';
-    if (btnRegister) {
-      btnRegister.classList.add('btn-primary');
-      btnRegister.classList.remove('btn-glass');
-    }
-    goToRegStep(1);
+    }, 120);
+  } else if (tab === 'dealer') {
+    if (formDealer) formDealer.style.display = 'block';
+    if (btnDealer) btnDealer.classList.add('active');
+    if (title) title.textContent = 'Shipper & Dealer Registration';
+    if (subtitle) subtitle.textContent = 'Instant Onboarding for Manufacturers, Mills & Shippers';
+    setTimeout(() => {
+      const el = document.getElementById('dealerCompany');
+      if (el) el.focus();
+    }, 120);
+  } else if (tab === 'transporter') {
+    if (formTransporter) formTransporter.style.display = 'block';
+    if (btnTransporter) btnTransporter.classList.add('active');
+    if (title) title.textContent = 'Fleet Transporter Registration';
+    if (subtitle) subtitle.textContent = 'Commercial Truck Operators, Fleets & Licensed Drivers';
+    setTimeout(() => {
+      const el = document.getElementById('transCompany');
+      if (el) el.focus();
+    }, 120);
   } else if (tab === 'forgot') {
-    loginForm.style.display = 'none';
-    regForm.style.display = 'none';
-    forgotForm.style.display = 'block';
+    if (formForgot) formForgot.style.display = 'block';
+    if (btnForgot) btnForgot.classList.add('active');
+    if (title) title.textContent = 'Reset Account Password';
+    if (subtitle) subtitle.textContent = 'Secure 6-Digit Email OTP Verification';
+
     const s1 = document.getElementById('otpStep1');
     const s2 = document.getElementById('otpStep2');
+    const s3 = document.getElementById('otpStep3');
     if (s1) s1.style.display = 'block';
     if (s2) s2.style.display = 'none';
-    if (title) title.textContent = 'Reset Account Password';
-    if (subtitle) subtitle.textContent = 'Secure 6-Digit OTP Recovery via Registered Email or Mobile';
-    if (btnForgot) {
-      btnForgot.classList.add('btn-primary');
-      btnForgot.classList.remove('btn-glass');
-    }
+    if (s3) s3.style.display = 'none';
+
     setTimeout(() => {
       const el = document.getElementById('forgotEmail');
       if (el) el.focus();
-    }, 150);
+    }, 120);
   }
 }
 
 // -------------------------------------------------------------
-// GUIDED REGISTRATION: ROLE SELECTION & STEP NAVIGATION
+// UI HELPERS: ATTACHMENTS, PASSWORD REVEAL & STRENGTH METER
 // -------------------------------------------------------------
-function selectRegistrationRole(role) {
-  const roleInput = document.getElementById('regRole');
-  if (roleInput) roleInput.value = role;
-
-  const cardDealer = document.getElementById('roleCardDealer');
-  const cardTrans = document.getElementById('roleCardTransporter');
-  const dealerFields = document.getElementById('dealerProfileFields');
-  const transFields = document.getElementById('transporterProfileFields');
-  const submitBtn = document.getElementById('btnRegisterSubmit');
-
-  if (role === 'dealer') {
-    if (cardDealer) cardDealer.classList.add('active');
-    if (cardTrans) cardTrans.classList.remove('active');
-    if (dealerFields) dealerFields.style.display = 'block';
-    if (transFields) transFields.style.display = 'none';
-    if (submitBtn) submitBtn.querySelector('.btn-text').textContent = 'Complete Verified Shipper Registration ✅';
+function handleDocSelection(input, displayId) {
+  const disp = document.getElementById(displayId);
+  if (!disp) return;
+  if (input.files && input.files[0]) {
+    const file = input.files[0];
+    const sizeMb = (file.size / (1024 * 1024)).toFixed(2);
+    disp.textContent = `Attached: ${file.name} (${sizeMb} MB)`;
+    disp.style.display = 'block';
   } else {
-    if (cardDealer) cardDealer.classList.remove('active');
-    if (cardTrans) cardTrans.classList.add('active');
-    if (dealerFields) dealerFields.style.display = 'none';
-    if (transFields) transFields.style.display = 'block';
-    if (submitBtn) submitBtn.querySelector('.btn-text').textContent = 'Complete Verified Transporter Registration ✅';
+    disp.textContent = '';
+    disp.style.display = 'none';
   }
 }
 
-function goToRegStep(step) {
-  // Validate before advancing
-  if (step === 2 && currentRegStep === 1) {
-    const isCompanyValid = validateCompany();
-    const isCityValid = validateCity();
-    const isGstValid = validateGst();
-    if (!isCompanyValid || !isCityValid || !isGstValid) {
-      showToast('Please fix required entity details in Step 1 before proceeding', 'warning');
-      focusFirstInvalid(['regCompany', 'regCity', 'regGst']);
-      return;
-    }
-  } else if (step === 3 && currentRegStep === 2) {
-    // Step 2 selects are pre-filled with reasonable defaults
+function togglePasswordVisibility(inputId, btn) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+  if (input.type === 'password') {
+    input.type = 'text';
+    if (btn) btn.textContent = '🙈';
+  } else {
+    input.type = 'password';
+    if (btn) btn.textContent = '👁️';
   }
-
-  currentRegStep = step;
-
-  // Show only target step section
-  [1, 2, 3].forEach(s => {
-    const sec = document.getElementById(`regStepSection${s}`);
-    const badge = document.getElementById(`regStepBadge${s}`);
-    if (sec) sec.style.display = s === step ? 'block' : 'none';
-    if (badge) {
-      badge.classList.remove('active', 'completed');
-      if (s === step) {
-        badge.classList.add('active');
-      } else if (s < step) {
-        badge.classList.add('completed');
-      }
-    }
-  });
-
-  const modalContainer = document.querySelector('#authModal .modal-container');
-  if (modalContainer) modalContainer.scrollTop = 0;
 }
 
-// -------------------------------------------------------------
-// REAL-TIME VALIDATION ENGINE & PASSWORD STRENGTH
-// -------------------------------------------------------------
-function setupAuthValidation() {
-  // Login fields
-  const loginIdent = document.getElementById('loginIdentifier');
-  if (loginIdent) {
-    loginIdent.addEventListener('input', () => validateIdentifier());
-    loginIdent.addEventListener('blur', () => validateIdentifier());
+function updatePasswordStrengthMeter(val, fillId, textId) {
+  const fill = document.getElementById(fillId);
+  const text = document.getElementById(textId);
+  if (!fill || !text) return;
+
+  if (!val || val.length === 0) {
+    fill.style.width = '0%';
+    fill.className = 'meter-bar-fill';
+    text.textContent = 'Enter Password';
+    text.className = 'meter-strength-text';
+    return;
   }
 
-  // Register Step 1
-  const regComp = document.getElementById('regCompany');
-  if (regComp) {
-    regComp.addEventListener('input', () => validateCompany());
-    regComp.addEventListener('blur', () => validateCompany());
-  }
-  const regGst = document.getElementById('regGst');
-  if (regGst) {
-    regGst.addEventListener('input', () => validateGst());
-    regGst.addEventListener('blur', () => validateGst());
-  }
-  const regCity = document.getElementById('regCity');
-  if (regCity) {
-    regCity.addEventListener('input', () => validateCity());
-    regCity.addEventListener('blur', () => validateCity());
-  }
+  let score = 0;
+  if (val.length >= 6) score += 1;
+  if (val.length >= 8) score += 1;
+  if (/[0-9]/.test(val)) score += 1;
+  if (/[a-z]/.test(val) && /[A-Z]/.test(val)) score += 1;
+  if (/[^A-Za-z0-9]/.test(val)) score += 1;
 
-  // Register Step 3
-  const regMob = document.getElementById('regMobile');
-  if (regMob) {
-    regMob.addEventListener('input', () => validateMobile());
-    regMob.addEventListener('blur', () => validateMobile());
-  }
-  const regEmail = document.getElementById('regEmail');
-  if (regEmail) {
-    regEmail.addEventListener('input', () => validateEmail());
-    regEmail.addEventListener('blur', () => validateEmail());
-  }
-  const regPass = document.getElementById('regPassword');
-  if (regPass) {
-    regPass.addEventListener('input', () => {
-      validatePassword();
-      validateConfirmPassword();
-    });
-    regPass.addEventListener('blur', () => validatePassword());
-  }
-  const regConfPass = document.getElementById('regConfirmPassword');
-  if (regConfPass) {
-    regConfPass.addEventListener('input', () => validateConfirmPassword());
-    regConfPass.addEventListener('blur', () => validateConfirmPassword());
+  if (score <= 1) {
+    fill.style.width = '25%';
+    fill.className = 'meter-bar-fill strength-weak';
+    text.textContent = 'Weak';
+    text.className = 'meter-strength-text strength-weak';
+  } else if (score <= 2) {
+    fill.style.width = '50%';
+    fill.className = 'meter-bar-fill strength-fair';
+    text.textContent = 'Fair';
+    text.className = 'meter-strength-text strength-fair';
+  } else if (score <= 3) {
+    fill.style.width = '75%';
+    fill.className = 'meter-bar-fill strength-good';
+    text.textContent = 'Good';
+    text.className = 'meter-strength-text strength-good';
+  } else {
+    fill.style.width = '100%';
+    fill.className = 'meter-bar-fill strength-strong';
+    text.textContent = 'Strong (Optimal)';
+    text.className = 'meter-strength-text strength-strong';
   }
 }
 
@@ -288,134 +261,7 @@ function setFieldValidationState(fieldId, isValid, errorMsg) {
   return isValid;
 }
 
-function validateIdentifier() {
-  const el = document.getElementById('loginIdentifier');
-  if (!el) return true;
-  const val = el.value.trim();
-  const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
-  const isMobile = /^[6-9]\d{9}$/.test(val);
-  const ok = val.length > 0 && (isEmail || isMobile);
-  return setFieldValidationState('loginIdentifier', ok, 'Enter a valid corporate email or 10-digit mobile number.');
-}
-
-function validateCompany() {
-  const el = document.getElementById('regCompany');
-  if (!el) return true;
-  const val = el.value.trim();
-  const ok = val.length >= 3;
-  return setFieldValidationState('regCompany', ok, 'Company/Firm legal name must be at least 3 characters.');
-}
-
-function validateGst() {
-  const el = document.getElementById('regGst');
-  if (!el) return true;
-  const val = el.value.trim().toUpperCase();
-  el.value = val;
-  if (!val) {
-    const wrap = document.getElementById('wrap_regGst');
-    if (wrap) {
-      wrap.classList.remove('has-invalid', 'has-valid');
-    }
-    const errEl = document.getElementById('err_regGst');
-    if (errEl) errEl.style.display = 'none';
-    return true;
-  }
-  // Standard 15-character Indian GSTIN Regex
-  const gstRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
-  const ok = gstRegex.test(val);
-  return setFieldValidationState('regGst', ok, 'GSTIN must be 15 valid alphanumeric characters (e.g. 27AAAAA0000A1Z5).');
-}
-
-function validateCity() {
-  const el = document.getElementById('regCity');
-  if (!el) return true;
-  const val = el.value.trim();
-  const ok = val.length >= 2;
-  return setFieldValidationState('regCity', ok, 'Please specify your primary city and state.');
-}
-
-function validateMobile() {
-  const el = document.getElementById('regMobile');
-  if (!el) return true;
-  const val = el.value.trim();
-  // Indian 10-digit mobile starting with 6, 7, 8, or 9
-  const ok = /^[6-9]\d{9}$/.test(val);
-  return setFieldValidationState('regMobile', ok, 'Must be a valid 10-digit Indian mobile number starting with 6, 7, 8, or 9.');
-}
-
-function validateEmail() {
-  const el = document.getElementById('regEmail');
-  if (!el) return true;
-  const val = el.value.trim();
-  const emailRegex = /^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$/;
-  const ok = emailRegex.test(val);
-  return setFieldValidationState('regEmail', ok, 'Enter a valid corporate email format (e.g. name@company.com).');
-}
-
-function validatePassword() {
-  const el = document.getElementById('regPassword');
-  if (!el) return true;
-  const val = el.value;
-
-  const hasMinLen = val.length >= 6;
-  const hasNumber = /[0-9]/.test(val);
-  const hasUpperLower = /[a-z]/.test(val) && /[A-Z]/.test(val);
-  const hasSpecial = /[^A-Za-z0-9]/.test(val);
-
-  // Update rule indicators
-  const updateRule = (id, passed) => {
-    const r = document.getElementById(id);
-    if (r) {
-      if (passed) r.classList.add('rule-passed');
-      else r.classList.remove('rule-passed');
-    }
-  };
-  updateRule('ruleMinLen', hasMinLen);
-  updateRule('ruleNumber', hasNumber);
-  updateRule('ruleUpperLower', hasUpperLower);
-  updateRule('ruleSpecial', hasSpecial);
-
-  // Compute strength score
-  let score = 0;
-  if (hasMinLen) score += 1;
-  if (val.length >= 8) score += 1;
-  if (hasNumber) score += 1;
-  if (hasUpperLower) score += 1;
-  if (hasSpecial) score += 1;
-
-  const fill = document.getElementById('regStrengthFill');
-  const text = document.getElementById('regStrengthText');
-
-  if (val.length === 0) {
-    if (fill) { fill.style.width = '0%'; fill.className = 'meter-bar-fill'; }
-    if (text) { text.textContent = 'Enter Password'; text.className = 'meter-strength-text'; }
-  } else if (score <= 1) {
-    if (fill) { fill.style.width = '25%'; fill.className = 'meter-bar-fill strength-weak'; }
-    if (text) { text.textContent = 'Weak'; text.className = 'meter-strength-text strength-weak'; }
-  } else if (score <= 2) {
-    if (fill) { fill.style.width = '50%'; fill.className = 'meter-bar-fill strength-fair'; }
-    if (text) { text.textContent = 'Fair'; text.className = 'meter-strength-text strength-fair'; }
-  } else if (score <= 3) {
-    if (fill) { fill.style.width = '75%'; fill.className = 'meter-bar-fill strength-good'; }
-    if (text) { text.textContent = 'Good'; text.className = 'meter-strength-text strength-good'; }
-  } else {
-    if (fill) { fill.style.width = '100%'; fill.className = 'meter-bar-fill strength-strong'; }
-    if (text) { text.textContent = 'Strong (Optimal)'; text.className = 'meter-strength-text strength-strong'; }
-  }
-
-  const ok = hasMinLen;
-  return setFieldValidationState('regPassword', ok, 'Password must be at least 6 characters.');
-}
-
-function validateConfirmPassword() {
-  const p1 = document.getElementById('regPassword');
-  const p2 = document.getElementById('regConfirmPassword');
-  if (!p1 || !p2) return true;
-  const ok = p2.value.length > 0 && p1.value === p2.value;
-  return setFieldValidationState('regConfirmPassword', ok, 'Passwords do not match. Please re-type identically.');
-}
-
-function focusFirstInvalid(fieldIds) {
+function focusFirstInvalidField(fieldIds) {
   for (const id of fieldIds) {
     const wrap = document.getElementById(`wrap_${id}`);
     if (wrap && wrap.classList.contains('has-invalid')) {
@@ -430,7 +276,296 @@ function focusFirstInvalid(fieldIds) {
 }
 
 // -------------------------------------------------------------
-// SUBMISSIONS: LOGIN & REGISTRATION
+// REAL-TIME FIELD VALIDATORS
+// -------------------------------------------------------------
+function validateIdentifier() {
+  const el = document.getElementById('loginIdentifier');
+  if (!el) return true;
+  const val = el.value.trim();
+  const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
+  const isMobile = /^[6-9]\d{9}$/.test(val);
+  const ok = val.length > 0 && (isEmail || isMobile);
+  return setFieldValidationState('loginIdentifier', ok, 'Enter a valid registered email or 10-digit mobile number.');
+}
+
+function validateEmailVal(emailVal, fieldId) {
+  const ok = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal.trim());
+  return setFieldValidationState(fieldId, ok, 'Enter a valid email address, for example name@example.com.');
+}
+
+function validateMobileVal(mobileVal, fieldId) {
+  const clean = mobileVal.replace(/\D/g, '').replace(/^91/, '').replace(/^0/, '');
+  const ok = /^[6-9]\d{9}$/.test(clean);
+  return setFieldValidationState(fieldId, ok, 'Please enter a valid 10-digit Indian mobile number.');
+}
+
+function validateGstVal(gstVal, fieldId) {
+  const val = gstVal.trim().toUpperCase();
+  if (!val) {
+    // Optional field
+    const wrap = document.getElementById(`wrap_${fieldId}`);
+    if (wrap) wrap.classList.remove('has-invalid', 'has-valid');
+    const errEl = document.getElementById(`err_${fieldId}`);
+    if (errEl) errEl.style.display = 'none';
+    return true;
+  }
+  const gstRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+  const ok = gstRegex.test(val);
+  return setFieldValidationState(fieldId, ok, 'Please enter a valid 15-character GSTIN (e.g. 27AAAAA0000A1Z5).');
+}
+
+function validateDealerCompany() {
+  const el = document.getElementById('dealerCompany');
+  const val = el ? el.value.trim() : '';
+  const ok = val.length >= 2;
+  return setFieldValidationState('dealerCompany', ok, 'Please enter your registered company name.');
+}
+
+function validateDealerMobile() {
+  const el = document.getElementById('dealerMobile');
+  return validateMobileVal(el ? el.value : '', 'dealerMobile');
+}
+
+function validateDealerEmail() {
+  const el = document.getElementById('dealerEmail');
+  return validateEmailVal(el ? el.value : '', 'dealerEmail');
+}
+
+function validateDealerGst() {
+  const el = document.getElementById('dealerGst');
+  return validateGstVal(el ? el.value : '', 'dealerGst');
+}
+
+function validateDealerPassword() {
+  const p1 = document.getElementById('dealerPassword');
+  const val = p1 ? p1.value : '';
+  updatePasswordStrengthMeter(val, 'dealerStrengthFill', 'dealerStrengthText');
+  const ok = val.length >= 6;
+  return setFieldValidationState('dealerPassword', ok, 'Password must be at least 6 characters long.');
+}
+
+function validateDealerConfirmPassword() {
+  const p1 = document.getElementById('dealerPassword');
+  const p2 = document.getElementById('dealerConfirmPassword');
+  if (!p1 || !p2) return true;
+  const ok = p2.value.length > 0 && p1.value === p2.value;
+  return setFieldValidationState('dealerConfirmPassword', ok, 'Your passwords do not match. Please check both password fields.');
+}
+
+function validateTransCompany() {
+  const el = document.getElementById('transCompany');
+  const val = el ? el.value.trim() : '';
+  const ok = val.length >= 2;
+  return setFieldValidationState('transCompany', ok, 'Please enter your registered transport company name.');
+}
+
+function validateTransMobile() {
+  const el = document.getElementById('transMobile');
+  return validateMobileVal(el ? el.value : '', 'transMobile');
+}
+
+function validateTransEmail() {
+  const el = document.getElementById('transEmail');
+  return validateEmailVal(el ? el.value : '', 'transEmail');
+}
+
+function validateTransGst() {
+  const el = document.getElementById('transGst');
+  return validateGstVal(el ? el.value : '', 'transGst');
+}
+
+function validateTransPassword() {
+  const p1 = document.getElementById('transPassword');
+  const val = p1 ? p1.value : '';
+  updatePasswordStrengthMeter(val, 'transStrengthFill', 'transStrengthText');
+  const ok = val.length >= 6;
+  return setFieldValidationState('transPassword', ok, 'Password must be at least 6 characters long.');
+}
+
+function validateTransConfirmPassword() {
+  const p1 = document.getElementById('transPassword');
+  const p2 = document.getElementById('transConfirmPassword');
+  if (!p1 || !p2) return true;
+  const ok = p2.value.length > 0 && p1.value === p2.value;
+  return setFieldValidationState('transConfirmPassword', ok, 'Your passwords do not match. Please check both password fields.');
+}
+
+function validateForgotEmail() {
+  const el = document.getElementById('forgotEmail');
+  return validateEmailVal(el ? el.value : '', 'forgotEmail');
+}
+
+function validateForgotNewPassword() {
+  const p1 = document.getElementById('forgotNewPassword');
+  const val = p1 ? p1.value : '';
+  updatePasswordStrengthMeter(val, 'forgotStrengthFill', 'forgotStrengthText');
+  const ok = val.length >= 6;
+  return setFieldValidationState('forgotNewPassword', ok, 'Password must be at least 6 characters long.');
+}
+
+function validateForgotConfirmPassword() {
+  const p1 = document.getElementById('forgotNewPassword');
+  const p2 = document.getElementById('forgotConfirmPassword');
+  if (!p1 || !p2) return true;
+  const ok = p2.value.length > 0 && p1.value === p2.value;
+  return setFieldValidationState('forgotConfirmPassword', ok, 'Your passwords do not match. Please check both password fields.');
+}
+
+// -------------------------------------------------------------
+// REAL-TIME EVENT ATTACHMENTS
+// -------------------------------------------------------------
+function setupAuthValidation() {
+  // Login
+  const loginIdent = document.getElementById('loginIdentifier');
+  if (loginIdent) {
+    loginIdent.addEventListener('input', validateIdentifier);
+    loginIdent.addEventListener('blur', validateIdentifier);
+  }
+
+  // Dealer Form
+  const dc = document.getElementById('dealerCompany');
+  if (dc) { dc.addEventListener('input', validateDealerCompany); dc.addEventListener('blur', validateDealerCompany); }
+  const dm = document.getElementById('dealerMobile');
+  if (dm) { dm.addEventListener('input', validateDealerMobile); dm.addEventListener('blur', validateDealerMobile); }
+  const de = document.getElementById('dealerEmail');
+  if (de) { de.addEventListener('input', validateDealerEmail); de.addEventListener('blur', validateDealerEmail); }
+  const dg = document.getElementById('dealerGst');
+  if (dg) { dg.addEventListener('input', validateDealerGst); dg.addEventListener('blur', validateDealerGst); }
+  const dp = document.getElementById('dealerPassword');
+  if (dp) {
+    dp.addEventListener('input', () => { validateDealerPassword(); validateDealerConfirmPassword(); });
+    dp.addEventListener('blur', validateDealerPassword);
+  }
+  const dcp = document.getElementById('dealerConfirmPassword');
+  if (dcp) { dcp.addEventListener('input', validateDealerConfirmPassword); dcp.addEventListener('blur', validateDealerConfirmPassword); }
+
+  // Transporter Form
+  const tc = document.getElementById('transCompany');
+  if (tc) { tc.addEventListener('input', validateTransCompany); tc.addEventListener('blur', validateTransCompany); }
+  const tm = document.getElementById('transMobile');
+  if (tm) { tm.addEventListener('input', validateTransMobile); tm.addEventListener('blur', validateTransMobile); }
+  const te = document.getElementById('transEmail');
+  if (te) { te.addEventListener('input', validateTransEmail); te.addEventListener('blur', validateTransEmail); }
+  const tg = document.getElementById('transGst');
+  if (tg) { tg.addEventListener('input', validateTransGst); tg.addEventListener('blur', validateTransGst); }
+  const tp = document.getElementById('transPassword');
+  if (tp) {
+    tp.addEventListener('input', () => { validateTransPassword(); validateTransConfirmPassword(); });
+    tp.addEventListener('blur', validateTransPassword);
+  }
+  const tcp = document.getElementById('transConfirmPassword');
+  if (tcp) { tcp.addEventListener('input', validateTransConfirmPassword); tcp.addEventListener('blur', validateTransConfirmPassword); }
+
+  // Forgot Form
+  const fe = document.getElementById('forgotEmail');
+  if (fe) { fe.addEventListener('input', validateForgotEmail); fe.addEventListener('blur', validateForgotEmail); }
+  const fnp = document.getElementById('forgotNewPassword');
+  if (fnp) {
+    fnp.addEventListener('input', () => { validateForgotNewPassword(); validateForgotConfirmPassword(); });
+    fnp.addEventListener('blur', validateForgotNewPassword);
+  }
+  const fcp = document.getElementById('forgotConfirmPassword');
+  if (fcp) { fcp.addEventListener('input', validateForgotConfirmPassword); fcp.addEventListener('blur', validateForgotConfirmPassword); }
+
+  // Setup 6-Box OTP Inputs
+  setupOtpInputs();
+}
+
+// -------------------------------------------------------------
+// 6-BOX OTP AUTO-FOCUS, PASTE & BACKSPACE NAVIGATION
+// -------------------------------------------------------------
+function setupOtpInputs() {
+  const digits = [0, 1, 2, 3, 4, 5].map(i => document.getElementById(`otpDigit${i}`));
+
+  digits.forEach((input, index) => {
+    if (!input) return;
+
+    input.addEventListener('input', (e) => {
+      const val = input.value.replace(/[^0-9]/g, '');
+      input.value = val ? val.slice(-1) : '';
+
+      if (input.value) {
+        input.classList.add('filled');
+        if (index < 5 && digits[index + 1]) {
+          digits[index + 1].focus();
+        } else if (index === 5) {
+          const fullOtp = digits.map(d => d ? d.value : '').join('');
+          if (fullOtp.length === 6) {
+            const verifyBtn = document.getElementById('btnVerifyOtp');
+            if (verifyBtn) verifyBtn.focus();
+          }
+        }
+      } else {
+        input.classList.remove('filled');
+      }
+      clearOtpDigitErrors();
+    });
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Backspace') {
+        if (!input.value && index > 0 && digits[index - 1]) {
+          digits[index - 1].focus();
+          digits[index - 1].value = '';
+          digits[index - 1].classList.remove('filled');
+        } else {
+          input.value = '';
+          input.classList.remove('filled');
+        }
+        clearOtpDigitErrors();
+      } else if (e.key === 'ArrowLeft' && index > 0 && digits[index - 1]) {
+        digits[index - 1].focus();
+      } else if (e.key === 'ArrowRight' && index < 5 && digits[index + 1]) {
+        digits[index + 1].focus();
+      }
+    });
+
+    input.addEventListener('paste', (e) => {
+      e.preventDefault();
+      const pasteData = (e.clipboardData || window.clipboardData).getData('text').trim();
+      const numOnly = pasteData.replace(/[^0-9]/g, '').slice(0, 6);
+      if (numOnly.length > 0) {
+        numOnly.split('').forEach((char, i) => {
+          if (digits[i]) {
+            digits[i].value = char;
+            digits[i].classList.add('filled');
+          }
+        });
+        const targetIdx = Math.min(numOnly.length, 5);
+        if (digits[targetIdx]) digits[targetIdx].focus();
+        clearOtpDigitErrors();
+        if (numOnly.length === 6) {
+          const verifyBtn = document.getElementById('btnVerifyOtp');
+          if (verifyBtn) verifyBtn.focus();
+        }
+      }
+    });
+
+    input.addEventListener('focus', () => {
+      input.select();
+    });
+  });
+}
+
+function clearOtpDigitErrors() {
+  const errEl = document.getElementById('err_otpDigits');
+  if (errEl) errEl.style.display = 'none';
+  [0, 1, 2, 3, 4, 5].forEach(i => {
+    const el = document.getElementById(`otpDigit${i}`);
+    if (el) el.classList.remove('is-invalid');
+  });
+}
+
+function getEnteredOtp() {
+  let otp = '';
+  for (let i = 0; i < 6; i++) {
+    const el = document.getElementById(`otpDigit${i}`);
+    otp += el ? el.value.trim() : '';
+  }
+  return otp;
+}
+
+// -------------------------------------------------------------
+// SUBMISSION: USER LOGIN (EMAIL OR MOBILE)
 // -------------------------------------------------------------
 async function handleLoginSubmit(e) {
   e.preventDefault();
@@ -438,15 +573,18 @@ async function handleLoginSubmit(e) {
   const pass = document.getElementById('loginPassword').value;
 
   if (!validateIdentifier() || !pass) {
-    showToast('Please enter both your email/mobile and password', 'warning');
     if (!ident) document.getElementById('loginIdentifier').focus();
-    else document.getElementById('loginPassword').focus();
+    else {
+      setFieldValidationState('loginPassword', false, 'Password is required.');
+      document.getElementById('loginPassword').focus();
+    }
     return;
   }
 
   const btn = document.getElementById('btnLoginSubmit');
   const originalText = btn.innerHTML;
   btn.disabled = true;
+  btn.classList.add('btn-loading');
   btn.innerHTML = '<span class="pulse-dot"></span> Authenticating...';
 
   try {
@@ -458,9 +596,11 @@ async function handleLoginSubmit(e) {
     const data = await res.json();
 
     if (!res.ok) {
-      showToast(data.error || 'Authentication failed. Please verify credentials.', 'error');
-      setFieldValidationState('loginPassword', false, data.error || 'Invalid credentials');
+      const errMsg = data.error || 'Authentication failed. Please verify credentials.';
+      showToast(errMsg, 'error');
+      setFieldValidationState('loginPassword', false, errMsg);
       btn.disabled = false;
+      btn.classList.remove('btn-loading');
       btn.innerHTML = originalText;
       return;
     }
@@ -475,91 +615,77 @@ async function handleLoginSubmit(e) {
       else if (data.user.role === 'transporter') window.location.href = '/transporter';
       else if (data.user.role === 'admin') window.location.href = '/admin';
       else window.location.reload();
-    }, 450);
+    }, 400);
   } catch (err) {
-    showToast('Network error during login: ' + err.message, 'error');
+    showToast('Unable to connect to the server. Your entered information has been preserved. Please try again.', 'error');
     btn.disabled = false;
+    btn.classList.remove('btn-loading');
     btn.innerHTML = originalText;
   }
 }
 
-async function handleRegisterSubmit(e) {
+// -------------------------------------------------------------
+// SUBMISSION: STREAMLINED DEALER REGISTRATION
+// -------------------------------------------------------------
+async function handleDealerRegisterSubmit(e) {
   e.preventDefault();
 
-  // Validate all fields across all 3 steps
-  const validComp = validateCompany();
-  const validCity = validateCity();
-  const validGst = validateGst();
-  const validMob = validateMobile();
-  const validEmail = validateEmail();
-  const validPass = validatePassword();
-  const validConf = validateConfirmPassword();
+  const validComp = validateDealerCompany();
+  const validMob = validateDealerMobile();
+  const validEmail = validateDealerEmail();
+  const validGst = validateDealerGst();
+  const validPass = validateDealerPassword();
+  const validConf = validateDealerConfirmPassword();
 
-  if (!validComp || !validCity || !validGst) {
-    goToRegStep(1);
-    focusFirstInvalid(['regCompany', 'regCity', 'regGst']);
-    showToast('Please complete valid business entity details in Step 1', 'warning');
+  if (!validComp || !validMob || !validEmail || !validGst || !validPass || !validConf) {
+    focusFirstInvalidField([
+      'dealerCompany', 'dealerMobile', 'dealerEmail', 'dealerGst', 'dealerPassword', 'dealerConfirmPassword'
+    ]);
     return;
   }
 
-  if (!validMob || !validEmail || !validPass || !validConf) {
-    goToRegStep(3);
-    focusFirstInvalid(['regMobile', 'regEmail', 'regPassword', 'regConfirmPassword']);
-    showToast('Please fix required credentials and security fields in Step 3', 'warning');
-    return;
-  }
+  const company_name = document.getElementById('dealerCompany').value.trim();
+  const mobile = document.getElementById('dealerMobile').value.trim();
+  const email = document.getElementById('dealerEmail').value.trim();
+  const gst_number = document.getElementById('dealerGst').value.trim().toUpperCase();
+  const password = document.getElementById('dealerPassword').value;
+  const confirm_password = document.getElementById('dealerConfirmPassword').value;
 
-  const role = document.getElementById('regRole').value;
-  const company_name = document.getElementById('regCompany').value.trim();
-  const city = document.getElementById('regCity').value.trim();
-  const gst_number = document.getElementById('regGst').value.trim().toUpperCase();
-  const mobile = document.getElementById('regMobile').value.trim();
-  const email = document.getElementById('regEmail').value.trim();
-  const password = document.getElementById('regPassword').value;
-  const confirm_password = document.getElementById('regConfirmPassword').value;
-
-  const cargo_type = document.getElementById('regCargoType') ? document.getElementById('regCargoType').value : '';
-  const monthly_volume = document.getElementById('regMonthlyVolume') ? document.getElementById('regMonthlyVolume').value : '';
-  const fleet_size = document.getElementById('regFleetSize') ? document.getElementById('regFleetSize').value : '';
-  const vehicle_types = document.getElementById('regTruckTypes') ? document.getElementById('regTruckTypes').value : '';
-  const operating_routes = document.getElementById('regOperatingRoutes') ? document.getElementById('regOperatingRoutes').value.trim() : '';
-
-  const btn = document.getElementById('btnRegisterSubmit');
+  const btn = document.getElementById('btnDealerSubmit');
   const originalText = btn.innerHTML;
   btn.disabled = true;
-  btn.innerHTML = '<span class="pulse-dot"></span> Creating Enterprise Account...';
+  btn.classList.add('btn-loading');
+  btn.innerHTML = '<span class="pulse-dot"></span> Creating Verified Dealer Account...';
 
   try {
     const res = await fetch('/api/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        role,
+        role: 'dealer',
         company_name,
-        city,
-        gst_number,
         mobile,
         email,
+        gstin: gst_number,
         password,
-        confirm_password,
-        cargo_type,
-        monthly_volume,
-        fleet_size,
-        vehicle_types,
-        operating_routes
+        confirm_password
       })
     });
     const data = await res.json();
 
     if (!res.ok) {
-      showToast(data.error || 'Registration failed', 'error');
+      const errMsg = data.error || 'Registration could not be completed.';
+      showToast(errMsg, 'error');
       btn.disabled = false;
+      btn.classList.remove('btn-loading');
       btn.innerHTML = originalText;
-      // If error mentions email or mobile, jump to Step 3
-      if (data.error && (data.error.includes('email') || data.error.includes('mobile'))) {
-        goToRegStep(3);
-        if (data.error.includes('mobile')) setFieldValidationState('regMobile', false, data.error);
-        if (data.error.includes('email')) setFieldValidationState('regEmail', false, data.error);
+
+      if (data.field === 'email' || errMsg.toLowerCase().includes('email')) {
+        setFieldValidationState('dealerEmail', false, 'This email is already registered. Please log in or reset your password.');
+        document.getElementById('dealerEmail').focus();
+      } else if (data.field === 'mobile' || errMsg.toLowerCase().includes('mobile')) {
+        setFieldValidationState('dealerMobile', false, 'This mobile number is already registered. Please log in or reset your password.');
+        document.getElementById('dealerMobile').focus();
       }
       return;
     }
@@ -567,33 +693,126 @@ async function handleRegisterSubmit(e) {
     localStorage.setItem('tc_token', data.token);
     localStorage.setItem('tc_user', JSON.stringify(data.user));
 
-    showToast('Registration successful! Redirecting to your command dashboard...', 'success');
+    showToast('Dealer account created successfully! Redirecting...', 'success');
 
     setTimeout(() => {
-      if (role === 'dealer') window.location.href = '/dealer';
-      else window.location.href = '/transporter';
-    }, 500);
+      window.location.href = '/dealer';
+    }, 450);
   } catch (err) {
-    showToast('Registration network error: ' + err.message, 'error');
+    showToast('Unable to connect to the server. Your entered information has been preserved. Please try again.', 'error');
     btn.disabled = false;
+    btn.classList.remove('btn-loading');
     btn.innerHTML = originalText;
   }
 }
 
 // -------------------------------------------------------------
-// FORGOT PASSWORD & EXPIRING OTP RECOVERY
+// SUBMISSION: TRANSPORTER REGISTRATION (WITH KYC ATTACHMENTS)
+// -------------------------------------------------------------
+async function handleTransporterRegisterSubmit(e) {
+  e.preventDefault();
+
+  const validComp = validateTransCompany();
+  const validMob = validateTransMobile();
+  const validEmail = validateTransEmail();
+  const validGst = validateTransGst();
+  const validPass = validateTransPassword();
+  const validConf = validateTransConfirmPassword();
+
+  if (!validComp || !validMob || !validEmail || !validGst || !validPass || !validConf) {
+    focusFirstInvalidField([
+      'transCompany', 'transMobile', 'transEmail', 'transGst', 'transPassword', 'transConfirmPassword'
+    ]);
+    return;
+  }
+
+  const company_name = document.getElementById('transCompany').value.trim();
+  const mobile = document.getElementById('transMobile').value.trim();
+  const email = document.getElementById('transEmail').value.trim();
+  const gst_number = document.getElementById('transGst').value.trim().toUpperCase();
+  const password = document.getElementById('transPassword').value;
+  const confirm_password = document.getElementById('transConfirmPassword').value;
+
+  const aadhaarInput = document.getElementById('transAadhaarFile');
+  const licenseInput = document.getElementById('transLicenseFile');
+
+  const formData = new FormData();
+  formData.append('role', 'transporter');
+  formData.append('company_name', company_name);
+  formData.append('mobile', mobile);
+  formData.append('email', email);
+  formData.append('gstin', gst_number);
+  formData.append('password', password);
+  formData.append('confirm_password', confirm_password);
+
+  if (aadhaarInput && aadhaarInput.files && aadhaarInput.files[0]) {
+    formData.append('aadhaar_file', aadhaarInput.files[0]);
+  }
+  if (licenseInput && licenseInput.files && licenseInput.files[0]) {
+    formData.append('license_file', licenseInput.files[0]);
+  }
+
+  const btn = document.getElementById('btnTransSubmit');
+  const originalText = btn.innerHTML;
+  btn.disabled = true;
+  btn.classList.add('btn-loading');
+  btn.innerHTML = '<span class="pulse-dot"></span> Registering Transporter Fleet...';
+
+  try {
+    const res = await fetch('/api/auth/register', {
+      method: 'POST',
+      body: formData
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      const errMsg = data.error || 'Transporter registration failed.';
+      showToast(errMsg, 'error');
+      btn.disabled = false;
+      btn.classList.remove('btn-loading');
+      btn.innerHTML = originalText;
+
+      if (data.field === 'email' || errMsg.toLowerCase().includes('email')) {
+        setFieldValidationState('transEmail', false, 'This email is already registered. Please log in or reset your password.');
+        document.getElementById('transEmail').focus();
+      } else if (data.field === 'mobile' || errMsg.toLowerCase().includes('mobile')) {
+        setFieldValidationState('transMobile', false, 'This mobile number is already registered. Please log in or reset your password.');
+        document.getElementById('transMobile').focus();
+      }
+      return;
+    }
+
+    localStorage.setItem('tc_token', data.token);
+    localStorage.setItem('tc_user', JSON.stringify(data.user));
+
+    showToast('Transporter profile registered! Redirecting...', 'success');
+
+    setTimeout(() => {
+      window.location.href = '/transporter';
+    }, 450);
+  } catch (err) {
+    showToast('Unable to connect to the server. Your entered information has been preserved. Please try again.', 'error');
+    btn.disabled = false;
+    btn.classList.remove('btn-loading');
+    btn.innerHTML = originalText;
+  }
+}
+
+// -------------------------------------------------------------
+// FORGOT PASSWORD: STEP 1 (REQUEST OTP)
 // -------------------------------------------------------------
 async function requestPasswordOtp() {
   const emailInput = document.getElementById('forgotEmail');
   const email = emailInput ? emailInput.value.trim() : '';
-  if (!email) {
-    showToast('Please enter your registered email or 10-digit mobile', 'warning');
+  if (!email || !validateForgotEmail()) {
     if (emailInput) emailInput.focus();
     return;
   }
 
   const btn = document.getElementById('btnForgotOtpRequest');
+  const originalText = btn.innerHTML;
   btn.disabled = true;
+  btn.classList.add('btn-loading');
   btn.innerHTML = '<span class="pulse-dot"></span> Generating OTP...';
 
   try {
@@ -605,7 +824,8 @@ async function requestPasswordOtp() {
     const data = await res.json();
 
     btn.disabled = false;
-    btn.innerHTML = '<span class="btn-text">Generate 6-Digit OTP ➔</span>';
+    btn.classList.remove('btn-loading');
+    btn.innerHTML = originalText;
 
     if (!res.ok) {
       showToast(data.error || 'Could not initiate OTP recovery', 'error');
@@ -613,50 +833,97 @@ async function requestPasswordOtp() {
     }
 
     showToast(data.message || '6-Digit OTP sent successfully!', 'success');
+
+    const recip = document.getElementById('otpRecipientDisplay');
+    if (recip) recip.textContent = `Dispatched to: ${email}`;
+
     document.getElementById('otpStep1').style.display = 'none';
     document.getElementById('otpStep2').style.display = 'block';
 
-    // Start 60-second cooldown timer for resend
+    // Start 5-minute expiration countdown & 60-second cooldown
+    startOtpExpirationTimer();
     startOtpCooldownTimer();
 
-    // If development/test environment OTP returned in response, prefill for convenience
+    // Clear digit boxes
+    for (let i = 0; i < 6; i++) {
+      const el = document.getElementById(`otpDigit${i}`);
+      if (el) { el.value = ''; el.classList.remove('filled', 'is-invalid'); }
+    }
+
+    // Prefill in local testing if returned
     if (data.otp_code) {
-      const codeInput = document.getElementById('forgotOtpCode');
-      if (codeInput) codeInput.value = data.otp_code;
+      const digits = data.otp_code.split('');
+      digits.forEach((d, i) => {
+        const box = document.getElementById(`otpDigit${i}`);
+        if (box) { box.value = d; box.classList.add('filled'); }
+      });
       showToast(`Verification OTP Code: ${data.otp_code}`, 'info');
     }
 
     setTimeout(() => {
-      const otpInput = document.getElementById('forgotOtpCode');
-      if (otpInput && !otpInput.value) otpInput.focus();
-      else {
-        const passInput = document.getElementById('forgotNewPassword');
-        if (passInput) passInput.focus();
-      }
-    }, 200);
+      const box0 = document.getElementById('otpDigit0');
+      if (box0) box0.focus();
+    }, 150);
   } catch (err) {
-    showToast('Network error requesting OTP: ' + err.message, 'error');
+    showToast('Unable to connect to the server. Please try again.', 'error');
     btn.disabled = false;
-    btn.innerHTML = '<span class="btn-text">Generate 6-Digit OTP ➔</span>';
+    btn.classList.remove('btn-loading');
+    btn.innerHTML = originalText;
   }
+}
+
+function startOtpExpirationTimer() {
+  otpExpirySeconds = 300; // 5 minutes
+  const timerDisplay = document.getElementById('otpCountdownMinutes');
+  const verifyBtn = document.getElementById('btnVerifyOtp');
+  if (verifyBtn) verifyBtn.disabled = false;
+
+  if (otpExpiryTimer) clearInterval(otpExpiryTimer);
+
+  otpExpiryTimer = setInterval(() => {
+    otpExpirySeconds--;
+    const mins = Math.floor(otpExpirySeconds / 60);
+    const secs = otpExpirySeconds % 60;
+    const formatted = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+
+    if (timerDisplay) timerDisplay.textContent = formatted;
+
+    if (otpExpirySeconds <= 0) {
+      clearInterval(otpExpiryTimer);
+      if (timerDisplay) timerDisplay.textContent = 'Expired';
+      if (verifyBtn) verifyBtn.disabled = true;
+      const errEl = document.getElementById('err_otpDigits');
+      if (errEl) {
+        errEl.textContent = 'OTP has expired. Please click Resend OTP to request a fresh code.';
+        errEl.style.display = 'flex';
+      }
+    }
+  }, 1000);
 }
 
 function startOtpCooldownTimer() {
   otpCooldownSeconds = 60;
   const resendBtn = document.getElementById('btnResendOtp');
-  const timerDisplay = document.getElementById('otpCountdownSeconds');
-  if (resendBtn) resendBtn.disabled = true;
+  if (resendBtn) {
+    resendBtn.disabled = true;
+    resendBtn.textContent = `Resend OTP (${otpCooldownSeconds}s)`;
+  }
 
   if (otpCooldownTimer) clearInterval(otpCooldownTimer);
 
   otpCooldownTimer = setInterval(() => {
     otpCooldownSeconds--;
-    if (timerDisplay) timerDisplay.textContent = `${otpCooldownSeconds}s`;
+    if (resendBtn) {
+      if (otpCooldownSeconds > 0) {
+        resendBtn.textContent = `Resend OTP (${otpCooldownSeconds}s)`;
+      } else {
+        resendBtn.disabled = false;
+        resendBtn.textContent = 'Resend OTP ➔';
+      }
+    }
 
     if (otpCooldownSeconds <= 0) {
       clearInterval(otpCooldownTimer);
-      if (resendBtn) resendBtn.disabled = false;
-      if (timerDisplay) timerDisplay.textContent = 'Now';
     }
   }, 1000);
 }
@@ -665,63 +932,148 @@ function resendPasswordOtp() {
   requestPasswordOtp();
 }
 
+// -------------------------------------------------------------
+// FORGOT PASSWORD: STEP 2 (VERIFY OTP)
+// -------------------------------------------------------------
+async function verifyOtpCode() {
+  const email = document.getElementById('forgotEmail').value.trim();
+  const otp_code = getEnteredOtp();
+
+  if (otp_code.length !== 6) {
+    const errEl = document.getElementById('err_otpDigits');
+    if (errEl) {
+      errEl.textContent = 'Please enter all 6 digits of the verification code.';
+      errEl.style.display = 'flex';
+    }
+    for (let i = 0; i < 6; i++) {
+      const box = document.getElementById(`otpDigit${i}`);
+      if (box && !box.value) { box.focus(); break; }
+    }
+    return;
+  }
+
+  const btn = document.getElementById('btnVerifyOtp');
+  const originalText = btn.innerHTML;
+  btn.disabled = true;
+  btn.classList.add('btn-loading');
+  btn.innerHTML = '<span class="pulse-dot"></span> Verifying Code...';
+
+  try {
+    const res = await fetch('/api/auth/verify-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, otp_code })
+    });
+    const data = await res.json();
+
+    btn.disabled = false;
+    btn.classList.remove('btn-loading');
+    btn.innerHTML = originalText;
+
+    if (!res.ok) {
+      const errMsg = data.error || 'Invalid or expired OTP code.';
+      const errEl = document.getElementById('err_otpDigits');
+      if (errEl) {
+        errEl.textContent = errMsg;
+        errEl.style.display = 'flex';
+      }
+      for (let i = 0; i < 6; i++) {
+        const box = document.getElementById(`otpDigit${i}`);
+        if (box) box.classList.add('is-invalid');
+      }
+      showToast(errMsg, 'error');
+      return;
+    }
+
+    currentResetSessionToken = data.reset_session_token;
+    if (otpExpiryTimer) clearInterval(otpExpiryTimer);
+
+    showToast('OTP verified successfully! Create your new password.', 'success');
+
+    document.getElementById('otpStep2').style.display = 'none';
+    document.getElementById('otpStep3').style.display = 'block';
+
+    setTimeout(() => {
+      const passInput = document.getElementById('forgotNewPassword');
+      if (passInput) passInput.focus();
+    }, 150);
+  } catch (err) {
+    showToast('Unable to connect to the server. Please try again.', 'error');
+    btn.disabled = false;
+    btn.classList.remove('btn-loading');
+    btn.innerHTML = originalText;
+  }
+}
+
+// -------------------------------------------------------------
+// FORGOT PASSWORD: STEP 3 (SAVE NEW PASSWORD)
+// -------------------------------------------------------------
 async function submitPasswordReset() {
   const email = document.getElementById('forgotEmail').value.trim();
-  const otp_code = document.getElementById('forgotOtpCode').value.trim();
+  const validPass = validateForgotNewPassword();
+  const validConf = validateForgotConfirmPassword();
+
+  if (!validPass || !validConf) {
+    if (!validPass) document.getElementById('forgotNewPassword').focus();
+    else document.getElementById('forgotConfirmPassword').focus();
+    return;
+  }
+
+  if (!currentResetSessionToken) {
+    showToast('Reset authorization expired. Please restart OTP verification.', 'warning');
+    setAuthTab('forgot');
+    return;
+  }
+
   const new_password = document.getElementById('forgotNewPassword').value;
   const confirm_password = document.getElementById('forgotConfirmPassword').value;
 
-  if (!otp_code || otp_code.length !== 6) {
-    showToast('Please enter the exact 6-digit OTP received', 'warning');
-    document.getElementById('forgotOtpCode').focus();
-    return;
-  }
-
-  if (!new_password || new_password.length < 6) {
-    showToast('New password must be at least 6 characters', 'warning');
-    document.getElementById('forgotNewPassword').focus();
-    return;
-  }
-
-  if (new_password !== confirm_password) {
-    showToast('Passwords do not match. Please re-enter identically.', 'warning');
-    document.getElementById('forgotConfirmPassword').focus();
-    const errEl = document.getElementById('err_forgotConfirmPassword');
-    if (errEl) errEl.style.display = 'flex';
-    return;
-  }
-
   const btn = document.getElementById('btnSubmitReset');
+  const originalText = btn.innerHTML;
   btn.disabled = true;
-  btn.innerHTML = '<span class="pulse-dot"></span> Resetting Password...';
+  btn.classList.add('btn-loading');
+  btn.innerHTML = '<span class="pulse-dot"></span> Updating Password...';
 
   try {
     const res = await fetch('/api/auth/reset-password', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, otp_code, new_password, confirm_password })
+      body: JSON.stringify({
+        email,
+        reset_session_token: currentResetSessionToken,
+        new_password,
+        confirm_password
+      })
     });
     const data = await res.json();
+
     btn.disabled = false;
-    btn.innerHTML = '<span class="btn-text">Confirm & Reset Password ✅</span>';
+    btn.classList.remove('btn-loading');
+    btn.innerHTML = originalText;
 
     if (!res.ok) {
-      showToast(data.error || 'Failed to reset password', 'error');
+      showToast(data.error || 'Failed to update password.', 'error');
       return;
     }
 
-    showToast('Password updated successfully! Please sign in with your new credentials.', 'success');
+    currentResetSessionToken = null;
+    showToast('Your password has been changed successfully. Please log in using your new password.', 'success');
+
     setAuthTab('login');
     const loginIdent = document.getElementById('loginIdentifier');
     if (loginIdent) {
       loginIdent.value = email;
       const pass = document.getElementById('loginPassword');
-      if (pass) pass.focus();
+      if (pass) {
+        pass.value = '';
+        pass.focus();
+      }
     }
   } catch (err) {
-    showToast('Password reset network error: ' + err.message, 'error');
+    showToast('Unable to connect to the server. Please try again.', 'error');
     btn.disabled = false;
-    btn.innerHTML = '<span class="btn-text">Confirm & Reset Password ✅</span>';
+    btn.classList.remove('btn-loading');
+    btn.innerHTML = originalText;
   }
 }
 

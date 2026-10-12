@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 360" fill="none">
+  <defs>
+    <linearGradient id="hw-sky" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#020617"/>
+      <stop offset="60%" stop-color="#0b172b"/>
+      <stop offset="100%" stop-color="#111f36"/>
+    </linearGradient>
+    <linearGradient id="hw-road" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#090e17"/>
+      <stop offset="100%" stop-color="#020617"/>
+    </linearGradient>
+    <linearGradient id="neon-trail" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ef4444" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#ef4444" stop-opacity="0.9"/>
+    </linearGradient>
+    <linearGradient id="cyan-beam" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00f0ff" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#00f0ff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="600" height="360" rx="8" fill="url(#hw-sky)"/>
+
+  <!-- Distant City Skyline / Horizon -->
+  <g opacity="0.35">
+    <rect x="50" y="140" width="30" height="70" fill="#1e293b"/>
+    <rect x="90" y="120" width="40" height="90" fill="#1e293b"/>
+    <rect x="140" y="150" width="35" height="60" fill="#1e293b"/>
+    <rect x="185" y="130" width="50" height="80" fill="#1e293b"/>
+    <rect x="420" y="135" width="45" height="75" fill="#1e293b"/>
+    <rect x="480" y="115" width="50" height="95" fill="#1e293b"/>
+    <rect x="540" y="145" width="40" height="65" fill="#1e293b"/>
+  </g>
+
+  <!-- Highway Road Perspective Surface -->
+  <polygon points="260,190 340,190 580,360 20,360" fill="url(#hw-road)" stroke="#1e293b" stroke-width="1"/>
+
+  <!-- Highway Guard Rails / Edges -->
+  <line x1="260" y1="190" x2="20" y2="360" stroke="#00f0ff" stroke-width="2" opacity="0.8"/>
+  <line x1="340" y1="190" x2="580" y2="360" stroke="#00f0ff" stroke-width="2" opacity="0.8"/>
+
+  <!-- Lane Markings with Motion -->
+  <line x1="300" y1="190" x2="300" y2="215" stroke="#ffffff" stroke-width="2" opacity="0.4"/>
+  <line x1="300" y1="230" x2="300" y2="265" stroke="#ffffff" stroke-width="3" opacity="0.6"/>
+  <line x1="300" y1="285" x2="300" y2="335" stroke="#ffffff" stroke-width="4" opacity="0.9"/>
+
+  <!-- Commercial Heavy Hauler Truck in Left Lane -->
+  <!-- Trailer Body -->
+  <polygon points="120,225 240,225 240,295 120,295" fill="#0f172a" stroke="#38bdf8" stroke-width="2"/>
+  <rect x="125" y="230" width="110" height="60" fill="#0b1322"/>
+  <!-- Trailer Grooves -->
+  <line x1="145" y1="230" x2="145" y2="290" stroke="#1e293b" stroke-width="2"/>
+  <line x1="165" y1="230" x2="165" y2="290" stroke="#1e293b" stroke-width="2"/>
+  <line x1="185" y1="230" x2="185" y2="290" stroke="#1e293b" stroke-width="2"/>
+  <line x1="205" y1="230" x2="205" y2="290" stroke="#1e293b" stroke-width="2"/>
+  <line x1="225" y1="230" x2="225" y2="290" stroke="#1e293b" stroke-width="2"/>
+  <!-- Brand Logo -->
+  <text x="180" y="260" font-family="'Inter', sans-serif" font-weight="900" font-size="10" fill="#38bdf8" text-anchor="middle" letter-spacing="1">TRANCECONNECT</text>
+  <text x="180" y="272" font-family="'JetBrains Mono', monospace" font-size="7" fill="#00f0ff" text-anchor="middle">FLEET 48-MXL</text>
+
+  <!-- Cabin Body -->
+  <polygon points="240,240 280,240 295,265 295,295 240,295" fill="#0284c7" stroke="#38bdf8" stroke-width="2"/>
+  <polygon points="265,245 285,265 260,265" fill="#bae6fd" opacity="0.85"/>
+  <!-- Headlight Beams -->
+  <polygon points="295,280 460,250 490,320 295,292" fill="url(#cyan-beam)"/>
+
+  <!-- Tail Light Trails -->
+  <line x1="20" y1="285" x2="120" y2="285" stroke="url(#neon-trail)" stroke-width="4"/>
+
+  <!-- Wheels -->
+  <circle cx="140" cy="300" r="14" fill="#020617" stroke="#38bdf8" stroke-width="2"/>
+  <circle cx="170" cy="300" r="14" fill="#020617" stroke="#38bdf8" stroke-width="2"/>
+  <circle cx="230" cy="300" r="14" fill="#020617" stroke="#38bdf8" stroke-width="2"/>
+  <circle cx="275" cy="300" r="14" fill="#020617" stroke="#38bdf8" stroke-width="2"/>
+
+  <!-- Highway Gantry Sign with Electronic VMS Matrix -->
+  <g transform="translate(180, 50)">
+    <rect x="0" y="0" width="240" height="50" rx="4" fill="#022c22" stroke="#10b981" stroke-width="2"/>
+    <text x="120" y="20" font-family="'JetBrains Mono', monospace" font-size="10" fill="#34d399" text-anchor="middle" font-weight="bold">NH 48 EXPRESSWAY: JNPT ➔ PUNE</text>
+    <text x="120" y="38" font-family="'JetBrains Mono', monospace" font-size="9" fill="#00f0ff" text-anchor="middle">FASTAG & E-WAY BILL TELEMETRY ACTIVE</text>
+    <!-- Gantry legs -->
+    <line x1="10" y1="50" x2="10" y2="140" stroke="#334155" stroke-width="3"/>
+    <line x1="230" y1="50" x2="230" y2="140" stroke="#334155" stroke-width="3"/>
+  </g>
+
+  <!-- Speed HUD Indicator -->
+  <rect x="420" y="240" width="130" height="55" rx="6" fill="rgba(15,23,42,0.9)" stroke="#00f0ff" stroke-width="1.5"/>
+  <text x="485" y="260" font-family="'JetBrains Mono', monospace" font-size="8" fill="#94a3b8" text-anchor="middle">CRUISE SPEED</text>
+  <text x="485" y="282" font-family="'JetBrains Mono', monospace" font-size="18" fill="#00f0ff" text-anchor="middle" font-weight="bold">68 KM/H</text>
+</svg>

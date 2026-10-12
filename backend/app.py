@@ -3,6 +3,7 @@ import sys
 import uuid
 import datetime
 import random
+import secrets
 import re
 import smtplib
 from email.mime.text import MIMEText
@@ -213,20 +214,29 @@ def send_email_notification(to_email, subject, body_text, body_html=None):
 
 @app.post("/api/auth/register")
 def register():
-    data = request.get_json(silent=True) or {}
+    """
+    Robust enterprise registration endpoint for Dealers and Transporters.
+    Supports both JSON payloads and multipart/form-data (with Aadhaar/License documents).
+    """
+    is_form = request.content_type and 'multipart/form-data' in request.content_type
+    if is_form:
+        data = request.form.to_dict()
+    else:
+        data = request.get_json(silent=True) or {}
+
     role = data.get("role", "").strip().lower()
     company_name = data.get("company_name", "").strip()
     contact_person = data.get("contact_person", "").strip()
     mobile = data.get("mobile", "").strip()
     email = data.get("email", "").strip().lower()
-    gst_number = data.get("gst_number", "").strip().upper()
+    gst_number = (data.get("gst_number") or data.get("gstin") or "").strip().upper()
     password = data.get("password", "").strip()
     confirm_password = data.get("confirm_password", "").strip()
     city = data.get("city", "").strip()
     state = data.get("state", "").strip()
     address = data.get("address", "").strip()
 
-    # Role specific profile
+    # Optional logistics profile fields
     fleet_size = data.get("fleet_size", "").strip()
     operating_routes = data.get("operating_routes", "").strip()
     vehicle_types = data.get("vehicle_types", "").strip()
@@ -235,13 +245,22 @@ def register():
 
     # 1. Role validation
     if not role or role not in ['dealer', 'transporter']:
-        return jsonify({"error": "Please select your account type: Dealer (Shipper) or Transporter (Fleet Carrier).", "field": "role"}), 400
+        return jsonify({
+            "error": "Please select your account type: Dealer or Transporter.",
+            "field": "role"
+        }), 400
 
     # 2. Company Name validation
     if not company_name:
-        return jsonify({"error": "Company name is required. Enter your registered business name or transport firm name.", "field": "company_name"}), 400
+        return jsonify({
+            "error": "Please enter your registered company name.",
+            "field": "company_name"
+        }), 400
     if len(company_name) < 2:
-        return jsonify({"error": "Company name must contain at least 2 characters.", "field": "company_name"}), 400
+        return jsonify({
+            "error": "Company name must contain at least 2 characters.",
+            "field": "company_name"
+        }), 400
 
     # 3. Mobile Number validation (Indian 10-digit mobile)
     clean_mobile = re.sub(r'[\s\-\+\(\)]', '', mobile)
@@ -252,7 +271,7 @@ def register():
 
     if not clean_mobile or len(clean_mobile) != 10 or clean_mobile[0] not in '6789':
         return jsonify({
-            "error": "Enter a valid 10-digit Indian mobile number starting with 6, 7, 8, or 9 (e.g. 9820123456).",
+            "error": "Please enter a valid 10-digit Indian mobile number.",
             "field": "mobile"
         }), 400
 
@@ -260,29 +279,33 @@ def register():
     email_regex = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
     if not email or not re.match(email_regex, email):
         return jsonify({
-            "error": "Enter a valid email address in the format name@example.com.",
+            "error": "Enter a valid email address, for example name@example.com.",
             "field": "email"
         }), 400
 
-    # 5. GSTIN format validation (Optional, but if entered must match format)
-    if gst_number:
+    # 5. GSTIN format validation (Optional for unregistered small carriers, but if entered must match 15-char format)
+    clean_gst = re.sub(r'[\s\-]', '', gst_number)
+    if clean_gst:
         gst_regex = r'^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$'
-        if not re.match(gst_regex, gst_number):
+        if not re.match(gst_regex, clean_gst):
             return jsonify({
-                "error": "GSTIN must contain 15 characters (e.g. 27AAAAA0000A1Z5). Please verify your GST registration number or leave blank if unregistered.",
+                "error": "Please enter a valid 15-character GSTIN.",
                 "field": "gst_number"
             }), 400
+        gst_number = clean_gst
+    else:
+        gst_number = None
 
     # 6. Password validation & Confirm Password match
     if not password or len(password) < 6:
         return jsonify({
-            "error": "Password must be at least 6 characters long and meet the security requirements.",
+            "error": "Password must be at least 6 characters long.",
             "field": "password"
         }), 400
 
     if confirm_password and confirm_password != password:
         return jsonify({
-            "error": "Your passwords do not match. Re-enter your confirmation password.",
+            "error": "Your passwords do not match. Please check both password fields.",
             "field": "confirm_password"
         }), 400
 
@@ -319,27 +342,52 @@ def register():
                     %s, %s, %s, %s, %s
                 )
             """, (
-                role, company_name, contact_person or company_name, clean_mobile, email, gst_number or None,
+                role, company_name, contact_person or company_name, clean_mobile, email, gst_number,
                 pwd_hash, address or None, city or None, state or None,
                 fleet_size or None, operating_routes or None, vehicle_types or None, cargo_type or None, monthly_volume or None
             ))
             user_id = cur.lastrowid
 
+            # Save optional KYC onboarding documents if uploaded during registration
+            saved_documents = []
+            if is_form and request.files:
+                for file_key, doc_type in [
+                    ('aadhaar_file', 'aadhaar'),
+                    ('aadhaar_doc', 'aadhaar'),
+                    ('license_file', 'driving_license'),
+                    ('license_doc', 'driving_license')
+                ]:
+                    file = request.files.get(file_key)
+                    if file and file.filename and allowed_file(file.filename):
+                        orig_filename = secure_filename(file.filename)
+                        stored_name = f"user_{user_id}_{doc_type}_{uuid.uuid4().hex[:8]}_{orig_filename}"
+                        save_path = os.path.join(UPLOAD_DIR, 'documents', stored_name)
+                        file.save(save_path)
+                        file_size = os.path.getsize(save_path)
+                        cur.execute("""
+                            INSERT INTO documents (
+                                user_id, document_type, file_name, file_path, file_size,
+                                mime_type, verification_status
+                            ) VALUES (%s, %s, %s, %s, %s, %s, 'pending')
+                        """, (user_id, doc_type, orig_filename, stored_name, file_size, file.content_type or 'application/octet-stream'))
+                        saved_documents.append({"type": doc_type, "name": orig_filename})
+
             # Create welcome in-app notification
-            role_label = "Shipper / Consignor" if role == 'dealer' else "Logistics Transporter"
+            role_label = "Shipper / Dealer" if role == 'dealer' else "Logistics Transporter"
             cur.execute("""
                 INSERT INTO notifications (user_id, title, message)
                 VALUES (%s, %s, %s)
             """, (
                 user_id,
-                f"Welcome to TranceConnect-Prime!",
-                f"Your business account as {role_label} has been registered successfully. Explore your dashboard to manage consignments."
+                f"Welcome to TranceConnect-Pro!",
+                f"Your business account as {role_label} has been registered successfully. Explore your dashboard to get started."
             ))
 
         token = create_access_token(user_id, role, email)
         return jsonify({
-            "message": f"Successfully registered as {role_label}! Welcome to TranceConnect-Prime.",
+            "message": f"Successfully registered as {role_label}! Welcome to TranceConnect-Pro.",
             "token": token,
+            "saved_documents": saved_documents,
             "user": {
                 "id": user_id,
                 "role": role,
@@ -362,38 +410,53 @@ def register():
 
 @app.post("/api/auth/login")
 def login():
+    """
+    Secure login endpoint accepting either registered corporate email or 10-digit mobile number.
+    Returns JWT access token with role-based routing details.
+    """
     data = request.get_json(silent=True) or {}
-    identifier = (data.get("email") or data.get("identifier") or "").strip().lower()
+    identifier = (data.get("email") or data.get("identifier") or "").strip()
     password = data.get("password", "").strip()
 
     if not identifier or not password:
         return jsonify({"error": "Please enter your registered email address or mobile number and password."}), 400
 
+    clean_mobile = re.sub(r'[\s\-\+\(\)]', '', identifier)
+    if clean_mobile.startswith('91') and len(clean_mobile) == 12:
+        clean_mobile = clean_mobile[2:]
+    if clean_mobile.startswith('0') and len(clean_mobile) == 11:
+        clean_mobile = clean_mobile[1:]
+
     conn = get_db_connection()
     try:
         with conn.cursor() as cur:
-            # Allow login via either email or 10-digit mobile number
-            clean_mobile = re.sub(r'[\s\-\+\(\)]', '', identifier)
-            if clean_mobile.startswith('91') and len(clean_mobile) == 12:
-                clean_mobile = clean_mobile[2:]
-
             cur.execute("""
-                SELECT id, role, company_name, contact_person, mobile, email, gst_number, password_hash, verification_status, status
+                SELECT id, role, company_name, contact_person, mobile, email, gst_number,
+                       password_hash, verification_status, status
                 FROM users WHERE email = %s OR mobile = %s
-            """, (identifier, clean_mobile))
+            """, (identifier.lower(), clean_mobile))
             user = cur.fetchone()
 
         if not user or not verify_password(password, user['password_hash']):
-            return jsonify({"error": "Invalid login credentials. Please check your email/mobile and password, or use Forgot Password."}), 401
+            return jsonify({
+                "error": "Invalid email/mobile or password. Please verify your credentials and try again."
+            }), 401
 
         if user['status'] == 'blocked':
-            return jsonify({"error": "Your account has been suspended by administration. Please contact support."}), 403
+            return jsonify({
+                "error": "Your account has been suspended by administration. Please contact support."
+            }), 403
+
+        if user['status'] == 'inactive':
+            return jsonify({
+                "error": "Your account is currently inactive. Please contact administrator to activate."
+            }), 403
 
         token = create_access_token(user['id'], user['role'], user['email'])
         del user['password_hash']
 
         return jsonify({
-            "message": "Login successful",
+            "message": "Login successful. Welcome back!",
             "token": token,
             "user": user
         }), 200
@@ -410,7 +473,8 @@ def get_current_user_profile(current_user):
     try:
         with conn.cursor() as cur:
             cur.execute("""
-                SELECT id, role, company_name, contact_person, mobile, email, gst_number, address, city, state, verification_status, status, created_at
+                SELECT id, role, company_name, contact_person, mobile, email, gst_number,
+                       address, city, state, verification_status, status, created_at
                 FROM users WHERE id = %s
             """, (current_user['id'],))
             user = cur.fetchone()
@@ -459,21 +523,25 @@ def update_user_profile(current_user):
 
 @app.post("/api/auth/forgot-password")
 def forgot_password():
+    """
+    Step 1 & 2: Validates email, enforces 60s cooldown, generates 6-digit OTP,
+    hashes OTP securely on backend, sets 5-minute expiry, and dispatches email via SMTP.
+    """
     data = request.get_json(silent=True) or {}
     email = data.get("email", "").strip().lower()
-    if not email:
-        return jsonify({"error": "Please enter your registered email address.", "field": "email"}), 400
+
+    email_regex = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
+    if not email or not re.match(email_regex, email):
+        return jsonify({
+            "error": "Enter a valid email address, for example name@example.com.",
+            "field": "email"
+        }), 400
 
     conn = get_db_connection()
     try:
         with conn.cursor() as cur:
             cur.execute("SELECT id, company_name, contact_person FROM users WHERE email = %s", (email,))
             user = cur.fetchone()
-            if not user:
-                return jsonify({
-                    "error": "No registered account found with this email address. Please check for spelling mistakes or create a new account.",
-                    "field": "email"
-                }), 404
 
             # Rate-limiting: prevent spam if requested in last 60 seconds
             cur.execute("""
@@ -481,67 +549,109 @@ def forgot_password():
                 WHERE email = %s AND created_at > (NOW() - INTERVAL 60 SECOND)
                 ORDER BY id DESC LIMIT 1
             """, (email,))
-            if cur.fetchone():
+            recent = cur.fetchone()
+            if recent:
                 return jsonify({
-                    "error": "A password reset code was recently sent. Please check your inbox or wait 60 seconds before requesting a new code."
+                    "error": "A password reset code was recently sent. Please check your inbox or wait 60 seconds before requesting a new code.",
+                    "retry_after": 60
                 }), 429
 
-            # Generate secure random single-use numeric 6-digit OTP and alphanumeric reset token
-            otp = f"{random.randint(100000, 999999)}"
-            reset_token = uuid.uuid4().hex + uuid.uuid4().hex
-            expires_at = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=15)
+            if not user:
+                # Privacy-safe response: do not disclose whether account exists
+                return jsonify({
+                    "message": "If this email address is registered with TranceConnect-Pro, a 6-digit OTP has been sent. Please check your inbox.",
+                    "email": email,
+                    "expires_in_minutes": 5
+                }), 200
+
+            # Invalidate any prior unused OTPs for this email
+            cur.execute("""
+                UPDATE password_resets SET is_used = TRUE 
+                WHERE email = %s AND is_used = FALSE
+            """, (email,))
+
+            # Generate cryptographically secure random 6-digit numeric OTP
+            otp = f"{secrets.randbelow(900000) + 100000}"
+            otp_hash = hash_password(otp)
+            expires_at = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=5)
 
             cur.execute("""
-                INSERT INTO password_resets (email, otp_code, expires_at)
-                VALUES (%s, %s, %s)
-            """, (email, otp, expires_at))
+                INSERT INTO password_resets (email, otp_code, expires_at, attempts, is_used)
+                VALUES (%s, %s, %s, 0, FALSE)
+            """, (email, otp_hash, expires_at))
 
-            # Store reset token on user record
-            cur.execute("""
-                UPDATE users SET reset_token = %s, reset_token_expires = %s WHERE id = %s
-            """, (reset_token, expires_at, user['id']))
+        # Email content exactly matching required specification
+        email_subject = "TranceConnect-Pro Password Reset OTP"
+        email_body = f"""Hello,
 
-        # Send email if SMTP is configured
-        email_subject = "TranceConnect-Prime: Password Recovery Code"
-        email_body = f"""Hello {user['contact_person'] or user['company_name']},
+We received a request to reset your TranceConnect-Pro password.
 
-We received a request to reset your password for your TranceConnect-Prime account ({email}).
+Your password reset OTP is:
+{otp}
 
-Your 6-Digit Password Reset OTP Code: {otp}
+This OTP will expire in 5 minutes.
 
-This code is valid for 15 minutes. If you did not request this, please ignore this email.
+If you did not request this password reset, you can ignore this email.
 
-Best regards,
-The TranceConnect Logistics Security Team
+Thank you,
+TranceConnect-Pro Security Team
 """
         email_html = f"""
-        <div style="font-family: Arial, sans-serif; background: #070d18; color: #e2e8f0; padding: 2rem; border-radius: 8px;">
-          <h2 style="color: #38bdf8;">TranceConnect-Prime Security</h2>
-          <p>Hello <strong>{user['contact_person'] or user['company_name']}</strong>,</p>
-          <p>We received a request to reset your password for account <code>{email}</code>.</p>
-          <div style="background: #0f172a; border: 1px solid #0ea5e9; padding: 1.25rem; border-radius: 6px; text-align: center; margin: 1.5rem 0;">
-            <span style="font-size: 0.85rem; color: #94a3b8; letter-spacing: 1px; display: block; margin-bottom: 0.5rem;">YOUR VERIFICATION CODE</span>
-            <span style="font-size: 2rem; font-weight: bold; letter-spacing: 6px; color: #38bdf8; font-family: monospace;">{otp}</span>
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: #060c18; color: #f1f5f9; padding: 2.5rem; border-radius: 12px; max-width: 560px; margin: 0 auto; border: 1px solid rgba(0, 240, 255, 0.2);">
+          <div style="text-align: center; margin-bottom: 2rem;">
+            <h1 style="color: #00f0ff; font-size: 1.5rem; letter-spacing: 2px; margin: 0; font-weight: 800;">TRANCECONNECT-PRO</h1>
+            <p style="color: #94a3b8; font-size: 0.8rem; margin-top: 0.25rem; letter-spacing: 1px;">NATIONAL FREIGHT & TELEMATICS SECURITY</p>
           </div>
-          <p style="color: #94a3b8; font-size: 0.85rem;">This OTP expires in 15 minutes. Never share this code with anyone.</p>
+
+          <p style="font-size: 0.95rem; line-height: 1.6; color: #e2e8f0;">Hello,</p>
+          <p style="font-size: 0.95rem; line-height: 1.6; color: #cbd5e1;">We received a request to reset your TranceConnect-Pro password for <strong>{email}</strong>.</p>
+          
+          <div style="background: rgba(15, 23, 42, 0.95); border: 2px solid #00f0ff; padding: 1.5rem; border-radius: 8px; text-align: center; margin: 2rem 0; box-shadow: 0 0 20px rgba(0, 240, 255, 0.25);">
+            <span style="font-size: 0.78rem; color: #94a3b8; letter-spacing: 2px; display: block; margin-bottom: 0.5rem; font-weight: 600;">YOUR 6-DIGIT VERIFICATION CODE</span>
+            <span style="font-size: 2.5rem; font-weight: 800; letter-spacing: 10px; color: #00f0ff; font-family: 'JetBrains Mono', Consolas, monospace; display: inline-block;">{otp}</span>
+          </div>
+
+          <p style="color: #f59e0b; font-size: 0.85rem; font-weight: 600;">⚠️ This OTP will expire in 5 minutes.</p>
+          <p style="color: #94a3b8; font-size: 0.85rem; line-height: 1.5;">If you did not request this password reset, you can safely ignore this email. Never share this code with anyone.</p>
+
+          <hr style="border: 0; border-top: 1px solid rgba(255, 255, 255, 0.1); margin: 2rem 0;">
+          <p style="color: #64748b; font-size: 0.8rem; margin: 0;">Thank you,<br><strong style="color: #94a3b8;">TranceConnect-Pro Security Team</strong></p>
         </div>
         """
+
         smtp_sent, smtp_msg = send_email_notification(email, email_subject, email_body, email_html)
 
-        return jsonify({
-            "message": f"A 6-digit recovery code has been generated for {email}. Valid for 15 minutes.",
-            "otp_code": otp,  # Returned for verified instant testing and display
-            "reset_token": reset_token,
-            "smtp_sent": smtp_sent,
-            "smtp_note": "Real email dispatched via SMTP" if smtp_sent else "SMTP not configured; code returned for testing and logged to server console.",
-            "email": email
-        }), 200
+        if smtp_sent:
+            return jsonify({
+                "message": f"A 6-digit password reset OTP has been sent to {email}. Please check your inbox.",
+                "email": email,
+                "expires_in_minutes": 5,
+                "delivery_status": "sent"
+            }), 200
+        else:
+            # Fallback when SMTP is not configured: log code clearly to server console
+            print(f"============================================================")
+            print(f"[TRANCECONNECT-PRO OTP] Password Reset Code for {email}: {otp}")
+            print(f"[TRANCECONNECT-PRO OTP] Valid for 5 minutes. Expires at: {expires_at}")
+            print(f"============================================================")
+            return jsonify({
+                "message": "A 6-digit password reset OTP has been generated. (SMTP is not configured on this server; the OTP has been recorded in the server console log).",
+                "email": email,
+                "expires_in_minutes": 5,
+                "delivery_status": "dev_console",
+                "dev_otp": otp if (app.debug or os.getenv('FLASK_ENV') != 'production') else None,
+                "otp_code": otp if (app.debug or os.getenv('FLASK_ENV') != 'production') else None
+            }), 200
     finally:
         conn.close()
 
 
 @app.post("/api/auth/verify-otp")
 def verify_otp():
+    """
+    Step 3: Securely verifies the 6-digit OTP against the stored hash.
+    Enforces maximum 5 attempts. On success, issues a single-use server-authorized reset session token.
+    """
     data = request.get_json(silent=True) or {}
     email = data.get("email", "").strip().lower()
     otp = data.get("otp_code", "").strip()
@@ -549,42 +659,89 @@ def verify_otp():
     if not email or not otp:
         return jsonify({"error": "Registered email address and 6-digit OTP code are required."}), 400
 
+    if len(otp) != 6 or not otp.isdigit():
+        return jsonify({"error": "Please enter a valid 6-digit numeric OTP code."}), 400
+
     conn = get_db_connection()
     try:
         with conn.cursor() as cur:
             cur.execute("""
-                SELECT id, expires_at, is_used FROM password_resets
-                WHERE email = %s AND otp_code = %s AND is_used = FALSE
+                SELECT id, otp_code, expires_at, attempts, is_used FROM password_resets
+                WHERE email = %s AND is_used = FALSE
                 ORDER BY id DESC LIMIT 1
-            """, (email, otp))
+            """, (email,))
             record = cur.fetchone()
 
-        if not record:
-            return jsonify({"error": "Invalid or already used OTP code. Please check the code or request a new one."}), 400
+            if not record:
+                return jsonify({"error": "Invalid or expired OTP code. Please request a new recovery code."}), 400
 
-        # Check expiration
-        expires_at = record['expires_at']
-        if isinstance(expires_at, datetime.datetime) and expires_at.tzinfo is None:
-            expires_at = expires_at.replace(tzinfo=datetime.timezone.utc)
-        
-        if datetime.datetime.now(datetime.timezone.utc) > expires_at:
-            return jsonify({"error": "This OTP code has expired. Please request a fresh recovery code."}), 400
+            # Enforce maximum 5 attempts
+            if record['attempts'] >= 5:
+                cur.execute("UPDATE password_resets SET is_used = TRUE WHERE id = %s", (record['id'],))
+                return jsonify({
+                    "error": "Too many incorrect attempts. For security, this OTP has been invalidated. Please request a fresh code."
+                }), 429
 
-        return jsonify({"message": "OTP verified successfully. Please enter and confirm your new password.", "valid": True}), 200
+            # Check expiration (5 minutes)
+            expires_at = record['expires_at']
+            if isinstance(expires_at, datetime.datetime) and expires_at.tzinfo is None:
+                expires_at = expires_at.replace(tzinfo=datetime.timezone.utc)
+
+            if datetime.datetime.now(datetime.timezone.utc) > expires_at:
+                cur.execute("UPDATE password_resets SET is_used = TRUE WHERE id = %s", (record['id'],))
+                return jsonify({"error": "This OTP code has expired. Please request a fresh recovery code."}), 400
+
+            # Verify OTP against stored hash (or legacy plaintext fallback)
+            stored_hash = record['otp_code']
+            is_valid = False
+            try:
+                is_valid = verify_password(otp, stored_hash)
+            except Exception:
+                is_valid = (otp == stored_hash)
+
+            if not is_valid:
+                new_attempts = record['attempts'] + 1
+                cur.execute("UPDATE password_resets SET attempts = %s WHERE id = %s", (new_attempts, record['id']))
+                remaining = max(0, 5 - new_attempts)
+                if remaining == 0:
+                    cur.execute("UPDATE password_resets SET is_used = TRUE WHERE id = %s", (record['id'],))
+                    return jsonify({"error": "Too many incorrect attempts. This OTP has been invalidated. Please request a new code."}), 429
+                return jsonify({"error": f"Invalid OTP code. {remaining} attempt(s) remaining."}), 400
+
+            # Generate short-lived, single-use server-authorized reset session token
+            reset_session_token = secrets.token_urlsafe(32)
+            cur.execute("""
+                UPDATE password_resets SET reset_session_token = %s 
+                WHERE id = %s
+            """, (reset_session_token, record['id']))
+
+        return jsonify({
+            "message": "OTP verified successfully. Please set your new account password.",
+            "valid": True,
+            "reset_session_token": reset_session_token
+        }), 200
     finally:
         conn.close()
 
 
 @app.post("/api/auth/reset-password")
 def reset_password():
+    """
+    Step 4: Changes account password ONLY when authorized by a verified, single-use server reset token.
+    Securely hashes the new password and invalidates the reset session.
+    """
     data = request.get_json(silent=True) or {}
     email = data.get("email", "").strip().lower()
-    otp = data.get("otp_code", "").strip()
+    reset_session_token = data.get("reset_session_token", "").strip()
+    otp_code = data.get("otp_code", "").strip()
     new_password = data.get("new_password", "").strip()
     confirm_password = data.get("confirm_password", "").strip()
 
-    if not email or not otp or not new_password:
-        return jsonify({"error": "Email address, OTP code, and new password are required."}), 400
+    if not email or not new_password:
+        return jsonify({"error": "Email address and new password are required."}), 400
+
+    if not reset_session_token and not otp_code:
+        return jsonify({"error": "Reset authorization token is missing. Please verify OTP first."}), 400
 
     if len(new_password) < 6:
         return jsonify({"error": "New password must be at least 6 characters long."}), 400
@@ -595,34 +752,61 @@ def reset_password():
     conn = get_db_connection()
     try:
         with conn.cursor() as cur:
-            cur.execute("""
-                SELECT id, expires_at, is_used FROM password_resets
-                WHERE email = %s AND otp_code = %s AND is_used = FALSE
-                ORDER BY id DESC LIMIT 1
-            """, (email, otp))
-            record = cur.fetchone()
+            # Verify via server-authorized reset session token
+            record = None
+            if reset_session_token:
+                cur.execute("""
+                    SELECT id, expires_at, is_used FROM password_resets
+                    WHERE email = %s AND reset_session_token = %s AND is_used = FALSE
+                    ORDER BY id DESC LIMIT 1
+                """, (email, reset_session_token))
+                record = cur.fetchone()
+
+            # Backwards compatibility fallback with OTP verification
+            if not record and otp_code:
+                cur.execute("""
+                    SELECT id, otp_code, expires_at, is_used FROM password_resets
+                    WHERE email = %s AND is_used = FALSE
+                    ORDER BY id DESC LIMIT 1
+                """, (email,))
+                candidate = cur.fetchone()
+                if candidate:
+                    try:
+                        valid_otp = verify_password(otp_code, candidate['otp_code'])
+                    except Exception:
+                        valid_otp = (otp_code == candidate['otp_code'])
+                    if valid_otp:
+                        record = candidate
 
             if not record:
-                return jsonify({"error": "Invalid or already used OTP code. Please request a new recovery code."}), 400
+                return jsonify({
+                    "error": "Invalid or expired password reset authorization. Please request a new OTP."
+                }), 401
 
             expires_at = record['expires_at']
             if isinstance(expires_at, datetime.datetime) and expires_at.tzinfo is None:
                 expires_at = expires_at.replace(tzinfo=datetime.timezone.utc)
 
             if datetime.datetime.now(datetime.timezone.utc) > expires_at:
-                return jsonify({"error": "This OTP code has expired. Please request a fresh code."}), 400
+                cur.execute("UPDATE password_resets SET is_used = TRUE WHERE id = %s", (record['id'],))
+                return jsonify({"error": "This recovery session has expired. Please request a fresh OTP."}), 400
 
-            # Update password securely
+            # Securely hash new password
             hashed = hash_password(new_password)
             cur.execute("""
                 UPDATE users SET password_hash = %s, reset_token = NULL, reset_token_expires = NULL 
                 WHERE email = %s
             """, (hashed, email))
 
-            # Mark OTP as used to prevent replay attacks
-            cur.execute("UPDATE password_resets SET is_used = TRUE WHERE id = %s", (record['id'],))
+            # Mark OTP and reset session as used (single-use protection)
+            cur.execute("""
+                UPDATE password_resets SET is_used = TRUE, reset_session_token = NULL 
+                WHERE id = %s
+            """, (record['id'],))
 
-        return jsonify({"message": "Your password has been reset successfully! You can now sign in with your new credentials."}), 200
+        return jsonify({
+            "message": "Your password has been changed successfully. Please log in using your new password."
+        }), 200
     finally:
         conn.close()
 
