@@ -4,11 +4,11 @@
   "rewrites": [
     {
       "source": "/api/:match*",
-      "destination": "https://screensavers-grounds-jean-traveling.trycloudflare.com/api/:match*"
+      "destination": "https://api.tranceconnect.com/api/:match*"
     },
     {
       "source": "/socket.io/:match*",
-      "destination": "https://screensavers-grounds-jean-traveling.trycloudflare.com/socket.io/:match*"
+      "destination": "https://api.tranceconnect.com/socket.io/:match*"
     },
     {
       "source": "/verify/:match*",

@@ -66,6 +66,12 @@ def log_audit(cur, doc_type, doc_id, doc_number, user_id, action, details=""):
     except Exception as e:
         print(f"Warning: Audit log error: {e}")
 
+def safe_isoformat(val):
+    if not val:
+        return None
+    if hasattr(val, 'isoformat'):
+        return val.isoformat()
+    return str(val)
 
 # ===================================================================
 # 1. INVOICE ENDPOINTS
@@ -128,8 +134,8 @@ def list_invoices(current_user):
             for inv in invoices:
                 if inv.get('invoice_date'): inv['invoice_date'] = str(inv['invoice_date'])
                 if inv.get('due_date'): inv['due_date'] = str(inv['due_date'])
-                if inv.get('created_at'): inv['created_at'] = inv['created_at'].isoformat()
-                if inv.get('updated_at'): inv['updated_at'] = inv['updated_at'].isoformat()
+                if inv.get('created_at'): inv['created_at'] = safe_isoformat(inv['created_at'])
+                if inv.get('updated_at'): inv['updated_at'] = safe_isoformat(inv['updated_at'])
                 for num_col in ['subtotal', 'discount_amount', 'taxable_amount', 'cgst_amount', 'sgst_amount', 'igst_amount', 'total_amount']:
                     inv[num_col] = float(inv.get(num_col) or 0.0)
 
@@ -177,8 +183,8 @@ def get_invoice_detail(current_user, inv_id):
 
             if inv.get('invoice_date'): inv['invoice_date'] = str(inv['invoice_date'])
             if inv.get('due_date'): inv['due_date'] = str(inv['due_date'])
-            if inv.get('created_at'): inv['created_at'] = inv['created_at'].isoformat()
-            if inv.get('updated_at'): inv['updated_at'] = inv['updated_at'].isoformat()
+            if inv.get('created_at'): inv['created_at'] = safe_isoformat(inv['created_at'])
+            if inv.get('updated_at'): inv['updated_at'] = safe_isoformat(inv['updated_at'])
             for num_col in ['subtotal', 'discount_amount', 'taxable_amount', 'cgst_amount', 'sgst_amount', 'igst_amount', 'total_amount']:
                 inv[num_col] = float(inv.get(num_col) or 0.0)
 
@@ -803,8 +809,8 @@ def list_delivery_orders(current_user):
             for item in dos:
                 if item.get('do_date'): item['do_date'] = str(item['do_date'])
                 if item.get('valid_until'): item['valid_until'] = str(item['valid_until'])
-                if item.get('created_at'): item['created_at'] = item['created_at'].isoformat()
-                if item.get('updated_at'): item['updated_at'] = item['updated_at'].isoformat()
+                if item.get('created_at'): item['created_at'] = safe_isoformat(item['created_at'])
+                if item.get('updated_at'): item['updated_at'] = safe_isoformat(item['updated_at'])
                 item['total_weight'] = float(item.get('total_weight') or 0.0)
                 item['total_quantity'] = float(item.get('total_quantity') or 0.0)
 
@@ -850,8 +856,8 @@ def get_delivery_order_detail(current_user, do_id):
 
             if item.get('do_date'): item['do_date'] = str(item['do_date'])
             if item.get('valid_until'): item['valid_until'] = str(item['valid_until'])
-            if item.get('created_at'): item['created_at'] = item['created_at'].isoformat()
-            if item.get('updated_at'): item['updated_at'] = item['updated_at'].isoformat()
+            if item.get('created_at'): item['created_at'] = safe_isoformat(item['created_at'])
+            if item.get('updated_at'): item['updated_at'] = safe_isoformat(item['updated_at'])
             item['total_weight'] = float(item.get('total_weight') or 0.0)
             item['total_quantity'] = float(item.get('total_quantity') or 0.0)
 

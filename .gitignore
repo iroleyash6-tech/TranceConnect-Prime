@@ -17,6 +17,9 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+.pytest_cache/
+.coverage
+htmlcov/
 
 # Node.js
 node_modules/
@@ -28,12 +31,20 @@ yarn-error.log*
 .vercel/
 .vercel
 
-# Uploaded documents & binaries
-uploads/documents/*.pdf
-uploads/documents/*.html
-uploads/documents/qr/*.png
+# Uploaded documents, private KYC & binaries
+uploads/
+!uploads/.gitkeep
+uploads/documents/*
+uploads/documents/qr/*
 cloudflared.exe
 *.log
+
+# Sensitive Database Exports
+database/*_dump.sql
+database/transconnectlinkx_dump.sql
+*.db
+*.sqlite
+*.sqlite3
 
 # Operating System files
 .DS_Store
@@ -43,11 +54,10 @@ desktop.ini
 # IDE & Editor folders
 sem 5/
 .idea/
+.vscode/
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 
-.vercel
-.env*
 scratch/

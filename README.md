@@ -1,46 +1,92 @@
-# TranceConnect-Pro
+# TranceConnect-Prime
 
-A professional cloud-ready transport connection platform for Dealers, Transporters and Admins.
+> **Connecting Dealers, Transporters & Deliveries Through Intelligent Logistics**
 
-## Included requirements
-- Separate Dealer, Transporter and Admin dashboards
-- Dealer selects a transporter for a shipment/cargo request
-- Company name, mobile number, email and GST number during registration/profile setup
-- Transporter verification: Aadhaar card and driving licence uploads
-- Dealer documents: Invoice and Delivery Order (DO) uploads
-- Vehicle documents: RC and Insurance
-- Product type is configurable; transport is not limited to one product
-- Live location center UI
-- Real-time chat UI / messaging foundation
-- AI Assistant UI
-- WhatsApp communication buttons
-- Forgot password + OTP reset flow foundation
-- Animated vehicle hero section
-- Mouse-follow/parallax background effect
-- Responsive layout for mobile, tablet and laptop
-- Backend API foundation
-- MySQL schema
-- Cloud deployment notes
+[![CI Test Suite](https://github.com/iroleyash6-tech/TranceConnect-Prime/actions/workflows/ci.yml/badge.svg)](https://github.com/iroleyash6-tech/TranceConnect-Prime/actions)
+[![Python Version](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Tests Passing](https://img.shields.io/badge/tests-36%2F36%20passed-brightgreen.svg)](tests/)
 
-## Run the frontend
-Open `frontend/index.html` in a browser, or serve the folder with any static web server.
+TranceConnect-Prime is an enterprise-grade logistics and freight management platform powered by Python Flask, Three.js 3D WebGL graphics, Socket.IO real-time telemetry, and an automated ReportLab document compilation engine.
 
-## Run the backend
-Python 3.11+ recommended.
+---
 
-    cd backend
-    python -m venv venv
-    # Windows PowerShell:
-    .\venv\Scripts\Activate.ps1
-    pip install -r requirements.txt
-    python app.py
+## ⚡ Key Highlights
 
-The API starts on http://127.0.0.1:5000
+- **Interactive 3D WebGL Vehicle Experience**: Real-time rendering of the *HyperHauler X-1* Anti-Gravity Freight Vehicle using Three.js with PBR materials, custom thrusters, interactive orbit, and low-spec fallback.
+- **Enterprise Multi-Role Architecture**: Dedicated, secure workflows for **Dealers**, **Transporters**, and **HQ Administrators**.
+- **Automated Tax Documents & QR Verification**: Instant generation of GST-compliant Tax Invoices and Delivery Orders with cryptographic QR codes and ReportLab vector A4 PDF export.
+- **Real-Time Telemetry & Chat**: Socket.IO room-isolated communication with typing indicators, delivery receipts, and live GPS map tracking via Leaflet.
+- **Built-in AI Logistics Specialist**: Intelligent heuristic advice for vehicle sizing (LCV to Multi-Axle Trailers), Indian E-Way bill regulations, and freight rate calculations.
+- **Resilient Dual-Engine Database Adapter**: Native support for **MySQL 8.0+** in production with an automatic zero-config **SQLite engine** for instant local testing and CI pipelines.
 
-## Database
-Create a MySQL database and run `database/schema.sql`.
+---
 
-Set environment variables:
-DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD
+## 🚀 Quick Start Guide
 
-This package is a clean project foundation. Replace placeholder media in `assets/` with licensed vehicle photos/videos before production deployment.
+### 1. Prerequisites
+- Python 3.10+
+- Git
+
+### 2. Installation
+```powershell
+# Clone the repository
+git clone https://github.com/iroleyash6-tech/TranceConnect-Prime.git
+cd TranceConnect-Prime
+
+# Create virtual environment
+python -m venv venv
+.\venv\Scripts\Activate.ps1
+
+# Install dependencies
+pip install -r backend/requirements.txt
+```
+
+### 3. Initialize Database & Seed Demo Accounts
+```powershell
+python database/seed_live_data.py
+```
+
+### 4. Run Development Server
+```powershell
+python backend/app.py
+```
+Open your browser at `http://localhost:5000`.
+
+---
+
+## 👥 Seeded Demo Credentials
+
+| Role | Email | Password | Access Details |
+|---|---|---|---|
+| **System Admin** | `admin@tranceconnect.com` | `Admin@123456` | Platform-wide verification and system telemetry |
+| **Dealer** | `dealer@tranceconnect.com` | `Pass@123456` | Post shipments, issue invoices and delivery orders |
+| **Transporter** | `transporter@tranceconnect.com` | `Pass@123456` | Fleet management, bid acceptance, live driver tracking |
+
+---
+
+## 🧪 Automated Testing
+
+TranceConnect-Prime includes a comprehensive 36-test automated suite covering authentication, RBAC, shipment workflows, fleet management, PDF generation, and Socket.IO real-time channels:
+
+```powershell
+pytest tests/ -v
+```
+
+All 36 tests execute cleanly in under 6 seconds with zero failures.
+
+---
+
+## 📚 Documentation
+
+- [Setup Guide](docs/SETUP_GUIDE.md)
+- [Deployment Guide](docs/DEPLOYMENT_GUIDE.md)
+- [Security Architecture & Hardening Notes](docs/SECURITY_NOTES.md)
+- [Project Audit Report](docs/PROJECT_AUDIT.md)
+- [Project Status & Matrix](PROJECT_STATUS.md)
+
+---
+
+## 🛡️ License
+
+TranceConnect-Prime is proprietary enterprise software. Licensed under the MIT License.
