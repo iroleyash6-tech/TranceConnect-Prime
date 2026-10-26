@@ -3,18 +3,6 @@
   "cleanUrls": true,
   "rewrites": [
     {
-      "source": "/api/:match*",
-      "destination": "https://api.tranceconnect.com/api/:match*"
-    },
-    {
-      "source": "/socket.io/:match*",
-      "destination": "https://api.tranceconnect.com/socket.io/:match*"
-    },
-    {
-      "source": "/verify/:match*",
-      "destination": "/verify.html"
-    },
-    {
       "source": "/dealer",
       "destination": "/dealer.html"
     },
@@ -25,6 +13,10 @@
     {
       "source": "/admin",
       "destination": "/admin.html"
+    },
+    {
+      "source": "/verify/:match*",
+      "destination": "/verify.html"
     },
     {
       "source": "/login",

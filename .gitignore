@@ -61,3 +61,5 @@ sem 5/
 *.sln
 
 scratch/
+
+.vercel
