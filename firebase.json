@@ -1,0 +1,69 @@
+{
+  "hosting": {
+    "public": "public",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "cleanUrls": true,
+    "trailingSlash": false,
+    "headers": [
+      {
+        "source": "**",
+        "headers": [
+          {
+            "key": "X-Content-Type-Options",
+            "value": "nosniff"
+          },
+          {
+            "key": "X-Frame-Options",
+            "value": "SAMEORIGIN"
+          },
+          {
+            "key": "X-XSS-Protection",
+            "value": "1; mode=block"
+          }
+        ]
+      }
+    ],
+    "rewrites": [
+      {
+        "source": "/dealer",
+        "destination": "/dealer.html"
+      },
+      {
+        "source": "/transporter",
+        "destination": "/transporter.html"
+      },
+      {
+        "source": "/admin",
+        "destination": "/admin.html"
+      },
+      {
+        "source": "/verify/**",
+        "destination": "/verify.html"
+      },
+      {
+        "source": "/login",
+        "destination": "/index.html"
+      },
+      {
+        "source": "/register",
+        "destination": "/index.html"
+      },
+      {
+        "source": "/shipments",
+        "destination": "/dealer.html"
+      },
+      {
+        "source": "/invoices",
+        "destination": "/dealer.html"
+      },
+      {
+        "source": "/delivery-orders",
+        "destination": "/dealer.html"
+      }
+    ]
+  }
+}

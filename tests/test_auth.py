@@ -197,3 +197,35 @@ def test_forgot_password_and_otp_flow(client):
     })
     assert l_res.status_code == 200
     assert 'token' in l_res.get_json()
+
+def test_firebase_login_existing_user(client):
+    res = client.post('/api/auth/firebase-login', json={
+        'email': 'dealer@tranceconnect.com',
+        'display_name': 'Dealer Bharat Steel',
+        'role': 'dealer'
+    })
+    assert res.status_code == 200
+    data = res.get_json()
+    assert 'token' in data
+    assert data['user']['email'] == 'dealer@tranceconnect.com'
+    assert data['user']['role'] == 'dealer'
+
+def test_firebase_login_new_user_provisioning(client):
+    import time
+    new_email = f"google_user_{int(time.time())}@example.com"
+    res = client.post('/api/auth/firebase-login', json={
+        'email': new_email,
+        'display_name': 'Yash Cloud Logistics',
+        'role': 'transporter'
+    })
+    assert res.status_code == 200
+    data = res.get_json()
+    assert 'token' in data
+    assert data['user']['email'] == new_email
+    assert data['user']['role'] == 'transporter'
+
+    # Verify token works on protected endpoint
+    token = data['token']
+    me_res = client.get('/api/auth/me', headers={'Authorization': f'Bearer {token}'})
+    assert me_res.status_code == 200
+    assert me_res.get_json()['user']['email'] == new_email
