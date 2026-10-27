@@ -1,8 +1,12 @@
+venv/
+node_modules/
+.pytest_cache/
 backend/
 database/
 uploads/
 *.sql
 *.py
+*.pyc
 *.bat
 check_db.py
 generate_vehicle_assets.py
