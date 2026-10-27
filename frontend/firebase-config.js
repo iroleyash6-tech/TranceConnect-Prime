@@ -17,6 +17,8 @@ const firebaseConfig = {
 
 let firebaseApp = null;
 let firebaseAuth = null;
+let firebaseFirestore = null;
+let firebaseRealtimeDb = null;
 let googleAuthProvider = null;
 let isFirebaseInitialized = false;
 
@@ -26,8 +28,35 @@ function initFirebase() {
       firebaseApp = firebase.initializeApp(firebaseConfig);
       firebaseAuth = firebase.auth();
       googleAuthProvider = new firebase.auth.GoogleAuthProvider();
+
+      if (typeof firebase.firestore === 'function') {
+        try {
+          firebaseFirestore = firebase.firestore();
+        } catch (fErr) {
+          console.warn("Firestore init notice:", fErr.message);
+        }
+      }
+
+      if (typeof firebase.database === 'function') {
+        try {
+          firebaseRealtimeDb = firebase.database();
+        } catch (dErr) {
+          console.warn("Realtime DB init notice:", dErr.message);
+        }
+      }
+
       isFirebaseInitialized = true;
       console.log("⚡ Firebase connected to live project:", firebaseConfig.projectId);
+
+      // Listen to Firebase auth state changes
+      firebaseAuth.onAuthStateChanged((user) => {
+        if (user) {
+          window.firebaseCurrentUser = user;
+          console.log("Firebase Auth User active:", user.email);
+        } else {
+          window.firebaseCurrentUser = null;
+        }
+      });
     } catch (err) {
       console.warn("Firebase initialization warning:", err.message);
     }
@@ -41,7 +70,9 @@ function initFirebase() {
 async function signInWithGoogle(selectedRole = 'dealer') {
   initFirebase();
   if (!firebaseAuth || !googleAuthProvider) {
-    showToast("Firebase Auth initializing... Please ensure network connectivity.", "warning");
+    if (typeof showToast === 'function') {
+      showToast("Firebase Auth initializing... Please ensure network connectivity.", "warning");
+    }
     return;
   }
 
@@ -65,13 +96,17 @@ async function signInWithGoogle(selectedRole = 'dealer') {
 
     const data = await res.json();
     if (!res.ok) {
-      showToast(data.error || "Google sign-in backend sync failed", "error");
+      if (typeof showToast === 'function') {
+        showToast(data.error || "Google sign-in backend sync failed", "error");
+      }
       return;
     }
 
     localStorage.setItem('tc_token', data.token);
     localStorage.setItem('tc_user', JSON.stringify(data.user));
-    showToast(`Welcome, ${data.user.company_name || data.user.contact_person}!`, "success");
+    if (typeof showToast === 'function') {
+      showToast(`Welcome, ${data.user.company_name || data.user.contact_person}!`, "success");
+    }
 
     setTimeout(() => {
       if (data.user.role === 'dealer') window.location.href = '/dealer';
@@ -82,10 +117,14 @@ async function signInWithGoogle(selectedRole = 'dealer') {
 
   } catch (error) {
     console.error("Google Auth Error:", error);
-    if (error.code === 'auth/popup-closed-by-user') {
-      showToast("Sign-in cancelled by user.", "info");
-    } else {
-      showToast(error.message || "Firebase Google Authentication failed.", "error");
+    if (typeof showToast === 'function') {
+      if (error.code === 'auth/popup-closed-by-user') {
+        showToast("Sign-in cancelled by user.", "info");
+      } else if (error.code === 'auth/unauthorized-domain') {
+        showToast("Domain unauthorized in Firebase Console. Please notify administrator.", "error");
+      } else {
+        showToast(error.message || "Firebase Google Authentication failed.", "error");
+      }
     }
   }
 }
@@ -110,6 +149,79 @@ async function registerWithFirebaseEmailPassword(email, password) {
     throw new Error("Firebase Authentication is not ready.");
   }
   return await firebaseAuth.createUserWithEmailAndPassword(email, password);
+}
+
+/**
+ * Real-time GPS Tracker Listener using Cloud Firestore.
+ */
+function listenToShipmentLiveTracking(shipmentId, onUpdate) {
+  initFirebase();
+  if (!firebaseFirestore) return null;
+  try {
+    return firebaseFirestore.collection('tracking_locations').doc(String(shipmentId))
+      .onSnapshot((doc) => {
+        if (doc.exists && typeof onUpdate === 'function') {
+          onUpdate(doc.data());
+        }
+      }, (err) => {
+        console.warn("Firestore tracking listener notice:", err);
+      });
+  } catch (err) {
+    console.warn("Error attaching Firestore tracking listener:", err);
+    return null;
+  }
+}
+
+/**
+ * Real-time Notifications Listener using Cloud Firestore.
+ */
+function listenToUserNotifications(userId, onNotification) {
+  initFirebase();
+  if (!firebaseFirestore) return null;
+  try {
+    return firebaseFirestore.collection('notifications')
+      .where('recipient_id', '==', Number(userId))
+      .orderBy('timestamp', 'desc')
+      .limit(20)
+      .onSnapshot((snapshot) => {
+        const notifications = [];
+        snapshot.forEach(doc => notifications.push({ id: doc.id, ...doc.data() }));
+        if (typeof onNotification === 'function') {
+          onNotification(notifications);
+        }
+      }, (err) => {
+        console.warn("Firestore notification listener notice:", err);
+      });
+  } catch (err) {
+    console.warn("Error attaching Firestore notification listener:", err);
+    return null;
+  }
+}
+
+/**
+ * Firestore Real-time Chat Subscription.
+ */
+function listenToRoomChat(roomName, onMessageReceived) {
+  initFirebase();
+  if (!firebaseFirestore) return null;
+  try {
+    return firebaseFirestore.collection('messages')
+      .where('room', '==', roomName)
+      .orderBy('timestamp', 'asc')
+      .limit(100)
+      .onSnapshot((snapshot) => {
+        snapshot.docChanges().forEach((change) => {
+          if (change.type === 'added' && typeof onMessageReceived === 'function') {
+            onMessageReceived({ id: change.doc.id, ...change.doc.data() });
+          }
+        });
+      }, (err) => {
+        console.warn("Firestore chat listener notice:", err);
+      });
+  } catch (err) {
+    console.warn("Error attaching Firestore chat listener:", err);
+    return null;
+  }
 }
 
 // Auto-initialize when script loads

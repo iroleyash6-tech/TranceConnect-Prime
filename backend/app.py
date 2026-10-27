@@ -400,23 +400,30 @@ def register():
             ))
 
         token = create_access_token(user_id, role, email)
+        user_payload = {
+            "id": user_id,
+            "role": role,
+            "company_name": company_name,
+            "contact_person": contact_person or company_name,
+            "email": email,
+            "mobile": clean_mobile,
+            "gst_number": gst_number,
+            "city": city,
+            "state": state,
+            "verification_status": "pending",
+            "status": "active"
+        }
+        try:
+            from backend.firestore_sync import sync_user_to_firestore
+            sync_user_to_firestore(user_payload)
+        except Exception:
+            pass
+
         return jsonify({
             "message": f"Successfully registered as {role_label}! Welcome to TranceConnect-Pro.",
             "token": token,
             "saved_documents": saved_documents,
-            "user": {
-                "id": user_id,
-                "role": role,
-                "company_name": company_name,
-                "contact_person": contact_person or company_name,
-                "email": email,
-                "mobile": clean_mobile,
-                "gst_number": gst_number,
-                "city": city,
-                "state": state,
-                "verification_status": "pending",
-                "status": "active"
-            }
+            "user": user_payload
         }), 201
     except Exception as e:
         return jsonify({"error": f"Registration failed: {str(e)}"}), 500
@@ -560,6 +567,12 @@ def firebase_login():
                 user = cur.fetchone()
 
         token = create_access_token(user['id'], user['role'], user['email'])
+        try:
+            from backend.firestore_sync import sync_user_to_firestore
+            sync_user_to_firestore(user)
+        except Exception:
+            pass
+
         return jsonify({
             "message": "Firebase authentication verified successfully",
             "token": token,
@@ -1132,6 +1145,24 @@ def create_shipment(current_user):
                 VALUES (%s, 19.0760, 72.8777, %s, 0.00, 'Shipment Registered at Origin')
             """, (shipment_id, pickup_location))
 
+        try:
+            from backend.firestore_sync import sync_shipment_to_firestore
+            sync_shipment_to_firestore({
+                'id': shipment_id,
+                'dealer_id': dealer_id,
+                'transporter_id': transporter_id,
+                'product_type': product_type,
+                'transport_type': transport_type,
+                'weight_tons': weight_tons,
+                'vehicle_required': vehicle_required,
+                'pickup_location': pickup_location,
+                'delivery_location': delivery_location,
+                'status': status,
+                'price_per_trip': price_per_trip
+            })
+        except Exception:
+            pass
+
         return jsonify({
             "message": f"Shipment #{shipment_id} successfully created!",
             "shipment_id": shipment_id,
@@ -1362,6 +1393,14 @@ def update_shipment_status(current_user, shipment_id):
             })
         except Exception as socket_err:
             print(f"[Socket Broadcast] {socket_err}")
+
+        # Firestore Cloud Sync
+        try:
+            from backend.firestore_sync import sync_shipment_to_firestore, sync_tracking_to_firestore
+            sync_shipment_to_firestore({'id': shipment_id, 'status': new_status, 'vehicle_id': v_id, 'driver_id': driver_id})
+            sync_tracking_to_firestore(shipment_id, 19.0760, 72.8777, 45.0 if new_status == 'In Transit' else 0.0, status=new_status)
+        except Exception:
+            pass
 
         return jsonify({
             "message": f"Shipment #{shipment_id} successfully updated to '{new_status}'!",

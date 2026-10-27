@@ -1,0 +1,117 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && (
+        request.auth.token.role == 'admin' ||
+        request.auth.token.email == 'iroleyash6@gmail.com'
+      );
+    }
+
+    // Users collection
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isOwner(userId) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // Dealers collection
+    match /dealers/{dealerId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthenticated() && (request.auth.uid == dealerId || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    // Transporters collection
+    match /transporters/{transporterId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthenticated() && (request.auth.uid == transporterId || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    // Vehicles collection
+    match /vehicles/{vehicleId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAuthenticated() && (
+        resource == null || resource.data.transporter_id == request.auth.uid || isAdmin()
+      );
+    }
+
+    // Shipments collection
+    match /shipments/{shipmentId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (
+        resource.data.dealer_id == request.auth.uid ||
+        resource.data.transporter_id == request.auth.uid ||
+        resource.data.status == 'posted' || // transporters can bid or claim
+        isAdmin()
+      );
+      allow delete: if isAdmin();
+    }
+
+    // Invoices and Delivery Orders
+    match /invoices/{invoiceId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthenticated();
+      allow delete: if isAdmin();
+    }
+
+    match /delivery_orders/{doId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthenticated();
+      allow delete: if isAdmin();
+    }
+
+    match /documents/{docId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthenticated();
+      allow delete: if isAdmin();
+    }
+
+    // Realtime chat messages
+    match /messages/{messageId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.resource.data.sender_id == request.auth.uid;
+      allow update, delete: if isAdmin();
+    }
+
+    // Live Tracking & GPS
+    match /tracking_locations/{trackingId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthenticated();
+      allow delete: if isAdmin();
+    }
+
+    // Notifications
+    match /notifications/{notificationId} {
+      allow read: if isAuthenticated() && (
+        resource.data.recipient_id == request.auth.uid ||
+        resource.data.recipient_email == request.auth.token.email ||
+        isAdmin()
+      );
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (
+        resource.data.recipient_id == request.auth.uid ||
+        resource.data.recipient_email == request.auth.token.email ||
+        isAdmin()
+      );
+      allow delete: if isAdmin();
+    }
+
+    // Default deny for unmatched collections
+    match /{document=**} {
+      allow read, write: if isAdmin();
+    }
+  }
+}
