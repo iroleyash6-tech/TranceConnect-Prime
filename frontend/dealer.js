@@ -716,6 +716,18 @@ function trackFromCurrentChat() {
   }
 }
 
+function sendQuickChatMessage(text) {
+  const input = document.getElementById('dealerMsgInput');
+  if (input) {
+    input.value = text;
+    handleSendDealerMessage(new Event('submit'));
+  }
+}
+
+function openDocGenerateModal() {
+  openInvoiceStudio();
+}
+
 // ==========================================
 // LIVE GPS RADAR & VEHICLE TRACKING
 // ==========================================

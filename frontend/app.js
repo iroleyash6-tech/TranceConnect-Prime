@@ -1140,19 +1140,6 @@ async function submitPasswordReset() {
     btn.classList.remove('btn-loading');
     btn.innerHTML = originalText;
   }
-      loginIdent.value = email;
-      const pass = document.getElementById('loginPassword');
-      if (pass) {
-        pass.value = '';
-        pass.focus();
-      }
-    }
-  } catch (err) {
-    showToast('Unable to connect to the server. Please try again.', 'error');
-    btn.disabled = false;
-    btn.classList.remove('btn-loading');
-    btn.innerHTML = originalText;
-  }
 }
 
 function logoutSession() {
@@ -1351,12 +1338,14 @@ function initTrackingMap(lat, lng, locName, vehicleImgUrl, hasGps = true) {
 
 // AI SPECIALIST
 function toggleAIAssistant() {
-  document.getElementById('aiWidget').classList.toggle('active');
+  const w = document.getElementById('aiWidget');
+  if (w) w.classList.toggle('active');
 }
 
 async function handleSendAiMessage(e) {
   e.preventDefault();
   const input = document.getElementById('aiUserInput');
+  if (!input) return;
   const text = input.value.trim();
   if (!text) return;
   input.value = '';
@@ -1367,7 +1356,8 @@ async function askAiQuestion(prompt) {
   const feed = document.getElementById('aiChatFeed');
   if (!feed) return;
 
-  document.getElementById('aiWidget').classList.add('active');
+  const w = document.getElementById('aiWidget');
+  if (w) w.classList.add('active');
   feed.innerHTML += `
     <div class="chat-bubble bubble-mine">${escapeHtml(prompt)}</div>
     <div id="aiThinking" class="chat-bubble bubble-theirs" style="color: var(--cyan);">

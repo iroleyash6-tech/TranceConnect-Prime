@@ -1118,3 +1118,19 @@ function escapeHtml(str) {
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
   })[m]);
 }
+
+function openModal(id) {
+  const m = document.getElementById(id);
+  if (m) {
+    m.classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+}
+
+function closeModal(id) {
+  const m = document.getElementById(id);
+  if (m) {
+    m.classList.remove('active');
+    document.body.style.overflow = '';
+  }
+}

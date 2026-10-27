@@ -817,6 +817,14 @@ async function handleSendTransporterMessage(e) {
   }
 }
 
+function sendQuickChatMessage(text) {
+  const input = document.getElementById('transMsgInput');
+  if (input) {
+    input.value = text;
+    handleSendTransporterMessage(new Event('submit'));
+  }
+}
+
 function handleTransporterTyping() {
   if (socket && currentChatShipmentId) {
     socket.emit('typing', { shipment_id: currentChatShipmentId, is_typing: true });
