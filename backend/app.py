@@ -79,6 +79,22 @@ socketio = SocketIO(
     async_mode="threading"
 )
 
+# Initialize Firebase Admin SDK for project transconnect-2fb2b (iroleyash6@gmail.com)
+try:
+    import firebase_admin
+    from firebase_admin import credentials
+    if not firebase_admin._apps:
+        fb_key_path = os.getenv('FIREBASE_SERVICE_ACCOUNT_KEY') or os.path.join(BASE_DIR, 'firebase-service-account.json')
+        if os.path.exists(fb_key_path):
+            cred = credentials.Certificate(fb_key_path)
+            firebase_admin.initialize_app(cred, {'projectId': 'transconnect-2fb2b'})
+            print(f"[Firebase Admin] Initialized with credentials from {fb_key_path}")
+        else:
+            firebase_admin.initialize_app(options={'projectId': 'transconnect-2fb2b'})
+            print("[Firebase Admin] Initialized with project ID transconnect-2fb2b")
+except Exception as fb_err:
+    print(f"[Firebase Admin Note] {fb_err} (standard fallback active)")
+
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 

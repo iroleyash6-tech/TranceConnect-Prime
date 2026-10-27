@@ -587,6 +587,43 @@ async function handleLoginSubmit(e) {
   btn.classList.add('btn-loading');
   btn.innerHTML = '<span class="pulse-dot"></span> Authenticating...';
 
+  // 1. Firebase Authentication Hybrid Check (if email is used)
+  if (ident.includes('@') && typeof firebase !== 'undefined' && firebase.auth) {
+    try {
+      if (typeof initFirebase === 'function') initFirebase();
+      if (typeof firebaseAuth !== 'undefined' && firebaseAuth) {
+        try {
+          const fbCred = await firebaseAuth.signInWithEmailAndPassword(ident, pass);
+          const idToken = await fbCred.user.getIdToken();
+          const syncRes = await fetch('/api/auth/firebase-login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id_token: idToken, email: ident })
+          });
+          const syncData = await syncRes.json();
+          if (syncRes.ok && syncData.token) {
+            localStorage.setItem('tc_token', syncData.token);
+            localStorage.setItem('tc_user', JSON.stringify(syncData.user));
+            showToast(`Authentication verified! Welcome, ${syncData.user.company_name || syncData.user.contact_person}`, 'success');
+            setTimeout(() => {
+              if (syncData.user.role === 'dealer') window.location.href = '/dealer';
+              else if (syncData.user.role === 'transporter') window.location.href = '/transporter';
+              else if (syncData.user.role === 'admin') window.location.href = '/admin';
+              else window.location.reload();
+            }, 400);
+            return;
+          }
+        } catch (fbErr) {
+          // If not in Firebase yet, continue to primary backend login seamlessly
+          console.warn('Firebase email auth fallback:', fbErr.message);
+        }
+      }
+    } catch (e) {
+      console.warn('Firebase auth attempt:', e);
+    }
+  }
+
+  // 2. Primary Backend Authentication (supports mobile, email, seeded accounts)
   try {
     const res = await fetch('/api/auth/login', {
       method: 'POST',
@@ -596,7 +633,12 @@ async function handleLoginSubmit(e) {
     const data = await res.json();
 
     if (!res.ok) {
-      const errMsg = data.error || 'Authentication failed. Please verify credentials.';
+      let errMsg = data.error || 'Authentication failed. Please verify credentials.';
+      if (res.status === 401) {
+        errMsg = 'The email or password is incorrect.';
+      } else if (res.status === 403) {
+        errMsg = 'This account is disabled. Please contact support.';
+      }
       showToast(errMsg, 'error');
       setFieldValidationState('loginPassword', false, errMsg);
       btn.disabled = false;
@@ -617,10 +659,36 @@ async function handleLoginSubmit(e) {
       else window.location.reload();
     }, 400);
   } catch (err) {
-    showToast('Unable to connect to the server. Your entered information has been preserved. Please try again.', 'error');
+    showToast('Unable to connect. Please check your internet connection.', 'error');
     btn.disabled = false;
     btn.classList.remove('btn-loading');
     btn.innerHTML = originalText;
+  }
+}
+
+async function handleFirebasePasswordReset() {
+  const emailInput = document.getElementById('forgotEmail');
+  const email = emailInput ? emailInput.value.trim() : '';
+  if (!email || !validateForgotEmail()) {
+    if (emailInput) emailInput.focus();
+    showToast('Please enter a valid registered email address.', 'warning');
+    return;
+  }
+
+  showToast('Requesting Firebase password reset link...', 'info');
+  try {
+    if (typeof sendFirebasePasswordReset === 'function') {
+      await sendFirebasePasswordReset(email);
+      showToast('A secure password reset link has been dispatched to your email via Firebase Authentication. Check your inbox to set a new password.', 'success');
+    } else {
+      showToast('Firebase client is initializing. Please try again.', 'warning');
+    }
+  } catch (err) {
+    if (err.code === 'auth/user-not-found') {
+      showToast('No account found with this email address.', 'error');
+    } else {
+      showToast(err.message || 'Could not send Firebase reset email.', 'error');
+    }
   }
 }
 

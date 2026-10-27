@@ -918,7 +918,17 @@
           </div>
 
           <button type="button" class="btn btn-primary" style="width: 100%;" id="btnForgotOtpRequest" onclick="requestPasswordOtp()">
-            <span class="btn-text">Send OTP ➔</span>
+            <span class="btn-text">Send Verification OTP ➔</span>
+          </button>
+
+          <div style="display: flex; align-items: center; margin: 0.75rem 0; gap: 0.5rem;">
+            <div style="flex: 1; height: 1px; background: var(--border-glass);"></div>
+            <span style="font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase;">OR</span>
+            <div style="flex: 1; height: 1px; background: var(--border-glass);"></div>
+          </div>
+
+          <button type="button" class="btn btn-outline btn-sm" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5rem;" onclick="handleFirebasePasswordReset()">
+            <span>📧 Send Firebase Password Reset Link</span>
           </button>
         </div>
 
