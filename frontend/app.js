@@ -66,13 +66,59 @@ function checkExistingSession() {
   }
 }
 
+// ===================================================================
+// TRANCECONNECT-PRO: PRODUCTION API HELPER & HEALTH CHECK
+// ===================================================================
+
+const apiRequest = window.apiRequest || async function(url, options = {}) {
+  let response;
+  try {
+    response = await fetch(url, options);
+  } catch (error) {
+    throw new Error("Unable to connect to the server. Please check your internet connection.");
+  }
+
+  const contentType = response.headers.get("content-type") || "";
+  const rawBody = await response.text();
+
+  if (!contentType.includes("application/json")) {
+    console.error("Unexpected API response", {
+      url,
+      status: response.status,
+      contentType,
+      bodyPreview: rawBody.slice(0, 300)
+    });
+    if (response.status === 404) {
+      throw new Error("API service endpoint not found (404). Please ensure the backend is reachable.");
+    }
+    throw new Error("The server returned an unexpected response.");
+  }
+
+  let data;
+  try {
+    data = JSON.parse(rawBody);
+  } catch (error) {
+    throw new Error("The server returned invalid JSON.");
+  }
+
+  if (!response.ok) {
+    const errorMsg = data.message || data.error || `Request failed with status ${response.status}`;
+    const err = new Error(errorMsg);
+    err.status = response.status;
+    err.data = data;
+    throw err;
+  }
+
+  return data;
+};
+window.apiRequest = apiRequest;
+
 async function checkApiHealth() {
   try {
-    const res = await fetch('/api/health');
-    const data = await res.json();
+    const data = await apiRequest('/api/health');
     const tel = document.getElementById('telemetryStatus');
-    if (data.status === 'healthy') {
-      tel.innerHTML = '● LIVE MYSQL DATABASE LINKED &bull; v' + data.version;
+    if (data.status === 'healthy' || data.success) {
+      tel.innerHTML = '● LIVE API & DATABASE LINKED &bull; v' + (data.version || '2.4.0');
       tel.parentElement.style.borderColor = 'rgba(16, 185, 129, 0.4)';
     } else {
       tel.innerHTML = '⚠️ DB WARNING: ' + (data.database ? data.database.message : 'Check MySQL');
@@ -595,13 +641,12 @@ async function handleLoginSubmit(e) {
         try {
           const fbCred = await firebaseAuth.signInWithEmailAndPassword(ident, pass);
           const idToken = await fbCred.user.getIdToken();
-          const syncRes = await fetch('/api/auth/firebase-login', {
+          const syncData = await apiRequest('/api/auth/firebase-login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ id_token: idToken, email: ident })
           });
-          const syncData = await syncRes.json();
-          if (syncRes.ok && syncData.token) {
+          if (syncData && syncData.token) {
             localStorage.setItem('tc_token', syncData.token);
             localStorage.setItem('tc_user', JSON.stringify(syncData.user));
             showToast(`Authentication verified! Welcome, ${syncData.user.company_name || syncData.user.contact_person}`, 'success');
@@ -625,32 +670,16 @@ async function handleLoginSubmit(e) {
 
   // 2. Primary Backend Authentication (supports mobile, email, seeded accounts)
   try {
-    const res = await fetch('/api/auth/login', {
+    const data = await apiRequest('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: ident, password: pass })
     });
-    const data = await res.json();
-
-    if (!res.ok) {
-      let errMsg = data.error || 'Authentication failed. Please verify credentials.';
-      if (res.status === 401) {
-        errMsg = 'The email or password is incorrect.';
-      } else if (res.status === 403) {
-        errMsg = 'This account is disabled. Please contact support.';
-      }
-      showToast(errMsg, 'error');
-      setFieldValidationState('loginPassword', false, errMsg);
-      btn.disabled = false;
-      btn.classList.remove('btn-loading');
-      btn.innerHTML = originalText;
-      return;
-    }
 
     localStorage.setItem('tc_token', data.token);
     localStorage.setItem('tc_user', JSON.stringify(data.user));
 
-    showToast(`Authentication verified! Welcome, ${data.user.company_name}`, 'success');
+    showToast(`Authentication verified! Welcome, ${data.user.company_name || data.user.contact_person || 'User'}`, 'success');
 
     setTimeout(() => {
       if (data.user.role === 'dealer') window.location.href = '/dealer';
@@ -659,7 +688,14 @@ async function handleLoginSubmit(e) {
       else window.location.reload();
     }, 400);
   } catch (err) {
-    showToast('Unable to connect. Please check your internet connection.', 'error');
+    let errMsg = err.message || 'Authentication failed. Please verify credentials.';
+    if (err.status === 401) {
+      errMsg = 'The email or password is incorrect.';
+    } else if (err.status === 403) {
+      errMsg = 'This account is disabled. Please contact support.';
+    }
+    showToast(errMsg, 'error');
+    setFieldValidationState('loginPassword', false, errMsg);
     btn.disabled = false;
     btn.classList.remove('btn-loading');
     btn.innerHTML = originalText;
@@ -726,7 +762,7 @@ async function handleDealerRegisterSubmit(e) {
   btn.innerHTML = '<span class="pulse-dot"></span> Creating Verified Dealer Account...';
 
   try {
-    const res = await fetch('/api/auth/register', {
+    const data = await apiRequest('/api/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -739,24 +775,6 @@ async function handleDealerRegisterSubmit(e) {
         confirm_password
       })
     });
-    const data = await res.json();
-
-    if (!res.ok) {
-      const errMsg = data.error || 'Registration could not be completed.';
-      showToast(errMsg, 'error');
-      btn.disabled = false;
-      btn.classList.remove('btn-loading');
-      btn.innerHTML = originalText;
-
-      if (data.field === 'email' || errMsg.toLowerCase().includes('email')) {
-        setFieldValidationState('dealerEmail', false, 'This email is already registered. Please log in or reset your password.');
-        document.getElementById('dealerEmail').focus();
-      } else if (data.field === 'mobile' || errMsg.toLowerCase().includes('mobile')) {
-        setFieldValidationState('dealerMobile', false, 'This mobile number is already registered. Please log in or reset your password.');
-        document.getElementById('dealerMobile').focus();
-      }
-      return;
-    }
 
     localStorage.setItem('tc_token', data.token);
     localStorage.setItem('tc_user', JSON.stringify(data.user));
@@ -767,10 +785,19 @@ async function handleDealerRegisterSubmit(e) {
       window.location.href = '/dealer';
     }, 450);
   } catch (err) {
-    showToast('Unable to connect to the server. Your entered information has been preserved. Please try again.', 'error');
+    const errMsg = err.message || 'Registration could not be completed.';
+    showToast(errMsg, 'error');
     btn.disabled = false;
     btn.classList.remove('btn-loading');
     btn.innerHTML = originalText;
+
+    if (err.data && (err.data.field === 'email' || errMsg.toLowerCase().includes('email'))) {
+      setFieldValidationState('dealerEmail', false, 'This email is already registered. Please log in or reset your password.');
+      document.getElementById('dealerEmail').focus();
+    } else if (err.data && (err.data.field === 'mobile' || errMsg.toLowerCase().includes('mobile'))) {
+      setFieldValidationState('dealerMobile', false, 'This mobile number is already registered. Please log in or reset your password.');
+      document.getElementById('dealerMobile').focus();
+    }
   }
 }
 
@@ -827,28 +854,10 @@ async function handleTransporterRegisterSubmit(e) {
   btn.innerHTML = '<span class="pulse-dot"></span> Registering Transporter Fleet...';
 
   try {
-    const res = await fetch('/api/auth/register', {
+    const data = await apiRequest('/api/auth/register', {
       method: 'POST',
       body: formData
     });
-    const data = await res.json();
-
-    if (!res.ok) {
-      const errMsg = data.error || 'Transporter registration failed.';
-      showToast(errMsg, 'error');
-      btn.disabled = false;
-      btn.classList.remove('btn-loading');
-      btn.innerHTML = originalText;
-
-      if (data.field === 'email' || errMsg.toLowerCase().includes('email')) {
-        setFieldValidationState('transEmail', false, 'This email is already registered. Please log in or reset your password.');
-        document.getElementById('transEmail').focus();
-      } else if (data.field === 'mobile' || errMsg.toLowerCase().includes('mobile')) {
-        setFieldValidationState('transMobile', false, 'This mobile number is already registered. Please log in or reset your password.');
-        document.getElementById('transMobile').focus();
-      }
-      return;
-    }
 
     localStorage.setItem('tc_token', data.token);
     localStorage.setItem('tc_user', JSON.stringify(data.user));
@@ -859,10 +868,19 @@ async function handleTransporterRegisterSubmit(e) {
       window.location.href = '/transporter';
     }, 450);
   } catch (err) {
-    showToast('Unable to connect to the server. Your entered information has been preserved. Please try again.', 'error');
+    const errMsg = err.message || 'Transporter registration failed.';
+    showToast(errMsg, 'error');
     btn.disabled = false;
     btn.classList.remove('btn-loading');
     btn.innerHTML = originalText;
+
+    if (err.data && (err.data.field === 'email' || errMsg.toLowerCase().includes('email'))) {
+      setFieldValidationState('transEmail', false, 'This email is already registered. Please log in or reset your password.');
+      document.getElementById('transEmail').focus();
+    } else if (err.data && (err.data.field === 'mobile' || errMsg.toLowerCase().includes('mobile'))) {
+      setFieldValidationState('transMobile', false, 'This mobile number is already registered. Please log in or reset your password.');
+      document.getElementById('transMobile').focus();
+    }
   }
 }
 
@@ -884,21 +902,15 @@ async function requestPasswordOtp() {
   btn.innerHTML = '<span class="pulse-dot"></span> Generating OTP...';
 
   try {
-    const res = await fetch('/api/auth/forgot-password', {
+    const data = await apiRequest('/api/auth/forgot-password', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email })
     });
-    const data = await res.json();
 
     btn.disabled = false;
     btn.classList.remove('btn-loading');
     btn.innerHTML = originalText;
-
-    if (!res.ok) {
-      showToast(data.error || 'Could not initiate OTP recovery', 'error');
-      return;
-    }
 
     showToast(data.message || '6-Digit OTP sent successfully!', 'success');
 
@@ -933,7 +945,7 @@ async function requestPasswordOtp() {
       if (box0) box0.focus();
     }, 150);
   } catch (err) {
-    showToast('Unable to connect to the server. Please try again.', 'error');
+    showToast(err.message || 'Could not initiate OTP recovery', 'error');
     btn.disabled = false;
     btn.classList.remove('btn-loading');
     btn.innerHTML = originalText;
@@ -1027,31 +1039,15 @@ async function verifyOtpCode() {
   btn.innerHTML = '<span class="pulse-dot"></span> Verifying Code...';
 
   try {
-    const res = await fetch('/api/auth/verify-otp', {
+    const data = await apiRequest('/api/auth/verify-otp', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, otp_code })
     });
-    const data = await res.json();
 
     btn.disabled = false;
     btn.classList.remove('btn-loading');
     btn.innerHTML = originalText;
-
-    if (!res.ok) {
-      const errMsg = data.error || 'Invalid or expired OTP code.';
-      const errEl = document.getElementById('err_otpDigits');
-      if (errEl) {
-        errEl.textContent = errMsg;
-        errEl.style.display = 'flex';
-      }
-      for (let i = 0; i < 6; i++) {
-        const box = document.getElementById(`otpDigit${i}`);
-        if (box) box.classList.add('is-invalid');
-      }
-      showToast(errMsg, 'error');
-      return;
-    }
 
     currentResetSessionToken = data.reset_session_token;
     if (otpExpiryTimer) clearInterval(otpExpiryTimer);
@@ -1066,7 +1062,17 @@ async function verifyOtpCode() {
       if (passInput) passInput.focus();
     }, 150);
   } catch (err) {
-    showToast('Unable to connect to the server. Please try again.', 'error');
+    const errMsg = err.message || 'Invalid or expired OTP code.';
+    const errEl = document.getElementById('err_otpDigits');
+    if (errEl) {
+      errEl.textContent = errMsg;
+      errEl.style.display = 'flex';
+    }
+    for (let i = 0; i < 6; i++) {
+      const box = document.getElementById(`otpDigit${i}`);
+      if (box) box.classList.add('is-invalid');
+    }
+    showToast(errMsg, 'error');
     btn.disabled = false;
     btn.classList.remove('btn-loading');
     btn.innerHTML = originalText;
@@ -1103,7 +1109,7 @@ async function submitPasswordReset() {
   btn.innerHTML = '<span class="pulse-dot"></span> Updating Password...';
 
   try {
-    const res = await fetch('/api/auth/reset-password', {
+    const data = await apiRequest('/api/auth/reset-password', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -1113,16 +1119,10 @@ async function submitPasswordReset() {
         confirm_password
       })
     });
-    const data = await res.json();
 
     btn.disabled = false;
     btn.classList.remove('btn-loading');
     btn.innerHTML = originalText;
-
-    if (!res.ok) {
-      showToast(data.error || 'Failed to update password.', 'error');
-      return;
-    }
 
     currentResetSessionToken = null;
     showToast('Your password has been changed successfully. Please log in using your new password.', 'success');
@@ -1130,6 +1130,16 @@ async function submitPasswordReset() {
     setAuthTab('login');
     const loginIdent = document.getElementById('loginIdentifier');
     if (loginIdent) {
+      loginIdent.value = email;
+      const passBox = document.getElementById('loginPassword');
+      if (passBox) passBox.focus();
+    }
+  } catch (err) {
+    showToast(err.message || 'Failed to update password.', 'error');
+    btn.disabled = false;
+    btn.classList.remove('btn-loading');
+    btn.innerHTML = originalText;
+  }
       loginIdent.value = email;
       const pass = document.getElementById('loginPassword');
       if (pass) {
@@ -1167,18 +1177,11 @@ async function handleLiveSearchTracking(e) {
   }
 
   try {
-    const res = await fetch(`/api/tracking/${shipId}`);
-    const data = await res.json();
-
-    if (!res.ok) {
-      showToast(data.error || `Consignment #${shipId} not found in database`, 'error');
-      return;
-    }
-
+    const data = await apiRequest(`/api/tracking/${shipId}`);
     const { shipment, latest_location, history } = data;
     renderTrackingModal(shipment, latest_location, history);
   } catch (err) {
-    showToast('Tracking query error: ' + err.message, 'error');
+    showToast(err.message || `Consignment #${shipId} not found in database`, 'error');
   }
 }
 
@@ -1374,12 +1377,11 @@ async function askAiQuestion(prompt) {
   feed.scrollTop = feed.scrollHeight;
 
   try {
-    const res = await fetch('/api/ai/assistant', {
+    const data = await apiRequest('/api/ai/assistant', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ prompt, role: 'shipper' })
     });
-    const data = await res.json();
 
     const t = document.getElementById('aiThinking');
     if (t) t.remove();

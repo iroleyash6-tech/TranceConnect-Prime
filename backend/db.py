@@ -393,7 +393,17 @@ class SQLiteConnectionWrapper:
 def get_sqlite_fallback():
     """Returns a resilient SQLite connection for testing and local fallback."""
     base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-    db_path = os.getenv('SQLITE_DB_PATH') or os.path.join(base_dir, 'database', 'tranceconnect_local.sqlite')
+    if os.getenv('VERCEL') or os.getenv('AWS_LAMBDA_FUNCTION_NAME'):
+        db_path = '/tmp/tranceconnect_local.sqlite'
+        src_path = os.path.join(base_dir, 'database', 'tranceconnect_local.sqlite')
+        if not os.path.exists(db_path) and os.path.exists(src_path):
+            try:
+                import shutil
+                shutil.copyfile(src_path, db_path)
+            except Exception:
+                pass
+    else:
+        db_path = os.getenv('SQLITE_DB_PATH') or os.path.join(base_dir, 'database', 'tranceconnect_local.sqlite')
     os.makedirs(os.path.dirname(db_path), exist_ok=True)
     return SQLiteConnectionWrapper(db_path)
 

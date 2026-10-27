@@ -55,7 +55,10 @@ load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 FRONTEND_DIR = os.path.join(BASE_DIR, 'frontend')
 ASSETS_DIR = os.path.join(BASE_DIR, 'assets')
-UPLOAD_DIR = os.path.join(BASE_DIR, 'uploads')
+if os.getenv('VERCEL') or os.getenv('AWS_LAMBDA_FUNCTION_NAME'):
+    UPLOAD_DIR = '/tmp/uploads'
+else:
+    UPLOAD_DIR = os.path.join(BASE_DIR, 'uploads')
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 os.makedirs(os.path.join(UPLOAD_DIR, 'documents'), exist_ok=True)
 
@@ -172,9 +175,10 @@ def serve_assets(filename):
 def health():
     db_ok, db_msg = test_db_connection()
     return jsonify({
+        "success": True if db_ok else False,
+        "service": "TranceConnect-Pro API",
         "status": "healthy" if db_ok else "database_error",
-        "project": "TranceConnect-Prime",
-        "service": "Production API Server",
+        "project": "TranceConnect-Pro",
         "database": {
             "connected": db_ok,
             "message": db_msg
@@ -182,6 +186,68 @@ def health():
         "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         "version": "2.4.0"
     }), 200 if db_ok else 500
+
+
+# ==========================================
+# 2.1 API ERROR HANDLERS (ALWAYS RETURN JSON)
+# ==========================================
+
+@app.errorhandler(400)
+def bad_request_handler(error):
+    if request.path.startswith("/api/"):
+        msg = getattr(error, 'description', "Bad request parameters")
+        return jsonify({
+            "success": False,
+            "error": msg,
+            "message": msg,
+            "status": 400
+        }), 400
+    return error
+
+@app.errorhandler(404)
+def not_found_handler(error):
+    if request.path.startswith("/api/"):
+        return jsonify({
+            "success": False,
+            "error": "API endpoint not found",
+            "message": f"Endpoint '{request.path}' was not found on this server.",
+            "status": 404
+        }), 404
+    return error
+
+@app.errorhandler(405)
+def method_not_allowed_handler(error):
+    if request.path.startswith("/api/"):
+        return jsonify({
+            "success": False,
+            "error": "Method not allowed",
+            "message": f"HTTP method '{request.method}' is not allowed for '{request.path}'.",
+            "status": 405
+        }), 405
+    return error
+
+@app.errorhandler(500)
+def internal_server_error_handler(error):
+    if request.path.startswith("/api/"):
+        return jsonify({
+            "success": False,
+            "error": "Internal server error",
+            "message": "An internal server error occurred. Please try again later.",
+            "status": 500
+        }), 500
+    return error
+
+@app.errorhandler(Exception)
+def generic_exception_handler(error):
+    if request.path.startswith("/api/"):
+        msg = str(error) if not (os.getenv('PRODUCTION') == 'true') else "An unexpected server error occurred."
+        return jsonify({
+            "success": False,
+            "error": msg,
+            "message": msg,
+            "status": 500
+        }), 500
+    raise error
 
 
 # ==========================================
@@ -2989,16 +3055,40 @@ def admin_db_inspect(current_user):
 @app.errorhandler(404)
 def not_found(e):
     if request.path.startswith('/api/'):
-        return jsonify({"error": "API route not found", "path": request.path}), 404
+        return jsonify({
+            "success": False,
+            "message": "API endpoint not found",
+            "error": "API route not found",
+            "path": request.path
+        }), 404
     return send_from_directory(FRONTEND_DIR, 'index.html')
+
+@app.errorhandler(405)
+def method_not_allowed(e):
+    if request.path.startswith('/api/'):
+        return jsonify({
+            "success": False,
+            "message": f"Method {request.method} not allowed for {request.path}",
+            "error": f"Method not allowed"
+        }), 405
+    return e
 
 @app.errorhandler(413)
 def request_entity_too_large(e):
-    return jsonify({"error": "Uploaded file is too large. Maximum size is 16 MB."}), 413
+    return jsonify({
+        "success": False,
+        "message": "Uploaded file is too large. Maximum size is 16 MB.",
+        "error": "Uploaded file is too large. Maximum size is 16 MB."
+    }), 413
 
 @app.errorhandler(500)
 def server_error(e):
-    return jsonify({"error": "Internal server error", "detail": str(e)}), 500
+    return jsonify({
+        "success": False,
+        "message": "Internal server error",
+        "error": "Internal server error",
+        "detail": str(e)
+    }), 500
 
 
 if __name__ == "__main__":

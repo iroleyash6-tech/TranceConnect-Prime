@@ -1,20 +1,12 @@
 venv/
 node_modules/
 .pytest_cache/
-backend/
-database/
-uploads/
-*.sql
-*.py
+__pycache__/
 *.pyc
 *.bat
-check_db.py
-generate_vehicle_assets.py
-cloudflared.exe
-Procfile
-runtime.txt
-requirements.txt
-__pycache__/
 .git/
 .env*
 sem 5/
+tests/
+cloudflared.exe
+database/*.sql
