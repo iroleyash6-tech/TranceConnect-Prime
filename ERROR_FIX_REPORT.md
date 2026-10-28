@@ -75,3 +75,24 @@
 * **Fix Applied:**
   * Modified `backend/app.py`: when `VERCEL=1`, sets `UPLOAD_DIR = '/tmp/uploads'`.
   * Modified `backend/db.py`: when `VERCEL=1`, automatically replicates SQLite DB to `/tmp/tranceconnect_local.sqlite` with full read-write isolation.
+
+---
+
+### Defect 6: "Get Started" & "Register Business" Role Selection Screen & Click Accessibility
+* **Symptoms:**
+  * Clicking "⚡ Get Started" or "Register Business" bypassed role selection and immediately showed the raw Dealer form without giving users the option to register as a Transporter.
+  * Registration forms lacked the required "Owner Name" field specified for verified business onboarding.
+  * Hero CTA buttons risked click interception by neighboring 3D canvas / overlay containers in certain browser viewport configurations.
+* **Root Cause:**
+  * `openAuthModal('register')` originally defaulted directly to `target = 'dealer'`.
+  * The modal container lacked an interactive role selection view (`#viewAuthRoleSelect`).
+  * Hero CTA container lacked explicit high `z-index` and `pointer-events: auto !important` CSS rules.
+* **Fix Applied:**
+  * Built interactive **Professional Role Selection Screen (`#viewAuthRoleSelect`)** inside `authModal` featuring two prominent cards:
+    1. **🏢 Register as Dealer (Shipper):** Post FTL loads, issue GST invoices & DOs, live GPS radar.
+    2. **🚛 Register as Transporter (Fleet Carrier):** Browse high-value freight, manage trucks & drivers, express payouts.
+  * Added `dealerOwner` and `transOwner` (Authorized Owner / Representative Name) input fields to both registration forms, with real-time validation and backend database mapping.
+  * Integrated hybrid client-side Firebase Authentication creation (`createUserWithEmailAndPassword`) during registration to provision Firebase UID into backend database.
+  * In `styles.css`, enforced `.hero-header-center { z-index: 10 }`, `.hero-cta-animated { z-index: 15 }`, and `.hero-cta-animated .btn { z-index: 20; pointer-events: auto !important }`.
+  * Added redundant programmatic `addEventListener` click bindings in `initPageButtons()` alongside inline `onclick` handlers.
+  * Validated live on `https://tranceconnect-pro.vercel.app/`: **PASS**.

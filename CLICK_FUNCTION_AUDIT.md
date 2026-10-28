@@ -6,26 +6,38 @@
 
 ## 1. Landing & Authentication Pages (`index.html`, `login.html`, `register.html`)
 
-| Element Name | Expected Action | Event Handler | Target File | Verification Status |
+| Element Name | Expected Action | Event Handler / Listener | Target File | Verification Status |
 | :--- | :--- | :--- | :--- | :--- |
-| **Navbar "Sign In" Link** | Opens authentication modal on 'login' tab | `openAuthModal('login')` | `app.js` | **PASS (Verified)** |
-| **Hero "Post Your Freight Load"** | Opens authentication modal on 'dealer' tab | `openAuthModal('dealer')` | `app.js` | **PASS (Verified)** |
-| **Hero "Join Carrier Fleet"** | Opens authentication modal on 'transporter' tab | `openAuthModal('transporter')` | `app.js` | **PASS (Verified)** |
-| **Modal Tab: "Sign In"** | Switches to login form view | `setAuthTab('login')` | `app.js` | **PASS (Verified)** |
-| **Modal Tab: "Dealer Register"** | Switches to shipper signup form view | `setAuthTab('dealer')` | `app.js` | **PASS (Verified)** |
-| **Modal Tab: "Transporter Fleet"** | Switches to carrier signup form view | `setAuthTab('transporter')` | `app.js` | **PASS (Verified)** |
-| **Modal Tab: "Forgot Password"** | Switches to 6-digit OTP recovery flow | `setAuthTab('forgot')` | `app.js` | **PASS (Verified)** |
-| **Google Sign-In Button** | Triggers Firebase Google Auth popup | `signInWithGoogle('dealer')` | `firebase-config.js` | **PASS (Verified)** |
-| **Password Eye Toggles (All)** | Toggles password input type (text/password) | `togglePasswordVisibility(...)` | `app.js` | **PASS (Verified)** |
-| **Login Submit Button** | Dispatches POST to `/api/auth/login` | `handleLogin(event)` | `app.js` | **PASS (Verified)** |
-| **Dealer Registration Submit** | Dispatches POST to `/api/auth/register` | `handleDealerRegisterSubmit(event)` | `app.js` | **PASS (Verified)** |
-| **Transporter Register Submit** | Multipart POST with KYC files to register | `handleTransporterRegisterSubmit(event)` | `app.js` | **PASS (Verified)** |
-| **Request OTP Button** | Dispatches POST to `/api/auth/forgot-password` | `requestPasswordOtp()` | `app.js` | **PASS (Verified)** |
-| **Verify OTP Button** | Dispatches POST to `/api/auth/verify-otp` | `verifyOtpCode()` | `app.js` | **PASS (Verified)** |
-| **Submit New Password Button** | Dispatches POST to `/api/auth/reset-password` | `submitPasswordReset()` | `app.js` | **PASS (Verified)** |
-| **AI Logistics Specialist Bubble** | Toggles floating AI assistant widget | `toggleAIAssistant()` | `app.js` | **PASS (Verified)** |
-| **3D Camera Angle Selector** | Rotates Three.js 3D vehicle perspective | `cycleCameraAngle()` | `vehicle-3d.js` | **PASS (Verified)** |
-| **Neon Palette Switcher** | Cycles vehicle shader lighting tints | `cycleNeonPalette()` | `vehicle-3d.js` | **PASS (Verified)** |
+| **Hero "⚡ Get Started" Button** | Opens professional role selection modal with Dealer vs Transporter choices | `openAuthModal('register')` + `addEventListener` (`#btnHeroGetStarted`) | `app.js`, `index.html` | **PASS (Verified Live)** |
+| **Navbar "Register Business" Button** | Opens role selection modal with Dealer vs Transporter choices | `openAuthModal('register')` + `addEventListener` (`#btnNavRegister`) | `app.js`, `index.html` | **PASS (Verified Live)** |
+| **Drawer "Register Business" Link** | Opens role selection modal and closes drawer | `openAuthModal('register')` + `addEventListener` (`#btnDrawerRegister`) | `app.js`, `index.html` | **PASS (Verified Live)** |
+| **Navbar "Sign In" Button & Link** | Opens authentication modal on 'login' tab | `openAuthModal('login')` + `addEventListener` (`#btnNavSignIn`) | `app.js`, `index.html` | **PASS (Verified Live)** |
+| **Hero "🔐 Sign In" Button** | Opens authentication modal on 'login' tab | `openAuthModal('login')` + `addEventListener` (`#btnHeroSignIn`) | `app.js`, `index.html` | **PASS (Verified Live)** |
+| **Drawer "🔐 Sign In" Link** | Opens authentication modal and closes drawer | `openAuthModal('login')` + `addEventListener` (`#btnDrawerSignIn`) | `app.js`, `index.html` | **PASS (Verified Live)** |
+| **Hero "🌐 Explore Platform"** | Smooth scrolls to Platform Features section | `scrollToSection('features')` (`#btnHeroExplore`) | `app.js`, `index.html` | **PASS (Verified Live)** |
+| **Hero "🛰️ Track Order" Button** | Centers tracking radar and focuses shipment ID input | `openTrackingInterface()` (`#btnHeroTrack`) | `app.js`, `index.html` | **PASS (Verified Live)** |
+| **Hamburger Menu Toggle** | Toggles mobile navigation drawer | `toggleMobileLandingDrawer()` (`.nav-drawer-toggle`) | `app.js`, `index.html` | **PASS (Verified Live)** |
+| **Modal Tab: "⚡ Role Selection"** | Displays interactive role choice cards (Dealer vs Transporter) | `setAuthTab('register')` (`#btnAuthTabSelect`) | `app.js`, `index.html` | **PASS (Verified Live)** |
+| **Role Card: "Register as Dealer"** | Transitions to Dealer registration form with back button | `setAuthTab('dealer')` (`.role-selection-card`) | `app.js`, `index.html` | **PASS (Verified Live)** |
+| **Role Card: "Register as Transporter"** | Transitions to Transporter registration form with back button | `setAuthTab('transporter')` (`.role-selection-card`) | `app.js`, `index.html` | **PASS (Verified Live)** |
+| **Modal Tab: "Sign In"** | Switches to login form view | `setAuthTab('login')` | `app.js`, `index.html` | **PASS (Verified Live)** |
+| **Modal Tab: "Dealer Reg"** | Switches to shipper signup form view | `setAuthTab('dealer')` | `app.js`, `index.html` | **PASS (Verified Live)** |
+| **Modal Tab: "Transporter Reg"** | Switches to carrier signup form view | `setAuthTab('transporter')` | `app.js`, `index.html` | **PASS (Verified Live)** |
+| **Modal Tab: "Reset OTP"** | Switches to 6-digit OTP recovery flow | `setAuthTab('forgot')` | `app.js`, `index.html` | **PASS (Verified Live)** |
+| **Google Sign-In Button** | Triggers Firebase Google Auth popup & backend sync | `signInWithGoogle('dealer')` | `firebase-config.js` | **PASS (Verified Live)** |
+| **Password Eye Toggles (All)** | Toggles password input type (text/password) | `togglePasswordVisibility(...)` | `app.js` | **PASS (Verified Live)** |
+| **Login Submit Button** | Dispatches POST to `/api/auth/login` | `handleLoginSubmit(event)` | `app.js` | **PASS (Verified Live)** |
+| **Dealer Registration Submit** | Dispatches POST to `/api/auth/register` with owner & company | `handleDealerRegisterSubmit(event)` | `app.js` | **PASS (Verified Live)** |
+| **Transporter Register Submit** | Multipart/JSON POST with owner, company & KYC files | `handleTransporterRegisterSubmit(event)` | `app.js` | **PASS (Verified Live)** |
+| **Request OTP Button** | Dispatches POST to `/api/auth/forgot-password` | `requestPasswordOtp()` | `app.js` | **PASS (Verified Live)** |
+| **Verify OTP Button** | Dispatches POST to `/api/auth/verify-otp` | `verifyOtpCode()` | `app.js` | **PASS (Verified Live)** |
+| **Submit New Password Button** | Dispatches POST to `/api/auth/reset-password` | `submitPasswordReset()` | `app.js` | **PASS (Verified Live)** |
+| **AI Logistics Specialist Bubble** | Toggles floating AI assistant widget | `toggleAIAssistant()` | `app.js` | **PASS (Verified Live)** |
+| **AI Ask Question Action** | Dispatches prompt to `/api/ai/assistant` | `handleSendAiMessage(event)` | `app.js` | **PASS (Verified Live)** |
+| **3D 360° Orbit Button** | Toggles vehicle auto-rotation | `toggleAutoRotate()` (`#btnHudAutoRotate`) | `vehicle-3d.js` | **PASS (Verified Live)** |
+| **3D Boost Button** | Activates ion thruster boost | `triggerThrusterBoost()` (`#btnHudBoost`) | `vehicle-3d.js` | **PASS (Verified Live)** |
+| **3D Neon Palette Button** | Cycles vehicle neon shader lighting tints | `cycleNeonPalette()` (`#btnHudColor`) | `vehicle-3d.js` | **PASS (Verified Live)** |
+| **3D Camera Angle Button** | Cycles Three.js camera perspectives | `cycleCameraAngle()` (`#btnHudView`) | `vehicle-3d.js` | **PASS (Verified Live)** |
 
 ---
 
