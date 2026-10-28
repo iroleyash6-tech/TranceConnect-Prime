@@ -34,6 +34,23 @@
   let currentPaletteIndex = 0;
   let currentCameraAngleIndex = 0;
 
+  // Immediate global fallback bindings for HUD controls
+  window.toggleAutoRotate = window.toggleAutoRotate || function() {
+    autoRotate = !autoRotate;
+    const btn = document.getElementById('btnHudAutoRotate');
+    if (btn) btn.classList.toggle('active', autoRotate);
+  };
+  window.triggerThrusterBoost = window.triggerThrusterBoost || function() {
+    const btn = document.getElementById('btnHudBoost');
+    if (btn) btn.classList.toggle('active');
+  };
+  window.cycleNeonPalette = window.cycleNeonPalette || function() {
+    if (window.showToast) window.showToast('Neon Scheme Toggled', 'info', 1500);
+  };
+  window.cycleCameraAngle = window.cycleCameraAngle || function() {
+    if (window.showToast) window.showToast('Camera Perspective Cycled', 'info', 1500);
+  };
+
   // Color Palettes: [Primary Neon, Secondary Neon, Accent Light, Hex Value]
   const PALETTES = [
     {

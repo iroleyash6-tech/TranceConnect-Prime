@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
   checkApiHealth();
   initStatsCounters();
   setupAuthValidation();
+  initPageButtons();
 
   // Auto-open modal or alert if navigated with hash, path or params
   const urlParams = new URLSearchParams(window.location.search);
@@ -27,14 +28,81 @@ document.addEventListener('DOMContentLoaded', () => {
   } else if (urlParams.get('tab') === 'forgot') {
     openAuthModal('forgot');
   } else if (window.location.hash === '#register' || window.location.pathname.endsWith('/register') || window.location.pathname.endsWith('/register.html')) {
-    openAuthModal('dealer');
+    openAuthModal('register');
   } else if (window.location.hash === '#login' || window.location.pathname.endsWith('/login') || window.location.pathname.endsWith('/login.html')) {
     openAuthModal('login');
   } else if (window.location.hash === '#tracking') {
-    const el = document.getElementById('trackingSearchInput');
-    if (el) el.focus();
+    openTrackingInterface();
   }
 });
+
+function initPageButtons() {
+  const getStarted = document.getElementById('btnHeroGetStarted');
+  if (getStarted) {
+    getStarted.addEventListener('click', (e) => {
+      e.preventDefault();
+      openAuthModal('register');
+    });
+  }
+
+  const explore = document.getElementById('btnHeroExplore');
+  if (explore) {
+    explore.addEventListener('click', (e) => {
+      e.preventDefault();
+      scrollToSection('features');
+    });
+  }
+
+  const heroSignIn = document.getElementById('btnHeroSignIn');
+  if (heroSignIn) {
+    heroSignIn.addEventListener('click', (e) => {
+      e.preventDefault();
+      openAuthModal('login');
+    });
+  }
+
+  const heroTrack = document.getElementById('btnHeroTrack');
+  if (heroTrack) {
+    heroTrack.addEventListener('click', (e) => {
+      e.preventDefault();
+      openTrackingInterface();
+    });
+  }
+
+  const navSignIn = document.getElementById('btnNavSignIn');
+  if (navSignIn) {
+    navSignIn.addEventListener('click', (e) => {
+      e.preventDefault();
+      openAuthModal('login');
+    });
+  }
+
+  const navRegister = document.getElementById('btnNavRegister');
+  if (navRegister) {
+    navRegister.addEventListener('click', (e) => {
+      e.preventDefault();
+      openAuthModal('register');
+    });
+  }
+
+  const drawerSignIn = document.getElementById('btnDrawerSignIn');
+  if (drawerSignIn) {
+    drawerSignIn.addEventListener('click', (e) => {
+      e.preventDefault();
+      openAuthModal('login');
+      toggleMobileLandingDrawer(false);
+    });
+  }
+
+  const drawerRegister = document.getElementById('btnDrawerRegister');
+  if (drawerRegister) {
+    drawerRegister.addEventListener('click', (e) => {
+      e.preventDefault();
+      openAuthModal('register');
+      toggleMobileLandingDrawer(false);
+    });
+  }
+}
 
 function setupInteractiveEffects() {
   const bg = document.getElementById('parallaxBg');
@@ -141,13 +209,35 @@ let currentResetSessionToken = null;
 
 function openAuthModal(initialTab = 'login', mode = null) {
   let target = initialTab;
-  if (initialTab === 'register') target = 'dealer';
+  if (initialTab === 'register' || initialTab === 'select') {
+    target = 'register';
+  }
   setAuthTab(target);
   openModal('authModal');
 }
+window.openAuthModal = openAuthModal;
+
+function openTrackingInterface(shipmentId = null) {
+  const sec = document.getElementById('tracking');
+  if (sec) {
+    sec.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    const inp = document.getElementById('trackingSearchInput');
+    if (inp) {
+      if (shipmentId) inp.value = shipmentId;
+      setTimeout(() => {
+        inp.focus();
+        inp.select();
+        inp.classList.add('input-highlight-pulse');
+        setTimeout(() => inp.classList.remove('input-highlight-pulse'), 2000);
+      }, 350);
+    }
+  }
+}
+window.openTrackingInterface = openTrackingInterface;
 
 function setAuthTab(tab) {
   const formLogin = document.getElementById('formLogin');
+  const viewSelect = document.getElementById('viewAuthRoleSelect');
   const formDealer = document.getElementById('formDealerRegister');
   const formTransporter = document.getElementById('formTransporterRegister');
   const formForgot = document.getElementById('formForgot');
@@ -155,20 +245,27 @@ function setAuthTab(tab) {
   const subtitle = document.getElementById('authModalSubtitle');
 
   const btnLogin = document.getElementById('btnAuthTabLogin');
+  const btnSelect = document.getElementById('btnAuthTabSelect');
   const btnDealer = document.getElementById('btnAuthTabDealer');
   const btnTransporter = document.getElementById('btnAuthTabTransporter');
   const btnForgot = document.getElementById('btnAuthTabForgot');
 
-  [btnLogin, btnDealer, btnTransporter, btnForgot].forEach(btn => {
+  [btnLogin, btnSelect, btnDealer, btnTransporter, btnForgot].forEach(btn => {
     if (btn) btn.classList.remove('active');
   });
 
   if (formLogin) formLogin.style.display = 'none';
+  if (viewSelect) viewSelect.style.display = 'none';
   if (formDealer) formDealer.style.display = 'none';
   if (formTransporter) formTransporter.style.display = 'none';
   if (formForgot) formForgot.style.display = 'none';
 
-  if (tab === 'login') {
+  if (tab === 'register' || tab === 'select' || tab === 'role-select') {
+    if (viewSelect) viewSelect.style.display = 'block';
+    if (btnSelect) btnSelect.classList.add('active');
+    if (title) title.textContent = 'Create Your TranceConnect Account';
+    if (subtitle) subtitle.textContent = 'Select your operational role to join the freight network';
+  } else if (tab === 'login') {
     if (formLogin) formLogin.style.display = 'block';
     if (btnLogin) btnLogin.classList.add('active');
     if (title) title.textContent = 'Sign In to TranceConnect';
@@ -214,6 +311,7 @@ function setAuthTab(tab) {
     }, 120);
   }
 }
+window.setAuthTab = setAuthTab;
 
 // -------------------------------------------------------------
 // UI HELPERS: ATTACHMENTS, PASSWORD REVEAL & STRENGTH METER
@@ -367,6 +465,13 @@ function validateDealerCompany() {
   return setFieldValidationState('dealerCompany', ok, 'Please enter your registered company name.');
 }
 
+function validateDealerOwner() {
+  const el = document.getElementById('dealerOwner');
+  const val = el ? el.value.trim() : '';
+  const ok = val.length >= 2;
+  return setFieldValidationState('dealerOwner', ok, 'Please enter the authorized owner or representative full name.');
+}
+
 function validateDealerMobile() {
   const el = document.getElementById('dealerMobile');
   return validateMobileVal(el ? el.value : '', 'dealerMobile');
@@ -403,6 +508,13 @@ function validateTransCompany() {
   const val = el ? el.value.trim() : '';
   const ok = val.length >= 2;
   return setFieldValidationState('transCompany', ok, 'Please enter your registered transport company name.');
+}
+
+function validateTransOwner() {
+  const el = document.getElementById('transOwner');
+  const val = el ? el.value.trim() : '';
+  const ok = val.length >= 2;
+  return setFieldValidationState('transOwner', ok, 'Please enter the authorized owner or fleet manager full name.');
 }
 
 function validateTransMobile() {
@@ -471,6 +583,8 @@ function setupAuthValidation() {
   // Dealer Form
   const dc = document.getElementById('dealerCompany');
   if (dc) { dc.addEventListener('input', validateDealerCompany); dc.addEventListener('blur', validateDealerCompany); }
+  const do_el = document.getElementById('dealerOwner');
+  if (do_el) { do_el.addEventListener('input', validateDealerOwner); do_el.addEventListener('blur', validateDealerOwner); }
   const dm = document.getElementById('dealerMobile');
   if (dm) { dm.addEventListener('input', validateDealerMobile); dm.addEventListener('blur', validateDealerMobile); }
   const de = document.getElementById('dealerEmail');
@@ -488,6 +602,8 @@ function setupAuthValidation() {
   // Transporter Form
   const tc = document.getElementById('transCompany');
   if (tc) { tc.addEventListener('input', validateTransCompany); tc.addEventListener('blur', validateTransCompany); }
+  const to_el = document.getElementById('transOwner');
+  if (to_el) { to_el.addEventListener('input', validateTransOwner); to_el.addEventListener('blur', validateTransOwner); }
   const tm = document.getElementById('transMobile');
   if (tm) { tm.addEventListener('input', validateTransMobile); tm.addEventListener('blur', validateTransMobile); }
   const te = document.getElementById('transEmail');
@@ -735,20 +851,22 @@ async function handleDealerRegisterSubmit(e) {
   e.preventDefault();
 
   const validComp = validateDealerCompany();
+  const validOwner = validateDealerOwner();
   const validMob = validateDealerMobile();
   const validEmail = validateDealerEmail();
   const validGst = validateDealerGst();
   const validPass = validateDealerPassword();
   const validConf = validateDealerConfirmPassword();
 
-  if (!validComp || !validMob || !validEmail || !validGst || !validPass || !validConf) {
+  if (!validComp || !validOwner || !validMob || !validEmail || !validGst || !validPass || !validConf) {
     focusFirstInvalidField([
-      'dealerCompany', 'dealerMobile', 'dealerEmail', 'dealerGst', 'dealerPassword', 'dealerConfirmPassword'
+      'dealerCompany', 'dealerOwner', 'dealerMobile', 'dealerEmail', 'dealerGst', 'dealerPassword', 'dealerConfirmPassword'
     ]);
     return;
   }
 
   const company_name = document.getElementById('dealerCompany').value.trim();
+  const owner_name = (document.getElementById('dealerOwner') ? document.getElementById('dealerOwner').value.trim() : '') || company_name;
   const mobile = document.getElementById('dealerMobile').value.trim();
   const email = document.getElementById('dealerEmail').value.trim();
   const gst_number = document.getElementById('dealerGst').value.trim().toUpperCase();
@@ -761,6 +879,29 @@ async function handleDealerRegisterSubmit(e) {
   btn.classList.add('btn-loading');
   btn.innerHTML = '<span class="pulse-dot"></span> Creating Verified Dealer Account...';
 
+  // 1. Firebase Authentication Hybrid Creation
+  let firebaseUid = null;
+  if (typeof firebase !== 'undefined' && firebase.auth) {
+    try {
+      if (typeof initFirebase === 'function') initFirebase();
+      if (typeof firebaseAuth !== 'undefined' && firebaseAuth) {
+        try {
+          const fbCred = await firebaseAuth.createUserWithEmailAndPassword(email, password);
+          if (fbCred && fbCred.user) {
+            firebaseUid = fbCred.user.uid;
+            if (fbCred.user.updateProfile) {
+              await fbCred.user.updateProfile({ displayName: owner_name || company_name });
+            }
+          }
+        } catch (fbErr) {
+          console.warn('Firebase user creation note:', fbErr.message);
+        }
+      }
+    } catch (fbE) {
+      console.warn('Firebase init note:', fbE.message);
+    }
+  }
+
   try {
     const data = await apiRequest('/api/auth/register', {
       method: 'POST',
@@ -768,11 +909,14 @@ async function handleDealerRegisterSubmit(e) {
       body: JSON.stringify({
         role: 'dealer',
         company_name,
+        owner_name,
+        contact_person: owner_name,
         mobile,
         email,
         gstin: gst_number,
         password,
-        confirm_password
+        confirm_password,
+        firebase_uid: firebaseUid
       })
     });
 
@@ -808,20 +952,22 @@ async function handleTransporterRegisterSubmit(e) {
   e.preventDefault();
 
   const validComp = validateTransCompany();
+  const validOwner = validateTransOwner();
   const validMob = validateTransMobile();
   const validEmail = validateTransEmail();
   const validGst = validateTransGst();
   const validPass = validateTransPassword();
   const validConf = validateTransConfirmPassword();
 
-  if (!validComp || !validMob || !validEmail || !validGst || !validPass || !validConf) {
+  if (!validComp || !validOwner || !validMob || !validEmail || !validGst || !validPass || !validConf) {
     focusFirstInvalidField([
-      'transCompany', 'transMobile', 'transEmail', 'transGst', 'transPassword', 'transConfirmPassword'
+      'transCompany', 'transOwner', 'transMobile', 'transEmail', 'transGst', 'transPassword', 'transConfirmPassword'
     ]);
     return;
   }
 
   const company_name = document.getElementById('transCompany').value.trim();
+  const owner_name = (document.getElementById('transOwner') ? document.getElementById('transOwner').value.trim() : '') || company_name;
   const mobile = document.getElementById('transMobile').value.trim();
   const email = document.getElementById('transEmail').value.trim();
   const gst_number = document.getElementById('transGst').value.trim().toUpperCase();
@@ -831,33 +977,82 @@ async function handleTransporterRegisterSubmit(e) {
   const aadhaarInput = document.getElementById('transAadhaarFile');
   const licenseInput = document.getElementById('transLicenseFile');
 
-  const formData = new FormData();
-  formData.append('role', 'transporter');
-  formData.append('company_name', company_name);
-  formData.append('mobile', mobile);
-  formData.append('email', email);
-  formData.append('gstin', gst_number);
-  formData.append('password', password);
-  formData.append('confirm_password', confirm_password);
-
-  if (aadhaarInput && aadhaarInput.files && aadhaarInput.files[0]) {
-    formData.append('aadhaar_file', aadhaarInput.files[0]);
-  }
-  if (licenseInput && licenseInput.files && licenseInput.files[0]) {
-    formData.append('license_file', licenseInput.files[0]);
-  }
-
   const btn = document.getElementById('btnTransSubmit');
   const originalText = btn.innerHTML;
   btn.disabled = true;
   btn.classList.add('btn-loading');
-  btn.innerHTML = '<span class="pulse-dot"></span> Registering Transporter Fleet...';
+  btn.innerHTML = '<span class="pulse-dot"></span> Onboarding Transporter Fleet...';
+
+  // 1. Firebase Authentication Hybrid Creation
+  let firebaseUid = null;
+  if (typeof firebase !== 'undefined' && firebase.auth) {
+    try {
+      if (typeof initFirebase === 'function') initFirebase();
+      if (typeof firebaseAuth !== 'undefined' && firebaseAuth) {
+        try {
+          const fbCred = await firebaseAuth.createUserWithEmailAndPassword(email, password);
+          if (fbCred && fbCred.user) {
+            firebaseUid = fbCred.user.uid;
+            if (fbCred.user.updateProfile) {
+              await fbCred.user.updateProfile({ displayName: owner_name || company_name });
+            }
+          }
+        } catch (fbErr) {
+          console.warn('Firebase user creation note:', fbErr.message);
+        }
+      }
+    } catch (fbE) {
+      console.warn('Firebase init note:', fbE.message);
+    }
+  }
 
   try {
-    const data = await apiRequest('/api/auth/register', {
-      method: 'POST',
-      body: formData
-    });
+    let data;
+    const hasFiles = (aadhaarInput && aadhaarInput.files && aadhaarInput.files[0]) ||
+                     (licenseInput && licenseInput.files && licenseInput.files[0]);
+
+    if (hasFiles) {
+      const formData = new FormData();
+      formData.append('role', 'transporter');
+      formData.append('company_name', company_name);
+      formData.append('owner_name', owner_name);
+      formData.append('contact_person', owner_name);
+      formData.append('mobile', mobile);
+      formData.append('email', email);
+      formData.append('gstin', gst_number);
+      formData.append('password', password);
+      formData.append('confirm_password', confirm_password);
+      if (firebaseUid) formData.append('firebase_uid', firebaseUid);
+
+      if (aadhaarInput && aadhaarInput.files[0]) {
+        formData.append('aadhaar_file', aadhaarInput.files[0]);
+      }
+      if (licenseInput && licenseInput.files[0]) {
+        formData.append('license_file', licenseInput.files[0]);
+      }
+
+      data = await apiRequest('/api/auth/register', {
+        method: 'POST',
+        body: formData
+      });
+    } else {
+      data = await apiRequest('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          role: 'transporter',
+          company_name,
+          owner_name,
+          contact_person: owner_name,
+          mobile,
+          email,
+          gstin: gst_number,
+          password,
+          confirm_password,
+          firebase_uid: firebaseUid
+        })
+      });
+    }
 
     localStorage.setItem('tc_token', data.token);
     localStorage.setItem('tc_user', JSON.stringify(data.user));

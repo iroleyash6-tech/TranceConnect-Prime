@@ -308,7 +308,7 @@ def register():
 
     role = data.get("role", "").strip().lower()
     company_name = data.get("company_name", "").strip()
-    contact_person = data.get("contact_person", "").strip()
+    contact_person = (data.get("owner_name") or data.get("contact_person") or "").strip()
     mobile = data.get("mobile", "").strip()
     email = data.get("email", "").strip().lower()
     gst_number = (data.get("gst_number") or data.get("gstin") or "").strip().upper()
@@ -653,7 +653,7 @@ def firebase_login():
 def update_user_profile(current_user):
     data = request.get_json(silent=True) or {}
     company_name = data.get("company_name", "").strip()
-    contact_person = data.get("contact_person", "").strip()
+    contact_person = (data.get("owner_name") or data.get("contact_person") or "").strip()
     mobile = data.get("mobile", "").strip()
     gst_number = data.get("gst_number", "").strip().upper()
     address = data.get("address", "").strip()

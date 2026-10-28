@@ -45,12 +45,12 @@
       <a href="#features">Platform Features</a>
       <a href="#workflow">Workflow</a>
       <a href="#tracking">Live GPS Radar</a>
-      <a onclick="openAuthModal('login')">Sign In</a>
+      <a id="navLinkSignIn" onclick="openAuthModal('login')" style="cursor: pointer;">Sign In</a>
     </nav>
 
     <div class="nav-actions">
-      <button class="btn btn-outline btn-sm" onclick="openAuthModal('login')">Sign In</button>
-      <button class="btn btn-primary btn-sm" onclick="openAuthModal('register')">Register Business</button>
+      <button id="btnNavSignIn" class="btn btn-outline btn-sm" onclick="openAuthModal('login')">Sign In</button>
+      <button id="btnNavRegister" class="btn btn-primary btn-sm" onclick="openAuthModal('register')">Register Business</button>
     </div>
   </header>
 
@@ -81,10 +81,10 @@
       <span>🛰️</span> Live GPS Radar
     </div>
     <div class="sidebar-heading" style="margin-top: 1.25rem;">Access</div>
-    <div class="sidebar-item" onclick="openAuthModal('login'); toggleMobileLandingDrawer(false);">
+    <div id="btnDrawerSignIn" class="sidebar-item" onclick="openAuthModal('login'); toggleMobileLandingDrawer(false);">
       <span>🔐</span> Sign In
     </div>
-    <div class="sidebar-item" onclick="openAuthModal('register'); toggleMobileLandingDrawer(false);">
+    <div id="btnDrawerRegister" class="sidebar-item" onclick="openAuthModal('register'); toggleMobileLandingDrawer(false);">
       <span>🏢</span> Register Business
     </div>
   </aside>
@@ -105,16 +105,16 @@
       </p>
 
       <div class="hero-cta-animated">
-        <button class="btn btn-animated-neon" onclick="openAuthModal('register')">
+        <button id="btnHeroGetStarted" class="btn btn-animated-neon" onclick="openAuthModal('register')" aria-label="Get Started with TranceConnect">
           ⚡ Get Started
         </button>
-        <button class="btn btn-animated-glass" onclick="scrollToSection('features')">
+        <button id="btnHeroExplore" class="btn btn-animated-glass" onclick="scrollToSection('features')">
           🌐 Explore Platform
         </button>
-        <button class="btn btn-outline" onclick="openAuthModal('login')">
+        <button id="btnHeroSignIn" class="btn btn-outline" onclick="openAuthModal('login')">
           🔐 Sign In
         </button>
-        <button class="btn btn-glass" onclick="document.getElementById('tracking').scrollIntoView({ behavior: 'smooth' }); document.getElementById('trackingSearchInput').focus();">
+        <button id="btnHeroTrack" class="btn btn-glass" onclick="openTrackingInterface()">
           🛰️ Track Order / Consignment
         </button>
       </div>
@@ -581,6 +581,9 @@
         <button id="btnAuthTabLogin" class="auth-flow-tab active" onclick="setAuthTab('login')">
           <span>🔐</span> Sign In
         </button>
+        <button id="btnAuthTabSelect" class="auth-flow-tab" onclick="setAuthTab('register')">
+          <span>⚡</span> Role Selection
+        </button>
         <button id="btnAuthTabDealer" class="auth-flow-tab" onclick="setAuthTab('dealer')">
           <span>🏢</span> Dealer Reg
         </button>
@@ -590,6 +593,78 @@
         <button id="btnAuthTabForgot" class="auth-flow-tab" onclick="setAuthTab('forgot')">
           <span>🔑</span> Reset OTP
         </button>
+      </div>
+
+      <!-- =========================================================
+           VIEW: ROLE SELECTION (GET STARTED / REGISTER BUSINESS)
+           ========================================================= -->
+      <div id="viewAuthRoleSelect" style="display: none; padding: 0.25rem 0;">
+        <div style="text-align: center; margin-bottom: 1.35rem;">
+          <div style="display: inline-flex; align-items: center; gap: 0.45rem; padding: 0.3rem 0.85rem; background: rgba(0, 240, 255, 0.08); border: 1px solid rgba(0, 240, 255, 0.25); border-radius: 999px; font-size: 0.74rem; color: var(--cyan); font-weight: 600; text-transform: uppercase; margin-bottom: 0.6rem;">
+            <span class="pulse-dot"></span> Professional Onboarding
+          </div>
+          <h3 style="font-size: 1.25rem; font-weight: 800; color: #ffffff; margin-bottom: 0.35rem;">Select Your Account Type</h3>
+          <p style="color: var(--text-dim); font-size: 0.82rem; max-width: 440px; margin: 0 auto;">Choose your operational role to launch tailored freight tools, live GPS radar, and instant billing.</p>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr; gap: 1rem; margin-bottom: 1.25rem;">
+          <!-- Card 1: Dealer (Shipper) -->
+          <div class="role-selection-card" onclick="setAuthTab('dealer')" style="background: rgba(15, 23, 42, 0.75); border: 1px solid rgba(0, 240, 255, 0.35); border-radius: var(--radius-md); padding: 1.25rem 1.35rem; cursor: pointer; transition: all 0.2s ease;">
+            <div style="display: flex; align-items: flex-start; gap: 1rem;">
+              <div style="width: 48px; height: 48px; border-radius: var(--radius-sm); background: rgba(0, 240, 255, 0.12); border: 1px solid rgba(0, 240, 255, 0.35); display: flex; align-items: center; justify-content: center; font-size: 1.6rem; flex-shrink: 0;">
+                🏢
+              </div>
+              <div style="flex: 1;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.25rem;">
+                  <strong style="font-size: 1.05rem; color: #ffffff;">Register as Dealer</strong>
+                  <span style="font-size: 0.68rem; color: var(--cyan); background: rgba(0, 240, 255, 0.1); border: 1px solid rgba(0, 240, 255, 0.25); border-radius: 4px; padding: 2px 7px; font-weight: 600;">CARGO SHIPPER</span>
+                </div>
+                <p style="color: var(--text-muted); font-size: 0.8rem; line-height: 1.45; margin-bottom: 0.75rem;">
+                  For cargo shippers, factory owners, mills & manufacturers looking to transport goods with real-time GPS tracking and instant GST billing.
+                </p>
+                <div style="display: flex; flex-wrap: wrap; gap: 0.45rem; margin-bottom: 0.85rem;">
+                  <span style="font-size: 0.72rem; color: var(--text-dim); background: rgba(255,255,255,0.04); padding: 2px 6px; border-radius: 3px;">✓ Post Consignments</span>
+                  <span style="font-size: 0.72rem; color: var(--text-dim); background: rgba(255,255,255,0.04); padding: 2px 6px; border-radius: 3px;">✓ GST Invoices & DOs</span>
+                  <span style="font-size: 0.72rem; color: var(--text-dim); background: rgba(255,255,255,0.04); padding: 2px 6px; border-radius: 3px;">✓ 24/7 Fleet Telemetry</span>
+                </div>
+                <button type="button" class="btn btn-primary btn-sm" style="width: 100%; justify-content: center;" onclick="event.stopPropagation(); setAuthTab('dealer')">
+                  Continue as Dealer ➔
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 2: Transporter (Fleet Carrier) -->
+          <div class="role-selection-card" onclick="setAuthTab('transporter')" style="background: rgba(15, 23, 42, 0.75); border: 1px solid rgba(16, 185, 129, 0.35); border-radius: var(--radius-md); padding: 1.25rem 1.35rem; cursor: pointer; transition: all 0.2s ease;">
+            <div style="display: flex; align-items: flex-start; gap: 1rem;">
+              <div style="width: 48px; height: 48px; border-radius: var(--radius-sm); background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.35); display: flex; align-items: center; justify-content: center; font-size: 1.6rem; flex-shrink: 0;">
+                🚛
+              </div>
+              <div style="flex: 1;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.25rem;">
+                  <strong style="font-size: 1.05rem; color: #ffffff;">Register as Transporter</strong>
+                  <span style="font-size: 0.68rem; color: var(--emerald); background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 4px; padding: 2px 7px; font-weight: 600;">FLEET CARRIER</span>
+                </div>
+                <p style="color: var(--text-muted); font-size: 0.8rem; line-height: 1.45; margin-bottom: 0.75rem;">
+                  For commercial fleet owners, truck operators, logistics partners & drivers looking to accept verified loads and earn faster.
+                </p>
+                <div style="display: flex; flex-wrap: wrap; gap: 0.45rem; margin-bottom: 0.85rem;">
+                  <span style="font-size: 0.72rem; color: var(--text-dim); background: rgba(255,255,255,0.04); padding: 2px 6px; border-radius: 3px;">✓ Browse Available Loads</span>
+                  <span style="font-size: 0.72rem; color: var(--text-dim); background: rgba(255,255,255,0.04); padding: 2px 6px; border-radius: 3px;">✓ Manage Vehicles & Drivers</span>
+                  <span style="font-size: 0.72rem; color: var(--text-dim); background: rgba(255,255,255,0.04); padding: 2px 6px; border-radius: 3px;">✓ Instant Settlement Payouts</span>
+                </div>
+                <button type="button" class="btn btn-outline btn-sm" style="width: 100%; justify-content: center; border-color: var(--emerald); color: var(--emerald);" onclick="event.stopPropagation(); setAuthTab('transporter')">
+                  Continue as Transporter ➔
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="text-align: center; padding-top: 0.75rem; border-top: 1px solid rgba(255,255,255,0.08); font-size: 0.82rem; color: var(--text-dim);">
+          Already have an account?
+          <a onclick="setAuthTab('login')" style="color: var(--cyan); font-weight: 600; cursor: pointer; margin-left: 0.35rem;">Sign In to Dashboard ➔</a>
+        </div>
       </div>
 
       <!-- =========================================================
@@ -656,6 +731,10 @@
            FORM 2: DEALER REGISTRATION (STREAMLINED BUSINESS FLOW)
            ========================================================= -->
       <form id="formDealerRegister" style="display: none;" onsubmit="handleDealerRegisterSubmit(event)" novalidate>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="setAuthTab('register')" style="margin-bottom: 0.75rem; color: var(--cyan); padding: 0.25rem 0.5rem; display: inline-flex; align-items: center; gap: 0.35rem;">
+          ← Back to Role Selection
+        </button>
+
         <div style="background: rgba(0, 240, 255, 0.05); border: 1px solid rgba(0, 240, 255, 0.2); border-radius: var(--radius-sm); padding: 0.65rem 0.85rem; margin-bottom: 1.15rem; font-size: 0.8rem; display: flex; align-items: center; gap: 0.5rem;">
           <span style="font-size: 1.2rem;">🏢</span>
           <div>
@@ -675,6 +754,19 @@
           </div>
           <div class="field-msg hint-msg">Example: Bharat Steel Works, Reliance Polymers, Tata Motors Plant.</div>
           <div class="field-msg error-msg" id="err_dealerCompany">Please enter your registered company name.</div>
+        </div>
+
+        <div class="form-group">
+          <label for="dealerOwner">
+            <span>Authorized Owner / Representative Name <span class="field-required">*</span></span>
+          </label>
+          <div class="form-input-wrap" id="wrap_dealerOwner">
+            <input type="text" id="dealerOwner" required placeholder="e.g. Rajesh Sharma" autocomplete="name">
+            <span class="field-validation-icon valid-icon">✓</span>
+            <span class="field-validation-icon invalid-icon">✕</span>
+          </div>
+          <div class="field-msg hint-msg">Full name of business owner or logistics director.</div>
+          <div class="field-msg error-msg" id="err_dealerOwner">Please enter the owner or representative's full name.</div>
         </div>
 
         <div class="form-row">
@@ -766,6 +858,10 @@
            FORM 3: TRANSPORTER REGISTRATION (WITH KYC DOCUMENT UPLOAD)
            ========================================================= -->
       <form id="formTransporterRegister" style="display: none;" onsubmit="handleTransporterRegisterSubmit(event)" novalidate>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="setAuthTab('register')" style="margin-bottom: 0.75rem; color: var(--emerald); padding: 0.25rem 0.5rem; display: inline-flex; align-items: center; gap: 0.35rem;">
+          ← Back to Role Selection
+        </button>
+
         <div style="background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: var(--radius-sm); padding: 0.65rem 0.85rem; margin-bottom: 1.15rem; font-size: 0.8rem; display: flex; align-items: center; gap: 0.5rem;">
           <span style="font-size: 1.2rem;">🚛</span>
           <div>
@@ -785,6 +881,19 @@
           </div>
           <div class="field-msg hint-msg">Example: Apex Freight Corp, Mahalaxmi Heavy Haulers, Gujarat Carriers.</div>
           <div class="field-msg error-msg" id="err_transCompany">Please enter your registered company name.</div>
+        </div>
+
+        <div class="form-group">
+          <label for="transOwner">
+            <span>Authorized Owner / Fleet Manager Name <span class="field-required">*</span></span>
+          </label>
+          <div class="form-input-wrap" id="wrap_transOwner">
+            <input type="text" id="transOwner" required placeholder="e.g. Vikram Singh" autocomplete="name">
+            <span class="field-validation-icon valid-icon">✓</span>
+            <span class="field-validation-icon invalid-icon">✕</span>
+          </div>
+          <div class="field-msg hint-msg">Full name of fleet operator or managing director.</div>
+          <div class="field-msg error-msg" id="err_transOwner">Please enter the fleet manager or owner's full name.</div>
         </div>
 
         <div class="form-row">

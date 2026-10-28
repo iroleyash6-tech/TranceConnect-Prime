@@ -1332,6 +1332,8 @@ input:focus, select:focus, textarea:focus {
   display: flex;
   flex-direction: column;
   align-items: center;
+  position: relative;
+  z-index: 10;
 }
 
 .hero-title-futuristic {
@@ -1362,6 +1364,33 @@ input:focus, select:focus, textarea:focus {
   justify-content: center;
   gap: 1.25rem;
   flex-wrap: wrap;
+  position: relative;
+  z-index: 15;
+}
+
+.hero-cta-animated .btn {
+  position: relative;
+  z-index: 20;
+  pointer-events: auto !important;
+  cursor: pointer;
+}
+
+.role-selection-card {
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.role-selection-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--cyan) !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5), 0 0 20px rgba(0, 240, 255, 0.2);
+}
+
+.input-highlight-pulse {
+  animation: pulse-border 1.5s ease 2;
+}
+@keyframes pulse-border {
+  0% { box-shadow: 0 0 0 0 rgba(0, 240, 255, 0.7); }
+  70% { box-shadow: 0 0 0 10px rgba(0, 240, 255, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(0, 240, 255, 0); }
 }
 
 /* ANIMATED BUTTONS */
