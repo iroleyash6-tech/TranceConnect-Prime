@@ -19,6 +19,7 @@ let firebaseApp = null;
 let firebaseAuth = null;
 let firebaseFirestore = null;
 let firebaseRealtimeDb = null;
+let firebaseStorage = null;
 let googleAuthProvider = null;
 let isFirebaseInitialized = false;
 
@@ -44,6 +45,19 @@ function initFirebase() {
           console.warn("Realtime DB init notice:", dErr.message);
         }
       }
+
+      if (typeof firebase.storage === 'function') {
+        try {
+          firebaseStorage = firebase.storage();
+        } catch (sErr) {
+          console.warn("Storage init notice:", sErr.message);
+        }
+      }
+
+      window.firebaseApp = firebaseApp;
+      window.firebaseAuth = firebaseAuth;
+      window.firebaseFirestore = firebaseFirestore;
+      window.firebaseStorage = firebaseStorage;
 
       isFirebaseInitialized = true;
       console.log("⚡ Firebase connected to live project:", firebaseConfig.projectId);

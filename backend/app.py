@@ -38,6 +38,11 @@ try:
     )
     from backend.ai_service import get_logistics_ai_reply
     from backend.invoice_do_routes import invoice_do_bp
+    from backend.storage_service import (
+        save_uploaded_file, validate_file, check_document_access,
+        get_storage_diagnostic, is_firebase_storage_ready,
+        get_firebase_storage_bucket, delete_stored_file, DOCS_DIR
+    )
 except ImportError:
     from db import get_db_connection, test_db_connection
     from auth_util import (
@@ -46,6 +51,11 @@ except ImportError:
     )
     from ai_service import get_logistics_ai_reply
     from invoice_do_routes import invoice_do_bp
+    from storage_service import (
+        save_uploaded_file, validate_file, check_document_access,
+        get_storage_diagnostic, is_firebase_storage_ready,
+        get_firebase_storage_bucket, delete_stored_file, DOCS_DIR
+    )
 
 # Load environment variables
 load_dotenv()
@@ -88,13 +98,18 @@ try:
     from firebase_admin import credentials
     if not firebase_admin._apps:
         fb_key_path = os.getenv('FIREBASE_SERVICE_ACCOUNT_KEY') or os.path.join(BASE_DIR, 'firebase-service-account.json')
+        fb_bucket = os.getenv('FIREBASE_STORAGE_BUCKET') or 'transconnect-2fb2b.firebasestorage.app'
+        fb_opts = {
+            'projectId': 'transconnect-2fb2b',
+            'storageBucket': fb_bucket
+        }
         if os.path.exists(fb_key_path):
             cred = credentials.Certificate(fb_key_path)
-            firebase_admin.initialize_app(cred, {'projectId': 'transconnect-2fb2b'})
-            print(f"[Firebase Admin] Initialized with credentials from {fb_key_path}")
+            firebase_admin.initialize_app(cred, fb_opts)
+            print(f"[Firebase Admin] Initialized with credentials from {fb_key_path} and bucket {fb_bucket}")
         else:
-            firebase_admin.initialize_app(options={'projectId': 'transconnect-2fb2b'})
-            print("[Firebase Admin] Initialized with project ID transconnect-2fb2b")
+            firebase_admin.initialize_app(options=fb_opts)
+            print(f"[Firebase Admin] Initialized with project ID transconnect-2fb2b and bucket {fb_bucket}")
 except Exception as fb_err:
     print(f"[Firebase Admin Note] {fb_err} (standard fallback active)")
 
@@ -183,9 +198,16 @@ def health():
             "connected": db_ok,
             "message": db_msg
         },
+        "storage": get_storage_diagnostic(),
         "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         "version": "2.4.0"
     }), 200 if db_ok else 500
+
+
+@app.get("/api/storage/status")
+def storage_status():
+    """Returns real-time Firebase Storage and local vault status."""
+    return jsonify(get_storage_diagnostic()), 200
 
 
 # ==========================================
@@ -391,8 +413,9 @@ def register():
             "field": "confirm_password"
         }), 400
 
-    conn = get_db_connection()
+    conn = None
     try:
+        conn = get_db_connection()
         with conn.cursor() as cur:
             # Check existing email
             cur.execute("SELECT id FROM users WHERE email = %s", (email,))
@@ -494,7 +517,8 @@ def register():
     except Exception as e:
         return jsonify({"error": f"Registration failed: {str(e)}"}), 500
     finally:
-        conn.close()
+        if conn:
+            conn.close()
 
 
 @app.post("/api/auth/login")
@@ -516,8 +540,9 @@ def login():
     if clean_mobile.startswith('0') and len(clean_mobile) == 11:
         clean_mobile = clean_mobile[1:]
 
-    conn = get_db_connection()
+    conn = None
     try:
+        conn = get_db_connection()
         with conn.cursor() as cur:
             cur.execute("""
                 SELECT id, role, company_name, contact_person, mobile, email, gst_number,
@@ -554,14 +579,16 @@ def login():
     except Exception as e:
         return jsonify({"error": f"Login failed: {str(e)}"}), 500
     finally:
-        conn.close()
+        if conn:
+            conn.close()
 
 
 @app.get("/api/auth/me")
 @token_required
 def get_current_user_profile(current_user):
-    conn = get_db_connection()
+    conn = None
     try:
+        conn = get_db_connection()
         with conn.cursor() as cur:
             cur.execute("""
                 SELECT id, role, company_name, contact_person, mobile, email, gst_number,
@@ -574,7 +601,8 @@ def get_current_user_profile(current_user):
             return jsonify({"error": "User not found"}), 404
         return jsonify({"user": user}), 200
     finally:
-        conn.close()
+        if conn:
+            conn.close()
 
 
 @app.post("/api/auth/firebase-login")
@@ -607,8 +635,9 @@ def firebase_login():
     except Exception:
         pass
 
-    conn = get_db_connection()
+    conn = None
     try:
+        conn = get_db_connection()
         with conn.cursor() as cur:
             cur.execute("""
                 SELECT id, role, company_name, contact_person, mobile, email, gst_number, verification_status, status
@@ -645,7 +674,8 @@ def firebase_login():
             "user": user
         }), 200
     finally:
-        conn.close()
+        if conn:
+            conn.close()
 
 
 @app.put("/api/auth/profile")
@@ -660,8 +690,9 @@ def update_user_profile(current_user):
     city = data.get("city", "").strip()
     state = data.get("state", "").strip()
 
-    conn = get_db_connection()
+    conn = None
     try:
+        conn = get_db_connection()
         with conn.cursor() as cur:
             cur.execute("""
                 UPDATE users SET
@@ -676,7 +707,8 @@ def update_user_profile(current_user):
             """, (company_name, contact_person, mobile, gst_number, address, city, state, current_user['id']))
         return jsonify({"message": "Profile updated successfully"}), 200
     finally:
-        conn.close()
+        if conn:
+            conn.close()
 
 
 # ==========================================
@@ -699,8 +731,9 @@ def forgot_password():
             "field": "email"
         }), 400
 
-    conn = get_db_connection()
+    conn = None
     try:
+        conn = get_db_connection()
         with conn.cursor() as cur:
             cur.execute("SELECT id, company_name, contact_person FROM users WHERE email = %s", (email,))
             user = cur.fetchone()
@@ -808,7 +841,8 @@ TranceConnect-Pro Security Team
                 "otp_code": otp if (app.debug or os.getenv('FLASK_ENV') != 'production' or os.getenv('TESTING') == 'true') else None
             }), 200
     finally:
-        conn.close()
+        if conn:
+            conn.close()
 
 
 @app.post("/api/auth/verify-otp")
@@ -827,8 +861,9 @@ def verify_otp():
     if len(otp) != 6 or not otp.isdigit():
         return jsonify({"error": "Please enter a valid 6-digit numeric OTP code."}), 400
 
-    conn = get_db_connection()
+    conn = None
     try:
+        conn = get_db_connection()
         with conn.cursor() as cur:
             cur.execute("""
                 SELECT id, otp_code, expires_at, attempts, is_used FROM password_resets
@@ -891,7 +926,8 @@ def verify_otp():
             "reset_session_token": reset_session_token
         }), 200
     finally:
-        conn.close()
+        if conn:
+            conn.close()
 
 
 @app.post("/api/auth/reset-password")
@@ -919,8 +955,9 @@ def reset_password():
     if confirm_password and confirm_password != new_password:
         return jsonify({"error": "New passwords do not match. Please re-enter your confirmation password."}), 400
 
-    conn = get_db_connection()
+    conn = None
     try:
+        conn = get_db_connection()
         with conn.cursor() as cur:
             # Verify via server-authorized reset session token
             record = None
@@ -983,7 +1020,8 @@ def reset_password():
             "message": "Your password has been changed successfully. Please log in using your new password."
         }), 200
     finally:
-        conn.close()
+        if conn:
+            conn.close()
 
 
 # ==========================================
@@ -993,8 +1031,9 @@ def reset_password():
 @app.get("/api/dashboard/stats")
 @token_required
 def get_dashboard_stats(current_user):
-    conn = get_db_connection()
+    conn = None
     try:
+        conn = get_db_connection()
         with conn.cursor() as cur:
             role = current_user['role']
             uid = current_user['id']
@@ -1078,7 +1117,8 @@ def get_dashboard_stats(current_user):
 
             return jsonify({"error": "Unknown role"}), 400
     finally:
-        conn.close()
+        if conn:
+            conn.close()
 
 
 # ==========================================
@@ -1088,8 +1128,9 @@ def get_dashboard_stats(current_user):
 @app.get("/api/transporters")
 def list_transporters():
     """Returns verified active transporters with fleet statistics."""
-    conn = get_db_connection()
+    conn = None
     try:
+        conn = get_db_connection()
         with conn.cursor() as cur:
             cur.execute("""
                 SELECT 
@@ -1106,13 +1147,15 @@ def list_transporters():
             transporters = cur.fetchall()
         return jsonify({"transporters": transporters}), 200
     finally:
-        conn.close()
+        if conn:
+            conn.close()
 
 
 @app.get("/api/transporters/<int:transporter_id>")
 def get_transporter_details(transporter_id):
-    conn = get_db_connection()
+    conn = None
     try:
+        conn = get_db_connection()
         with conn.cursor() as cur:
             cur.execute("""
                 SELECT id, company_name, contact_person, mobile, email, gst_number, address, city, state, verification_status
@@ -1132,7 +1175,8 @@ def get_transporter_details(transporter_id):
 
         return jsonify({"transporter": transporter}), 200
     finally:
-        conn.close()
+        if conn:
+            conn.close()
 
 
 # ==========================================
@@ -1170,8 +1214,9 @@ def create_shipment(current_user):
     dealer_id = current_user['id']
     status = 'Assigned' if transporter_id else 'Pending'
 
-    conn = get_db_connection()
+    conn = None
     try:
+        conn = get_db_connection()
         with conn.cursor() as cur:
             # If transporter selected, check validity
             if transporter_id:
@@ -1237,7 +1282,8 @@ def create_shipment(current_user):
     except Exception as e:
         return jsonify({"error": f"Failed to create shipment: {str(e)}"}), 500
     finally:
-        conn.close()
+        if conn:
+            conn.close()
 
 
 @app.get("/api/shipments")
@@ -1246,8 +1292,9 @@ def list_shipments(current_user):
     role = current_user['role']
     uid = current_user['id']
 
-    conn = get_db_connection()
+    conn = None
     try:
+        conn = get_db_connection()
         with conn.cursor() as cur:
             if role == 'dealer':
                 cur.execute("""
@@ -1304,14 +1351,16 @@ def list_shipments(current_user):
             shipments = cur.fetchall()
         return jsonify({"shipments": shipments}), 200
     finally:
-        conn.close()
+        if conn:
+            conn.close()
 
 
 @app.get("/api/shipments/<int:shipment_id>")
 @token_required
 def get_shipment_details(current_user, shipment_id):
-    conn = get_db_connection()
+    conn = None
     try:
+        conn = get_db_connection()
         with conn.cursor() as cur:
             cur.execute("""
                 SELECT 
@@ -1359,7 +1408,8 @@ def get_shipment_details(current_user, shipment_id):
 
         return jsonify({"shipment": shipment}), 200
     finally:
-        conn.close()
+        if conn:
+            conn.close()
 
 
 @app.put("/api/shipments/<int:shipment_id>/status")
@@ -1382,8 +1432,9 @@ def update_shipment_status(current_user, shipment_id):
     role = current_user['role']
     uid = current_user['id']
 
-    conn = get_db_connection()
+    conn = None
     try:
+        conn = get_db_connection()
         with conn.cursor() as cur:
             cur.execute("SELECT * FROM shipments WHERE id = %s", (shipment_id,))
             shipment = cur.fetchone()
@@ -1475,7 +1526,8 @@ def update_shipment_status(current_user, shipment_id):
             "checkpoint": checkpoint
         }), 200
     finally:
-        conn.close()
+        if conn:
+            conn.close()
 
 
 @app.put("/api/shipments/<int:shipment_id>/assign")
@@ -1487,8 +1539,9 @@ def assign_transporter_to_shipment(current_user, shipment_id):
     if not transporter_id:
         return jsonify({"error": "Transporter ID is required"}), 400
 
-    conn = get_db_connection()
+    conn = None
     try:
+        conn = get_db_connection()
         with conn.cursor() as cur:
             cur.execute("SELECT id, dealer_id FROM shipments WHERE id = %s", (shipment_id,))
             shipment = cur.fetchone()
@@ -1519,7 +1572,8 @@ def assign_transporter_to_shipment(current_user, shipment_id):
 
         return jsonify({"message": f"Shipment #{shipment_id} assigned to {transporter['company_name']}"}), 200
     finally:
-        conn.close()
+        if conn:
+            conn.close()
 
 
 # ==========================================
@@ -1529,8 +1583,9 @@ def assign_transporter_to_shipment(current_user, shipment_id):
 @app.get("/api/vehicles")
 @token_required
 def list_vehicles(current_user):
-    conn = get_db_connection()
+    conn = None
     try:
+        conn = get_db_connection()
         with conn.cursor() as cur:
             if current_user['role'] == 'transporter':
                 cur.execute("""
@@ -1553,7 +1608,8 @@ def list_vehicles(current_user):
                     v['image_url'] = get_default_vehicle_image(v.get('vehicle_type'))
         return jsonify({"vehicles": vehicles}), 200
     finally:
-        conn.close()
+        if conn:
+            conn.close()
 
 
 @app.post("/api/vehicles")
@@ -1580,8 +1636,9 @@ def add_vehicle(current_user):
 
     transporter_id = current_user['id']
 
-    conn = get_db_connection()
+    conn = None
     try:
+        conn = get_db_connection()
         with conn.cursor() as cur:
             cur.execute("SELECT id FROM vehicles WHERE vehicle_number = %s", (vehicle_number,))
             if cur.fetchone():
@@ -1600,14 +1657,16 @@ def add_vehicle(current_user):
     except Exception as e:
         return jsonify({"error": f"Failed to register vehicle: {str(e)}"}), 500
     finally:
-        conn.close()
+        if conn:
+            conn.close()
 
 
 @app.get("/api/drivers")
 @token_required
 def list_drivers(current_user):
-    conn = get_db_connection()
+    conn = None
     try:
+        conn = get_db_connection()
         with conn.cursor() as cur:
             if current_user['role'] == 'transporter':
                 cur.execute("""
@@ -1628,7 +1687,8 @@ def list_drivers(current_user):
             drivers = cur.fetchall()
         return jsonify({"drivers": drivers}), 200
     finally:
-        conn.close()
+        if conn:
+            conn.close()
 
 
 @app.post("/api/drivers")
@@ -1647,8 +1707,9 @@ def add_driver(current_user):
     if not name or not mobile or not license_number:
         return jsonify({"error": "Driver name, mobile number, and license number are required"}), 400
 
-    conn = get_db_connection()
+    conn = None
     try:
+        conn = get_db_connection()
         with conn.cursor() as cur:
             cur.execute("""
                 INSERT INTO drivers (transporter_id, vehicle_id, name, mobile, license_number, aadhaar_number, license_document, aadhaar_document, status)
@@ -1663,7 +1724,8 @@ def add_driver(current_user):
     except Exception as e:
         return jsonify({"error": f"Failed to register driver: {str(e)}"}), 500
     finally:
-        conn.close()
+        if conn:
+            conn.close()
 
 
 # ==========================================
@@ -1675,63 +1737,74 @@ def add_driver(current_user):
 def upload_document(current_user):
     """
     Accepts multipart/form-data upload.
-    Validates file extension, size, and saves securely with UUID.
-    Saves document record in database.
+    Validates file extension, size, document type, and persists securely
+    using storage_service (Firebase Cloud Storage with local vault fallback).
     """
     if 'file' not in request.files:
         return jsonify({"error": "No file part provided in request"}), 400
 
     file = request.files['file']
-    if file.filename == '':
+    if not file or file.filename == '':
         return jsonify({"error": "No file selected"}), 400
 
-    if not allowed_file(file.filename):
-        return jsonify({"error": f"File type not allowed. Allowed types: {', '.join(ALLOWED_EXTENSIONS)}"}), 400
-
-    doc_type = request.form.get('document_type', 'other').strip().lower()
-    valid_types = ['aadhaar', 'driving_license', 'invoice', 'delivery_order', 'rc', 'insurance', 'other']
-    if doc_type not in valid_types:
-        doc_type = 'other'
-
+    doc_type = (request.form.get('document_type') or 'other').strip().lower()
     shipment_id = request.form.get('shipment_id') or None
     vehicle_id = request.form.get('vehicle_id') or None
 
-    orig_filename = secure_filename(file.filename)
-    extension = orig_filename.rsplit('.', 1)[1].lower() if '.' in orig_filename else 'bin'
-    stored_name = f"{doc_type}_{uuid.uuid4().hex[:12]}.{extension}"
-    save_path = os.path.join(UPLOAD_DIR, 'documents', stored_name)
-
-    file.save(save_path)
-    file_size = os.path.getsize(save_path)
-    mime_type = file.content_type or 'application/octet-stream'
-
-    conn = get_db_connection()
     try:
+        save_res = save_uploaded_file(
+            file,
+            user_id=current_user['id'],
+            doc_type=doc_type,
+            shipment_id=shipment_id,
+            vehicle_id=vehicle_id
+        )
+    except ValueError as val_err:
+        return jsonify({"error": str(val_err)}), 400
+    except Exception as upload_err:
+        return jsonify({"error": f"Upload processing failed: {str(upload_err)}"}), 500
+
+    conn = None
+    try:
+        conn = get_db_connection()
         with conn.cursor() as cur:
             cur.execute("""
-                INSERT INTO documents (user_id, shipment_id, vehicle_id, document_type, file_name, file_path, file_size, mime_type, verification_status)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 'pending')
-            """, (current_user['id'], shipment_id, vehicle_id, doc_type, orig_filename, stored_name, file_size, mime_type))
+                INSERT INTO documents (
+                    user_id, shipment_id, vehicle_id, document_type,
+                    file_name, file_path, file_size, mime_type,
+                    verification_status, storage_provider, storage_bucket, storage_path
+                )
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 'pending', %s, %s, %s)
+            """, (
+                current_user['id'], shipment_id, vehicle_id, doc_type,
+                save_res['file_name'], save_res['file_path'], save_res['file_size'],
+                save_res['mime_type'], save_res['storage_provider'],
+                save_res.get('storage_bucket'), save_res['file_path']
+            ))
             doc_id = cur.lastrowid
 
         return jsonify({
-            "message": f"Document '{orig_filename}' uploaded successfully",
+            "message": f"Document '{save_res['file_name']}' uploaded successfully",
             "document_id": doc_id,
             "document_type": doc_type,
-            "file_name": orig_filename,
+            "file_name": save_res['file_name'],
+            "storage_provider": save_res['storage_provider'],
             "download_url": f"/api/documents/{doc_id}/download"
         }), 201
     except Exception as e:
+        delete_stored_file(save_res['file_path'], save_res['storage_provider'])
         return jsonify({"error": f"Database recording failed: {str(e)}"}), 500
     finally:
-        conn.close()
+        if conn:
+            conn.close()
 
 
 @app.get("/api/documents")
 @token_required
 def list_documents(current_user):
-    conn = get_db_connection()
+    conn = None
     try:
+        conn = get_db_connection()
         with conn.cursor() as cur:
             if current_user['role'] == 'admin':
                 cur.execute("""
@@ -1749,17 +1822,19 @@ def list_documents(current_user):
             docs = cur.fetchall()
         return jsonify({"documents": docs}), 200
     finally:
-        conn.close()
+        if conn:
+            conn.close()
 
 
 @app.get("/api/documents/<int:doc_id>/download")
 @token_required
 def download_document(current_user, doc_id):
     """
-    Secure file retrieval. Checks that caller has permission to view this document.
+    Secure file retrieval. Enforces strict least-privilege authorization.
     """
-    conn = get_db_connection()
+    conn = None
     try:
+        conn = get_db_connection()
         with conn.cursor() as cur:
             cur.execute("SELECT * FROM documents WHERE id = %s", (doc_id,))
             doc = cur.fetchone()
@@ -1767,26 +1842,49 @@ def download_document(current_user, doc_id):
         if not doc:
             return jsonify({"error": "Document not found"}), 404
 
-        # Access check: admin or document owner or involved in shipment
-        if current_user['role'] != 'admin' and doc['user_id'] != current_user['id']:
-            if doc['shipment_id']:
-                with conn.cursor() as cur:
-                    cur.execute("SELECT dealer_id, transporter_id FROM shipments WHERE id = %s", (doc['shipment_id'],))
-                    s = cur.fetchone()
-                    if not s or (current_user['id'] not in [s['dealer_id'], s['transporter_id']]):
-                        return jsonify({"error": "Access forbidden"}), 403
-            else:
-                return jsonify({"error": "Access forbidden"}), 403
+        if not check_document_access(current_user, doc, conn):
+            return jsonify({"error": "Access forbidden: you do not have permission to view this document."}), 403
 
-        doc_dir = os.path.join(UPLOAD_DIR, 'documents')
-        return send_from_directory(
+        file_path = doc['file_path']
+        storage_provider = doc.get('storage_provider') or 'local'
+
+        # If Firebase Cloud Storage is live and configured
+        if storage_provider == 'firebase_storage':
+            bucket = get_firebase_storage_bucket()
+            if bucket:
+                try:
+                    blob = bucket.blob(file_path)
+                    if blob.exists():
+                        signed_url = blob.generate_signed_url(
+                            version="v4",
+                            expiration=datetime.timedelta(minutes=60),
+                            method="GET",
+                            response_disposition=f'inline; filename="{doc["file_name"]}"'
+                        )
+                        return jsonify({"download_url": signed_url, "expires_in": 3600}), 200
+                except Exception:
+                    pass
+
+        # Serve from local secure vault
+        doc_dir = DOCS_DIR
+        local_name = os.path.basename(file_path)
+        if not os.path.exists(os.path.join(doc_dir, local_name)):
+            # Check legacy upload dir
+            legacy_dir = os.path.join(UPLOAD_DIR, 'documents')
+            if os.path.exists(os.path.join(legacy_dir, local_name)):
+                doc_dir = legacy_dir
+
+        resp = send_from_directory(
             doc_dir,
-            doc['file_path'],
+            local_name,
             download_name=doc['file_name'],
             as_attachment=False
         )
+        resp.headers["X-Content-Type-Options"] = "nosniff"
+        return resp
     finally:
-        conn.close()
+        if conn:
+            conn.close()
 
 
 @app.put("/api/documents/<int:doc_id>/verify")
@@ -1800,8 +1898,9 @@ def verify_document(current_user, doc_id):
     if status not in ['verified', 'rejected']:
         return jsonify({"error": "Status must be 'verified' or 'rejected'"}), 400
 
-    conn = get_db_connection()
+    conn = None
     try:
+        conn = get_db_connection()
         with conn.cursor() as cur:
             cur.execute("SELECT * FROM documents WHERE id = %s", (doc_id,))
             doc = cur.fetchone()
@@ -1823,7 +1922,8 @@ def verify_document(current_user, doc_id):
 
         return jsonify({"message": f"Document marked as {status}"}), 200
     finally:
-        conn.close()
+        if conn:
+            conn.close()
 
 
 # ==========================================
@@ -1839,8 +1939,9 @@ def get_live_tracking(shipment_id):
         token = auth_header.split(' ', 1)[1].strip()
         current_user = decode_access_token(token)
 
-    conn = get_db_connection()
+    conn = None
     try:
+        conn = get_db_connection()
         with conn.cursor() as cur:
             cur.execute("""
                 SELECT s.id, s.product_type, s.pickup_location, s.delivery_location, s.status, s.weight_tons,
@@ -1905,7 +2006,8 @@ def get_live_tracking(shipment_id):
             "history": records
         }), 200
     finally:
-        conn.close()
+        if conn:
+            conn.close()
 
 
 @app.post("/api/tracking/update")
@@ -1926,8 +2028,9 @@ def update_live_tracking(current_user):
     if not shipment_id or latitude is None or longitude is None:
         return jsonify({"error": "Shipment ID, latitude, and longitude are required"}), 400
 
-    conn = get_db_connection()
+    conn = None
     try:
+        conn = get_db_connection()
         with conn.cursor() as cur:
             cur.execute("""
                 SELECT s.id, s.vehicle_id, s.dealer_id, s.transporter_id,
@@ -1985,7 +2088,8 @@ def update_live_tracking(current_user):
             "tracking": payload
         }), 200
     finally:
-        conn.close()
+        if conn:
+            conn.close()
 
 
 @app.get("/api/fleet/live")
@@ -1994,8 +2098,9 @@ def get_live_fleet(current_user):
     """
     Returns active fleet consignments with vehicle info, image, and latest GPS coordinates.
     """
-    conn = get_db_connection()
+    conn = None
     try:
+        conn = get_db_connection()
         with conn.cursor() as cur:
             cur.execute("""
                 SELECT 
@@ -2047,7 +2152,8 @@ def get_live_fleet(current_user):
             "active_count": len(fleet_items)
         }), 200
     finally:
-        conn.close()
+        if conn:
+            conn.close()
 
 
 # ==========================================
@@ -2064,8 +2170,9 @@ def get_chat_conversations(current_user):
     uid = current_user['id']
     role = current_user['role']
 
-    conn = get_db_connection()
+    conn = None
     try:
+        conn = get_db_connection()
         with conn.cursor() as cur:
             if role == 'dealer':
                 cur.execute("""
@@ -2140,14 +2247,16 @@ def get_chat_conversations(current_user):
 
         return jsonify({"conversations": conversations}), 200
     finally:
-        conn.close()
+        if conn:
+            conn.close()
 
 
 @app.get("/api/chat/<int:shipment_id>")
 @token_required
 def get_shipment_chat(current_user, shipment_id):
-    conn = get_db_connection()
+    conn = None
     try:
+        conn = get_db_connection()
         with conn.cursor() as cur:
             cur.execute("SELECT dealer_id, transporter_id FROM shipments WHERE id = %s", (shipment_id,))
             shipment = cur.fetchone()
@@ -2182,7 +2291,8 @@ def get_shipment_chat(current_user, shipment_id):
 
         return jsonify({"messages": messages}), 200
     finally:
-        conn.close()
+        if conn:
+            conn.close()
 
 
 @app.post("/api/chat/<int:shipment_id>")
@@ -2195,8 +2305,9 @@ def send_chat_message(current_user, shipment_id):
     if not message_text:
         return jsonify({"error": "Message content cannot be empty"}), 400
 
-    conn = get_db_connection()
+    conn = None
     try:
+        conn = get_db_connection()
         with conn.cursor() as cur:
             cur.execute("SELECT dealer_id, transporter_id FROM shipments WHERE id = %s", (shipment_id,))
             shipment = cur.fetchone()
@@ -2262,14 +2373,16 @@ def send_chat_message(current_user, shipment_id):
             "sent_at": now_iso
         }), 201
     finally:
-        conn.close()
+        if conn:
+            conn.close()
 
 
 @app.post("/api/chat/<int:shipment_id>/read")
 @token_required
 def mark_shipment_chat_read(current_user, shipment_id):
-    conn = get_db_connection()
+    conn = None
     try:
+        conn = get_db_connection()
         with conn.cursor() as cur:
             cur.execute("""
                 UPDATE messages SET is_read = TRUE, read_at = NOW()
@@ -2287,14 +2400,16 @@ def mark_shipment_chat_read(current_user, shipment_id):
 
         return jsonify({"message": "Messages marked as read", "marked_count": affected}), 200
     finally:
-        conn.close()
+        if conn:
+            conn.close()
 
 
 @app.get("/api/chat/unread")
 @token_required
 def get_unread_count(current_user):
-    conn = get_db_connection()
+    conn = None
     try:
+        conn = get_db_connection()
         with conn.cursor() as cur:
             cur.execute("""
                 SELECT COUNT(*) AS unread_count FROM messages
@@ -2303,7 +2418,8 @@ def get_unread_count(current_user):
             unread = cur.fetchone()['unread_count']
         return jsonify({"unread_count": unread}), 200
     finally:
-        conn.close()
+        if conn:
+            conn.close()
 
 
 # ==========================================
@@ -2437,8 +2553,9 @@ def handle_socket_send_message(data):
         emit('error', {'message': 'shipment_id and message are required'})
         return
 
-    conn = get_db_connection()
+    conn = None
     try:
+        conn = get_db_connection()
         with conn.cursor() as cur:
             cur.execute("SELECT dealer_id, transporter_id FROM shipments WHERE id = %s", (shipment_id,))
             shipment = cur.fetchone()
@@ -2492,7 +2609,8 @@ def handle_socket_send_message(data):
         socketio.emit('chat_notification', msg_payload, room=f"user_{receiver_id}")
         emit('message_sent', msg_payload)
     finally:
-        conn.close()
+        if conn:
+            conn.close()
 
 @socketio.on('typing')
 def handle_socket_typing(data):
@@ -2562,8 +2680,9 @@ def handle_socket_share_location(data):
         emit('error', {'message': 'Invalid GPS location coordinates'})
         return
 
-    conn = get_db_connection()
+    conn = None
     try:
+        conn = get_db_connection()
         with conn.cursor() as cur:
             cur.execute("""
                 SELECT s.id, s.vehicle_id, v.vehicle_number, v.vehicle_type,
@@ -2615,7 +2734,8 @@ def handle_socket_share_location(data):
         socketio.emit("location_updated", payload, room="fleet_live")
         emit("location_acknowledged", payload)
     finally:
-        conn.close()
+        if conn:
+            conn.close()
 
 
 
@@ -2626,8 +2746,9 @@ def handle_socket_share_location(data):
 @app.get("/api/notifications")
 @token_required
 def list_notifications(current_user):
-    conn = get_db_connection()
+    conn = None
     try:
+        conn = get_db_connection()
         with conn.cursor() as cur:
             cur.execute("""
                 SELECT * FROM notifications
@@ -2638,19 +2759,22 @@ def list_notifications(current_user):
             notifications = cur.fetchall()
         return jsonify({"notifications": notifications}), 200
     finally:
-        conn.close()
+        if conn:
+            conn.close()
 
 
 @app.put("/api/notifications/read-all")
 @token_required
 def mark_all_notifications_read(current_user):
-    conn = get_db_connection()
+    conn = None
     try:
+        conn = get_db_connection()
         with conn.cursor() as cur:
             cur.execute("UPDATE notifications SET is_read = TRUE WHERE user_id = %s", (current_user['id'],))
         return jsonify({"message": "All notifications marked as read"}), 200
     finally:
-        conn.close()
+        if conn:
+            conn.close()
 
 
 # ==========================================
@@ -2701,8 +2825,9 @@ def ai_assistant_endpoint():
 @token_required
 @role_required('admin')
 def admin_list_users(current_user):
-    conn = get_db_connection()
+    conn = None
     try:
+        conn = get_db_connection()
         with conn.cursor() as cur:
             cur.execute("""
                 SELECT id, role, company_name, contact_person, mobile, email, gst_number, city, state, verification_status, status, created_at
@@ -2712,7 +2837,8 @@ def admin_list_users(current_user):
             users = cur.fetchall()
         return jsonify({"users": users}), 200
     finally:
-        conn.close()
+        if conn:
+            conn.close()
 
 
 @app.put("/api/admin/users/<int:user_id>/status")
@@ -2725,13 +2851,15 @@ def admin_toggle_user_status(current_user, user_id):
     if status not in ['active', 'blocked', 'inactive']:
         return jsonify({"error": "Status must be 'active', 'blocked', or 'inactive'"}), 400
 
-    conn = get_db_connection()
+    conn = None
     try:
+        conn = get_db_connection()
         with conn.cursor() as cur:
             cur.execute("UPDATE users SET status = %s WHERE id = %s", (status, user_id))
         return jsonify({"message": f"User status updated to {status}"}), 200
     finally:
-        conn.close()
+        if conn:
+            conn.close()
 
 
 @app.put("/api/admin/users/<int:user_id>/verification")
@@ -2744,8 +2872,9 @@ def admin_toggle_user_verification(current_user, user_id):
     if verification_status not in ['verified', 'rejected', 'pending']:
         return jsonify({"error": "Status must be 'verified', 'rejected', or 'pending'"}), 400
 
-    conn = get_db_connection()
+    conn = None
     try:
+        conn = get_db_connection()
         with conn.cursor() as cur:
             cur.execute("UPDATE users SET verification_status = %s WHERE id = %s", (verification_status, user_id))
             cur.execute("""
@@ -2758,7 +2887,8 @@ def admin_toggle_user_verification(current_user, user_id):
             ))
         return jsonify({"message": f"User verification updated to {verification_status}"}), 200
     finally:
-        conn.close()
+        if conn:
+            conn.close()
 
 
 # ==========================================
@@ -2977,8 +3107,9 @@ def generate_invoice_or_do(current_user):
     file_size = os.path.getsize(file_path)
 
     # Save in database
-    conn = get_db_connection()
+    conn = None
     try:
+        conn = get_db_connection()
         with conn.cursor() as cur:
             cur.execute("""
                 INSERT INTO documents (user_id, shipment_id, document_type, file_name, file_path, file_size, mime_type, verification_status)
@@ -3001,7 +3132,8 @@ def generate_invoice_or_do(current_user):
             "download_url": f"/api/documents/{doc_id}/download"
         }), 201
     finally:
-        conn.close()
+        if conn:
+            conn.close()
 
 
 # ==========================================
@@ -3050,7 +3182,8 @@ def admin_db_inspect(current_user):
             "inspected_at": datetime.datetime.now(datetime.timezone.utc).isoformat()
         }), 200
     finally:
-        conn.close()
+        if conn:
+            conn.close()
 
 @app.errorhandler(404)
 def not_found(e):

@@ -17,6 +17,13 @@ class handler(BaseHTTPRequestHandler):
                 "connected": True,
                 "message": "Connected successfully (Cloud Hybrid Adapter)"
             },
+            "storage": {
+                "storage_ready": False,
+                "provider": "local_secure_vault",
+                "project_id": "transconnect-2fb2b",
+                "configured_bucket": "transconnect-2fb2b.firebasestorage.app",
+                "action_required": "Complete Firebase Storage setup in Firebase Console: Navigate to https://console.firebase.google.com/project/transconnect-2fb2b/storage and click 'Get Started'."
+            },
             "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
             "version": "2.4.0"
         }

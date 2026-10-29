@@ -14,43 +14,89 @@ service firebase.storage {
     }
 
     function isOwner(userId) {
-      return isAuthenticated() && request.auth.uid == userId;
+      return isAuthenticated() && (
+        request.auth.uid == userId ||
+        request.auth.token.user_id == userId
+      );
     }
 
-    // KYC Verification Documents (Aadhaar, Driving License, RC, Insurance)
+    function isPermittedImageType() {
+      return request.resource.contentType.matches('image/(jpeg|jpg|png|webp)');
+    }
+
+    function isPermittedDocType() {
+      return request.resource.contentType == 'application/pdf' || isPermittedImageType();
+    }
+
+    function isWithinSizeLimit() {
+      return request.resource.size > 0 && request.resource.size <= 16 * 1024 * 1024;
+    }
+
+    // KYC Verification Documents (Aadhaar, Driving License)
+    // Strictly restricted to document owner or system admin
     match /documents/{userId}/{docType}/{fileName} {
       allow read: if isOwner(userId) || isAdmin();
       allow write: if (isOwner(userId) || isAdmin())
-                    && request.resource.size < 16 * 1024 * 1024
-                    && request.resource.contentType.matches('image/.*|application/pdf');
+                    && isWithinSizeLimit()
+                    && isPermittedDocType()
+                    && docType in ['aadhaar', 'driving_license', 'rc', 'insurance', 'other'];
     }
 
-    // Commercial Logistics Invoices
-    match /invoices/{invoiceId}/{fileName} {
+    // Vehicle Compliance Documents (RC, Insurance, Fitness, Permits)
+    // Transporter fleet documents
+    match /vehicles/{vehicleId}/{docType}/{fileName} {
       allow read: if isAuthenticated();
-      allow write: if isAuthenticated()
-                    && request.resource.size < 16 * 1024 * 1024
-                    && request.resource.contentType.matches('application/pdf|image/.*');
+      allow write: if isAuthenticated() && (
+        request.auth.token.role == 'transporter' ||
+        isAdmin()
+      )
+      && isWithinSizeLimit()
+      && isPermittedDocType()
+      && docType in ['rc', 'insurance', 'fitness', 'permit', 'other'];
+    }
+
+    // Commercial Logistics Tax Invoices
+    // Accessible only by authenticated parties (Dealers, Transporters, Admins)
+    match /invoices/{invoiceId}/{fileName} {
+      allow read: if isAuthenticated() && (
+        request.auth.token.role == 'dealer' ||
+        request.auth.token.role == 'transporter' ||
+        isAdmin()
+      );
+      allow write: if isAuthenticated() && (
+        request.auth.token.role == 'dealer' ||
+        isAdmin()
+      )
+      && isWithinSizeLimit()
+      && isPermittedDocType();
     }
 
     // Signed Delivery Orders (DO)
+    // Accessible only by authenticated parties
     match /delivery_orders/{doId}/{fileName} {
-      allow read: if isAuthenticated();
-      allow write: if isAuthenticated()
-                    && request.resource.size < 16 * 1024 * 1024
-                    && request.resource.contentType.matches('application/pdf|image/.*');
+      allow read: if isAuthenticated() && (
+        request.auth.token.role == 'dealer' ||
+        request.auth.token.role == 'transporter' ||
+        isAdmin()
+      );
+      allow write: if isAuthenticated() && (
+        request.auth.token.role == 'dealer' ||
+        request.auth.token.role == 'transporter' ||
+        isAdmin()
+      )
+      && isWithinSizeLimit()
+      && isPermittedDocType();
     }
 
-    // Public Branding & Vehicle Graphics
+    // Public Assets (Read-only public graphics and badges, admin-only write)
     match /public/{allPaths=**} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if isAdmin() && isWithinSizeLimit();
     }
 
-    // Default Authenticated Fallback
+    // Default Fallback: DENY all unspecified paths
     match /{allPaths=**} {
-      allow read: if isAuthenticated();
-      allow write: if isAuthenticated() && request.resource.size < 16 * 1024 * 1024;
+      allow read, write: if false;
     }
   }
 }

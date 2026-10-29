@@ -387,6 +387,15 @@ class SQLiteConnectionWrapper:
                 cur.execute(f"ALTER TABLE vehicles ADD COLUMN {col} {col_type}")
             except Exception:
                 pass
+        for col, col_type in [
+            ('storage_provider', 'TEXT DEFAULT "local"'),
+            ('storage_bucket', 'TEXT DEFAULT "transconnect-2fb2b.firebasestorage.app"'),
+            ('storage_path', 'TEXT NULL')
+        ]:
+            try:
+                cur.execute(f"ALTER TABLE documents ADD COLUMN {col} {col_type}")
+            except Exception:
+                pass
         self.conn.commit()
 
 
