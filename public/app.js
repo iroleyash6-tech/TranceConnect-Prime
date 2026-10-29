@@ -1,10 +1,20 @@
 /**
  * TRANCECONNECT-PRIME: LANDING & ACCESS CONTROLLER
- * Connects to live MySQL database for authentication, registration, and direct tracking.
+ * Connects to live backend for authentication, registration, and direct tracking.
  */
 
+function getStoredUser() {
+  try {
+    const raw = localStorage.getItem('tc_user');
+    if (!raw || raw === 'undefined' || raw === 'null') return null;
+    return JSON.parse(raw);
+  } catch (e) {
+    return null;
+  }
+}
+
 let currentAuthToken = localStorage.getItem('tc_token') || null;
-let currentUser = JSON.parse(localStorage.getItem('tc_user') || 'null');
+let currentUser = getStoredUser();
 let trackingMapInstance = null;
 let trackingMarkerInstance = null;
 
@@ -15,6 +25,13 @@ document.addEventListener('DOMContentLoaded', () => {
   initStatsCounters();
   setupAuthValidation();
   initPageButtons();
+
+  // If page was loaded with a pending tab from early user click
+  if (window._pendingAuthTab) {
+    const p = window._pendingAuthTab;
+    window._pendingAuthTab = null;
+    openAuthModal(p);
+  }
 
   // Auto-open modal or alert if navigated with hash, path or params
   const urlParams = new URLSearchParams(window.location.search);
@@ -37,71 +54,62 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function initPageButtons() {
-  const getStarted = document.getElementById('btnHeroGetStarted');
-  if (getStarted) {
-    getStarted.addEventListener('click', (e) => {
+  // Delegated global click dispatcher ensures 100% click capture without duplicate collisions
+  document.addEventListener('click', (e) => {
+    const t = e.target;
+    if (!t) return;
+
+    // 1. Get Started
+    if (t.closest('#btnHeroGetStarted, .btn-hero-get-started')) {
       e.preventDefault();
       openAuthModal('register');
-    });
-  }
+      return;
+    }
 
-  const explore = document.getElementById('btnHeroExplore');
-  if (explore) {
-    explore.addEventListener('click', (e) => {
+    // 2. Explore Platform
+    if (t.closest('#btnHeroExplore')) {
       e.preventDefault();
       scrollToSection('features');
-    });
-  }
+      return;
+    }
 
-  const heroSignIn = document.getElementById('btnHeroSignIn');
-  if (heroSignIn) {
-    heroSignIn.addEventListener('click', (e) => {
+    // 3. Sign In triggers
+    if (t.closest('#btnHeroSignIn, #btnNavSignIn, #navLinkSignIn, #btnDrawerSignIn')) {
       e.preventDefault();
+      if (typeof toggleMobileLandingDrawer === 'function') toggleMobileLandingDrawer(false);
       openAuthModal('login');
-    });
-  }
+      return;
+    }
 
-  const heroTrack = document.getElementById('btnHeroTrack');
-  if (heroTrack) {
-    heroTrack.addEventListener('click', (e) => {
+    // 4. Register triggers
+    if (t.closest('#btnNavRegister, #btnDrawerRegister')) {
+      e.preventDefault();
+      if (typeof toggleMobileLandingDrawer === 'function') toggleMobileLandingDrawer(false);
+      openAuthModal('register');
+      return;
+    }
+
+    // 5. Track Order / Consignment
+    if (t.closest('#btnHeroTrack')) {
       e.preventDefault();
       openTrackingInterface();
-    });
-  }
+      return;
+    }
 
-  const navSignIn = document.getElementById('btnNavSignIn');
-  if (navSignIn) {
-    navSignIn.addEventListener('click', (e) => {
-      e.preventDefault();
-      openAuthModal('login');
-    });
-  }
+    // 6. Role Selection Cards
+    const roleCard = t.closest('.role-selection-card');
+    if (roleCard) {
+      const isTrans = roleCard.innerText.includes('Transporter') || roleCard.getAttribute('data-role') === 'transporter';
+      setAuthTab(isTrans ? 'transporter' : 'dealer');
+      return;
+    }
 
-  const navRegister = document.getElementById('btnNavRegister');
-  if (navRegister) {
-    navRegister.addEventListener('click', (e) => {
-      e.preventDefault();
-      openAuthModal('register');
-    });
-  }
-
-  const drawerSignIn = document.getElementById('btnDrawerSignIn');
-  if (drawerSignIn) {
-    drawerSignIn.addEventListener('click', (e) => {
-      e.preventDefault();
-      openAuthModal('login');
-      toggleMobileLandingDrawer(false);
-    });
-  }
-
-  const drawerRegister = document.getElementById('btnDrawerRegister');
-  if (drawerRegister) {
-    drawerRegister.addEventListener('click', (e) => {
-      e.preventDefault();
-      openAuthModal('register');
-      toggleMobileLandingDrawer(false);
-    });
-  }
+    // 7. Modal backdrop click to dismiss
+    if (t.classList && t.classList.contains('modal-overlay')) {
+      closeModal(t.id);
+      return;
+    }
+  });
 }
 
 function setupInteractiveEffects() {
@@ -1596,13 +1604,26 @@ function formatMarkdown(text) {
 
 function openModal(id) {
   const m = document.getElementById(id);
-  if (m) m.classList.add('active');
+  if (!m) return;
+  m.style.display = 'flex';
+  void m.offsetHeight; // Force layout recalculation
+  m.classList.add('active');
+  document.body.classList.add('modal-open');
 }
+window.openModal = openModal;
 
 function closeModal(id) {
   const m = document.getElementById(id);
-  if (m) m.classList.remove('active');
+  if (!m) return;
+  m.classList.remove('active');
+  setTimeout(() => {
+    if (!m.classList.contains('active')) {
+      m.style.display = 'none';
+    }
+  }, 220);
+  document.body.classList.remove('modal-open');
 }
+window.closeModal = closeModal;
 
 function showToast(message, type = 'info', duration = 4000) {
   const container = document.getElementById('toastContainer');

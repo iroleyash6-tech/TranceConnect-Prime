@@ -3,8 +3,18 @@
  * Real-time operational controller connected directly to MySQL backend.
  */
 
+function getStoredUser() {
+  try {
+    const raw = localStorage.getItem('tc_user');
+    if (!raw || raw === 'undefined' || raw === 'null') return null;
+    return JSON.parse(raw);
+  } catch (e) {
+    return null;
+  }
+}
+
 const authToken = localStorage.getItem('tc_token');
-const currentUser = JSON.parse(localStorage.getItem('tc_user') || 'null');
+const currentUser = getStoredUser();
 
 let allDealerShipments = [];
 let allDealerInvoices = [];
@@ -2519,6 +2529,11 @@ function closeModal(id) {
 }
 
 function logoutUser() {
+  if (typeof firebase !== 'undefined' && firebase.auth) {
+    try {
+      firebase.auth().signOut().catch(() => {});
+    } catch (e) {}
+  }
   localStorage.removeItem('tc_token');
   localStorage.removeItem('tc_user');
   window.location.href = '/';

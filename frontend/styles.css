@@ -119,6 +119,15 @@ body {
   transition: all var(--transition-fast);
 }
 
+.navbar .btn,
+.navbar a,
+.nav-actions .btn {
+  position: relative;
+  z-index: 105 !important;
+  pointer-events: auto !important;
+  cursor: pointer;
+}
+
 .nav-brand {
   display: flex;
   align-items: center;
@@ -917,19 +926,21 @@ tr:hover td {
   background: rgba(4, 9, 20, 0.85);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  z-index: 1000;
+  z-index: 3000;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 1.5rem;
   opacity: 0;
   visibility: hidden;
+  pointer-events: none;
   transition: all var(--transition-fast);
 }
 
 .modal-overlay.active {
-  opacity: 1;
-  visibility: visible;
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
 }
 
 .modal-container {

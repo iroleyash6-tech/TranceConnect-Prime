@@ -14,6 +14,28 @@
   <link rel="stylesheet" href="styles.css">
   <link rel="icon" type="image/svg+xml" href="assets/logo.svg">
   <link rel="manifest" href="manifest.json">
+
+  <!-- Immediate Click Readiness Buffer - ensures buttons never drop clicks while assets load -->
+  <script>
+    window.openAuthModal = window.openAuthModal || function(tab) {
+      window._pendingAuthTab = tab || 'login';
+      var m = document.getElementById('authModal');
+      if (m) {
+        m.style.display = 'flex';
+        m.classList.add('active');
+      }
+    };
+    window.setAuthTab = window.setAuthTab || function(tab) {
+      window._pendingAuthTab = tab;
+    };
+    window.closeModal = window.closeModal || function(id) {
+      var m = document.getElementById(id);
+      if (m) {
+        m.classList.remove('active');
+        m.style.display = 'none';
+      }
+    };
+  </script>
 </head>
 <body>
 
@@ -1278,8 +1300,19 @@
     </form>
   </div>
 
+  <!-- Firebase App, Auth, Firestore & Database SDK (v10) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+  <script src="firebase-config.js"></script>
+
+  <!-- Core Interactive Logic & Form Controllers (Loads First for Instant Button Response) -->
+  <script src="app.js"></script>
+
   <!-- Leaflet Map JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+
   <!-- Three.js 3D WebGL Library (Local with CDN Fallback) -->
   <script src="three.min.js"></script>
   <script>
@@ -1289,13 +1322,5 @@
   </script>
   <!-- Futuristic 3D Anti-Gravity Vehicle Engine -->
   <script src="vehicle-3d.js"></script>
-  <!-- Firebase App, Auth, Firestore & Database SDK (v10) -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
-  <script src="firebase-config.js"></script>
-  <!-- Landing Script -->
-  <script src="app.js"></script>
 </body>
 </html>
