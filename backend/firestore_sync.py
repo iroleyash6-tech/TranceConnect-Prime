@@ -127,3 +127,103 @@ def sync_notification_to_firestore(recipient_id, title, message, category='syste
     except Exception as e:
         logger.warning(f"Failed to push notification to Firestore: {e}")
         return False
+
+
+def sync_vehicle_to_firestore(vehicle_dict):
+    """
+    Synchronizes vehicle entity to Cloud Firestore 'vehicles' collection.
+    """
+    client = get_firestore_client()
+    if not client or not vehicle_dict:
+        return False
+    try:
+        vid = str(vehicle_dict.get('id'))
+        doc_data = dict(vehicle_dict)
+        doc_data['synced_at'] = datetime.datetime.utcnow().isoformat() + "Z"
+        client.collection('vehicles').document(vid).set(doc_data, merge=True)
+        return True
+    except Exception as e:
+        logger.warning(f"Failed to sync vehicle {vehicle_dict.get('id')} to Firestore: {e}")
+        return False
+
+
+def sync_booking_to_firestore(booking_dict):
+    """
+    Synchronizes booking request/acceptance state to Cloud Firestore 'bookings' collection.
+    """
+    client = get_firestore_client()
+    if not client or not booking_dict:
+        return False
+    try:
+        bid = str(booking_dict.get('id'))
+        doc_data = dict(booking_dict)
+        doc_data['synced_at'] = datetime.datetime.utcnow().isoformat() + "Z"
+        client.collection('bookings').document(bid).set(doc_data, merge=True)
+        return True
+    except Exception as e:
+        logger.warning(f"Failed to sync booking {booking_dict.get('id')} to Firestore: {e}")
+        return False
+
+
+def sync_invoice_to_firestore(invoice_dict):
+    """
+    Synchronizes invoice entity to Cloud Firestore 'invoices' collection.
+    """
+    client = get_firestore_client()
+    if not client or not invoice_dict:
+        return False
+    try:
+        iid = str(invoice_dict.get('id') or invoice_dict.get('invoice_number'))
+        doc_data = dict(invoice_dict)
+        doc_data['synced_at'] = datetime.datetime.utcnow().isoformat() + "Z"
+        client.collection('invoices').document(iid).set(doc_data, merge=True)
+        return True
+    except Exception as e:
+        logger.warning(f"Failed to sync invoice {invoice_dict.get('id')} to Firestore: {e}")
+        return False
+
+
+def sync_delivery_order_to_firestore(do_dict):
+    """
+    Synchronizes delivery order entity to Cloud Firestore 'delivery_orders' collection.
+    """
+    client = get_firestore_client()
+    if not client or not do_dict:
+        return False
+    try:
+        doid = str(do_dict.get('id') or do_dict.get('do_number'))
+        doc_data = dict(do_dict)
+        doc_data['synced_at'] = datetime.datetime.utcnow().isoformat() + "Z"
+        client.collection('delivery_orders').document(doid).set(doc_data, merge=True)
+        return True
+    except Exception as e:
+        logger.warning(f"Failed to sync DO {do_dict.get('id')} to Firestore: {e}")
+        return False
+
+
+def sync_message_to_firestore(msg_dict):
+    """
+    Synchronizes realtime dispatch messages to Cloud Firestore 'messages' and 'conversations' collections.
+    """
+    client = get_firestore_client()
+    if not client or not msg_dict:
+        return False
+    try:
+        mid = str(msg_dict.get('id') or datetime.datetime.utcnow().timestamp())
+        doc_data = dict(msg_dict)
+        doc_data['created_at'] = datetime.datetime.utcnow().isoformat() + "Z"
+        client.collection('messages').document(mid).set(doc_data, merge=True)
+
+        # Update conversation container
+        conv_id = str(msg_dict.get('shipment_id') or msg_dict.get('conversation_id') or 'general')
+        client.collection('conversations').document(conv_id).set({
+            'shipment_id': msg_dict.get('shipment_id'),
+            'last_message': msg_dict.get('message_text') or msg_dict.get('content'),
+            'last_sender_id': msg_dict.get('sender_id'),
+            'updated_at': datetime.datetime.utcnow().isoformat() + "Z"
+        }, merge=True)
+        return True
+    except Exception as e:
+        logger.warning(f"Failed to sync message to Firestore: {e}")
+        return False
+

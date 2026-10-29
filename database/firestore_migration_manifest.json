@@ -1,0 +1,22 @@
+{
+  "timestamp": "2026-10-29T18:26:16.986789Z",
+  "firebase_project": "transconnect-2fb2b",
+  "official_admin": "iroleyash6@gmail.com",
+  "backup_file": "C:\\Users\\rutik\\Documents\\New folder\\database\\backup_pre_firestore_20261029_235614.sqlite",
+  "status": "completed",
+  "statistics": {
+    "users": 89,
+    "dealers": 46,
+    "transporters": 42,
+    "admins": 1,
+    "vehicles": 32,
+    "shipments": 47,
+    "bookings": 47,
+    "invoices": 61,
+    "delivery_orders": 37,
+    "documents": 0,
+    "tracking_records": 105,
+    "messages": 2,
+    "notifications": 147
+  }
+}

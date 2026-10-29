@@ -1,0 +1,56 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && (
+        request.auth.token.role == 'admin' ||
+        request.auth.token.email == 'iroleyash6@gmail.com'
+      );
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // KYC Verification Documents (Aadhaar, Driving License, RC, Insurance)
+    match /documents/{userId}/{docType}/{fileName} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow write: if (isOwner(userId) || isAdmin())
+                    && request.resource.size < 16 * 1024 * 1024
+                    && request.resource.contentType.matches('image/.*|application/pdf');
+    }
+
+    // Commercial Logistics Invoices
+    match /invoices/{invoiceId}/{fileName} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated()
+                    && request.resource.size < 16 * 1024 * 1024
+                    && request.resource.contentType.matches('application/pdf|image/.*');
+    }
+
+    // Signed Delivery Orders (DO)
+    match /delivery_orders/{doId}/{fileName} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated()
+                    && request.resource.size < 16 * 1024 * 1024
+                    && request.resource.contentType.matches('application/pdf|image/.*');
+    }
+
+    // Public Branding & Vehicle Graphics
+    match /public/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Default Authenticated Fallback
+    match /{allPaths=**} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && request.resource.size < 16 * 1024 * 1024;
+    }
+  }
+}

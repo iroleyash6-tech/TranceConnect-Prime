@@ -33,6 +33,7 @@
   let boostTimer = null;
   let currentPaletteIndex = 0;
   let currentCameraAngleIndex = 0;
+  let isCanvasVisible = true;
 
   // Immediate global fallback bindings for HUD controls
   window.toggleAutoRotate = window.toggleAutoRotate || function() {
@@ -105,6 +106,20 @@
       setupParticleSystems();
       setupInteractions(container);
       setupResizeHandler(container);
+
+      // Performance Optimization: Pause rendering when 3D canvas is offscreen or tab is hidden
+      if ('IntersectionObserver' in window) {
+        try {
+          const visObserver = new IntersectionObserver((entries) => {
+            entries.forEach(e => { isCanvasVisible = e.isIntersecting; });
+          }, { threshold: 0.05 });
+          visObserver.observe(container);
+        } catch (_) {}
+      }
+      document.addEventListener('visibilitychange', () => {
+        isCanvasVisible = !document.hidden;
+      });
+
       animate(0);
       setupHudControls();
       console.log('⚡ TranceConnect HyperHauler X-1 3D Engine initialized successfully.');
@@ -803,6 +818,10 @@
   // -------------------------------------------------------------------
   function animate(timestamp) {
     animationFrameId = requestAnimationFrame(animate);
+
+    if (!isCanvasVisible || (typeof document !== 'undefined' && document.hidden)) {
+      return;
+    }
 
     const time = timestamp * 0.001;
 

@@ -107,16 +107,21 @@ function initPageButtons() {
 function setupInteractiveEffects() {
   const bg = document.getElementById('parallaxBg');
   const glow = document.getElementById('cursorGlow');
+  let rafId = null;
 
   document.addEventListener('mousemove', (e) => {
-    const x = (e.clientX / window.innerWidth - 0.5);
-    const y = (e.clientY / window.innerHeight - 0.5);
-    if (bg) bg.style.transform = `translate3d(${x * 24}px, ${y * 24}px, 0)`;
-    if (glow) {
-      glow.style.left = `${e.clientX}px`;
-      glow.style.top = `${e.clientY}px`;
-    }
-  });
+    if (rafId) return;
+    rafId = requestAnimationFrame(() => {
+      rafId = null;
+      const x = (e.clientX / window.innerWidth - 0.5);
+      const y = (e.clientY / window.innerHeight - 0.5);
+      if (bg) bg.style.transform = `translate3d(${x * 24}px, ${y * 24}px, 0)`;
+      if (glow) {
+        glow.style.left = `${e.clientX}px`;
+        glow.style.top = `${e.clientY}px`;
+      }
+    });
+  }, { passive: true });
 }
 
 function checkExistingSession() {

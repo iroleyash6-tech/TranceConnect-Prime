@@ -39,6 +39,11 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // Admins collection
+    match /admins/{adminId} {
+      allow read, write: if isAdmin();
+    }
+
     // Vehicles collection
     match /vehicles/{vehicleId} {
       allow read: if isAuthenticated();
@@ -55,6 +60,18 @@ service cloud.firestore {
         resource.data.dealer_id == request.auth.uid ||
         resource.data.transporter_id == request.auth.uid ||
         resource.data.status == 'posted' || // transporters can bid or claim
+        isAdmin()
+      );
+      allow delete: if isAdmin();
+    }
+
+    // Bookings collection
+    match /bookings/{bookingId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (
+        resource.data.dealer_id == request.auth.uid ||
+        resource.data.transporter_id == request.auth.uid ||
         isAdmin()
       );
       allow delete: if isAdmin();
@@ -79,7 +96,13 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // Realtime chat messages
+    // Realtime chat conversations & messages
+    match /conversations/{convId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthenticated();
+      allow delete: if isAdmin();
+    }
+
     match /messages/{messageId} {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated() && request.resource.data.sender_id == request.auth.uid;
@@ -87,6 +110,12 @@ service cloud.firestore {
     }
 
     // Live Tracking & GPS
+    match /shipment_tracking/{trackingId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthenticated();
+      allow delete: if isAdmin();
+    }
+
     match /tracking_locations/{trackingId} {
       allow read: if isAuthenticated();
       allow create, update: if isAuthenticated();
