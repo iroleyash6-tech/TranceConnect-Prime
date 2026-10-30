@@ -82,12 +82,31 @@ function initFirebase() {
  * Intercepts network failures, validates Content-Type, prevents unexpected token JSON crashes,
  * and formats clean, human-readable error messages for users while preserving diagnostics.
  */
+const CLOUD_API_BASE = "https://tranceconnect-pro.vercel.app";
+
 async function apiRequest(url, options = {}) {
+  let targetUrl = url;
+  if (url.startsWith('/api/') && typeof window !== 'undefined') {
+    if (window.location.protocol === 'file:' || !window.location.hostname) {
+      targetUrl = CLOUD_API_BASE + url;
+    }
+  }
+
   let response;
   try {
-    response = await fetch(url, options);
+    response = await fetch(targetUrl, options);
   } catch (error) {
-    throw new Error("Unable to connect to the server. Please check your internet connection.");
+    if (url.startsWith('/api/') && !targetUrl.startsWith('https://')) {
+      try {
+        const fallbackUrl = CLOUD_API_BASE + url;
+        console.warn("[TranceConnect API] Routing to Cloud API:", fallbackUrl);
+        response = await fetch(fallbackUrl, options);
+      } catch (fbErr) {
+        throw new Error("Unable to connect to the server. Please check your internet connection.");
+      }
+    } else {
+      throw new Error("Unable to connect to the server. Please check your internet connection.");
+    }
   }
 
   const contentType = response.headers.get("content-type") || "";

@@ -11,7 +11,7 @@
   <!-- Leaflet CSS for Interactive Live GPS Maps -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
   <!-- Main Cyber-Logistics Stylesheet -->
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=20261031_03">
   <link rel="icon" type="image/svg+xml" href="assets/logo.svg">
   <link rel="manifest" href="manifest.json">
 
@@ -24,9 +24,18 @@
         m.style.display = 'flex';
         m.classList.add('active');
       }
+      if (typeof window.setAuthTab === 'function') window.setAuthTab(tab || 'login');
     };
     window.setAuthTab = window.setAuthTab || function(tab) {
       window._pendingAuthTab = tab;
+      var forms = ['formLogin', 'viewAuthRoleSelect', 'formDealerRegister', 'formTransporterRegister', 'formForgot'];
+      forms.forEach(function(f) {
+        var el = document.getElementById(f);
+        if (el) el.style.display = 'none';
+      });
+      var target = (tab === 'register' || tab === 'select') ? 'viewAuthRoleSelect' : (tab === 'dealer' ? 'formDealerRegister' : (tab === 'transporter' ? 'formTransporterRegister' : (tab === 'forgot' ? 'formForgot' : 'formLogin')));
+      var tEl = document.getElementById(target);
+      if (tEl) tEl.style.display = 'block';
     };
     window.closeModal = window.closeModal || function(id) {
       var m = document.getElementById(id);
@@ -34,6 +43,10 @@
         m.classList.remove('active');
         m.style.display = 'none';
       }
+    };
+    window.handleLoginSubmit = window.handleLoginSubmit || function(e) {
+      if (e && e.preventDefault) e.preventDefault();
+      console.log("[Auth Buffer] Login click received, initializing engine...");
     };
   </script>
 </head>
@@ -1305,10 +1318,10 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
-  <script src="firebase-config.js"></script>
+  <script src="firebase-config.js?v=20261031_03"></script>
 
   <!-- Core Interactive Logic & Form Controllers (Loads First for Instant Button Response) -->
-  <script src="app.js"></script>
+  <script src="app.js?v=20261031_03"></script>
 
   <!-- Leaflet Map JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
@@ -1321,6 +1334,6 @@
     }
   </script>
   <!-- Futuristic 3D Anti-Gravity Vehicle Engine -->
-  <script src="vehicle-3d.js"></script>
+  <script src="vehicle-3d.js?v=20261031_03"></script>
 </body>
 </html>
