@@ -695,16 +695,16 @@
       <form id="formLogin" onsubmit="handleLoginSubmit(event)" novalidate>
         <div class="form-group">
           <label for="loginIdentifier">
-            <span>Email or 10-Digit Mobile <span class="field-required">*</span></span>
-            <span class="field-hint-icon" title="You can sign in with your registered corporate email or 10-digit mobile number">ℹ️</span>
+            <span>User ID, Email, or 10-Digit Mobile <span class="field-required">*</span></span>
+            <span class="field-hint-icon" title="You can sign in with your User ID, registered corporate email, or 10-digit mobile number">ℹ️</span>
           </label>
           <div class="form-input-wrap" id="wrap_loginIdentifier">
-            <input type="text" id="loginIdentifier" required placeholder="name@example.com or 9820123456" autocomplete="username">
+            <input type="text" id="loginIdentifier" required placeholder="User ID, name@example.com, or 9820123456" autocomplete="username">
             <span class="field-validation-icon valid-icon">✓</span>
             <span class="field-validation-icon invalid-icon">✕</span>
           </div>
-          <div class="field-msg hint-msg">Enter your registered email address or 10-digit mobile number.</div>
-          <div class="field-msg error-msg" id="err_loginIdentifier">Please enter your email or 10-digit mobile number.</div>
+          <div class="field-msg hint-msg">Enter your User ID, registered corporate email address, or 10-digit mobile number.</div>
+          <div class="field-msg error-msg" id="err_loginIdentifier">Please enter your User ID, email, or 10-digit mobile number.</div>
         </div>
 
         <div class="form-group">
@@ -725,7 +725,7 @@
           <a style="color: var(--cyan); cursor: pointer; font-weight: 600;" onclick="setAuthTab('forgot')">Forgot Password?</a>
         </div>
 
-        <button type="submit" class="btn btn-primary" style="width: 100%;" id="btnLoginSubmit">
+        <button type="submit" class="btn btn-primary" style="width: 100%;" id="btnLoginSubmit" onclick="handleLoginSubmit(event)">
           <span class="btn-text">Sign In to Dashboard ➔</span>
         </button>
 
@@ -867,7 +867,7 @@
           </div>
         </div>
 
-        <button type="submit" class="btn btn-primary" style="width: 100%;" id="btnDealerSubmit">
+        <button type="submit" class="btn btn-primary" style="width: 100%;" id="btnDealerSubmit" onclick="handleDealerRegisterSubmit(event)">
           <span class="btn-text">Register as Verified Dealer ➔</span>
         </button>
 
@@ -1016,7 +1016,7 @@
           </div>
         </div>
 
-        <button type="submit" class="btn btn-primary" style="width: 100%;" id="btnTransSubmit">
+        <button type="submit" class="btn btn-primary" style="width: 100%;" id="btnTransSubmit" onclick="handleTransporterRegisterSubmit(event)">
           <span class="btn-text">Register as Fleet Transporter ➔</span>
         </button>
 

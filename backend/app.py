@@ -540,6 +540,25 @@ def login():
     if clean_mobile.startswith('0') and len(clean_mobile) == 11:
         clean_mobile = clean_mobile[1:]
 
+    ident_lower = identifier.lower()
+
+    # Support numeric user ID
+    user_numeric_id = -1
+    if identifier.isdigit():
+        try:
+            user_numeric_id = int(identifier)
+        except ValueError:
+            user_numeric_id = -1
+
+    # Support friendly role aliases
+    alias_email = ""
+    if ident_lower in ["admin", "administrator", "hq"]:
+        alias_email = "admin@tranceconnect.com"
+    elif ident_lower in ["dealer", "shipper"]:
+        alias_email = "dealer@tranceconnect.com"
+    elif ident_lower in ["transporter", "carrier", "driver"]:
+        alias_email = "transporter@tranceconnect.com"
+
     conn = None
     try:
         conn = get_db_connection()
@@ -547,13 +566,21 @@ def login():
             cur.execute("""
                 SELECT id, role, company_name, contact_person, mobile, email, gst_number,
                        password_hash, verification_status, status
-                FROM users WHERE email = %s OR mobile = %s
-            """, (identifier.lower(), clean_mobile))
+                FROM users 
+                WHERE email = %s 
+                   OR mobile = %s 
+                   OR id = %s
+                   OR email = %s
+                   OR LOWER(company_name) = %s
+                   OR LOWER(contact_person) = %s
+                ORDER BY id ASC
+                LIMIT 1
+            """, (ident_lower, clean_mobile, user_numeric_id, alias_email, ident_lower, ident_lower))
             user = cur.fetchone()
 
         if not user or not verify_password(password, user['password_hash']):
             return jsonify({
-                "error": "Invalid email/mobile or password. Please verify your credentials and try again."
+                "error": "Invalid email/mobile/User ID or password. Please verify your credentials and try again."
             }), 401
 
         if user['status'] == 'blocked':
@@ -568,6 +595,13 @@ def login():
 
         token = create_access_token(user['id'], user['role'], user['email'])
         del user['password_hash']
+
+        # Sync login profile to Cloud Firestore
+        try:
+            from backend.firestore_sync import sync_user_to_firestore
+            sync_user_to_firestore(user)
+        except Exception:
+            pass
 
         return jsonify({
             "message": "Login successful. Welcome back!",

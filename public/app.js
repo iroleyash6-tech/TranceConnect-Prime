@@ -439,10 +439,8 @@ function validateIdentifier() {
   const el = document.getElementById('loginIdentifier');
   if (!el) return true;
   const val = el.value.trim();
-  const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
-  const isMobile = /^[6-9]\d{9}$/.test(val);
-  const ok = val.length > 0 && (isEmail || isMobile);
-  return setFieldValidationState('loginIdentifier', ok, 'Enter a valid registered email or 10-digit mobile number.');
+  const ok = val.length > 0;
+  return setFieldValidationState('loginIdentifier', ok, 'Please enter your User ID, Email address, or Mobile number.');
 }
 
 function validateEmailVal(emailVal, fieldId) {
@@ -588,9 +586,28 @@ function validateForgotConfirmPassword() {
 function setupAuthValidation() {
   // Login
   const loginIdent = document.getElementById('loginIdentifier');
+  const loginPass = document.getElementById('loginPassword');
   if (loginIdent) {
     loginIdent.addEventListener('input', validateIdentifier);
     loginIdent.addEventListener('blur', validateIdentifier);
+    loginIdent.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        if (loginPass && !loginPass.value) {
+          loginPass.focus();
+        } else {
+          handleLoginSubmit(e);
+        }
+      }
+    });
+  }
+  if (loginPass) {
+    loginPass.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handleLoginSubmit(e);
+      }
+    });
   }
 
   // Dealer Form
@@ -742,94 +759,94 @@ function getEnteredOtp() {
 // -------------------------------------------------------------
 // SUBMISSION: USER LOGIN (EMAIL OR MOBILE)
 // -------------------------------------------------------------
-async function handleLoginSubmit(e) {
-  e.preventDefault();
-  const ident = document.getElementById('loginIdentifier').value.trim();
-  const pass = document.getElementById('loginPassword').value;
+let isLoginSubmitting = false;
 
-  if (!validateIdentifier() || !pass) {
-    if (!ident) document.getElementById('loginIdentifier').focus();
-    else {
-      setFieldValidationState('loginPassword', false, 'Password is required.');
-      document.getElementById('loginPassword').focus();
-    }
+async function handleLoginSubmit(e) {
+  if (e && e.preventDefault) e.preventDefault();
+  if (isLoginSubmitting) return;
+
+  const identEl = document.getElementById('loginIdentifier');
+  const passEl = document.getElementById('loginPassword');
+  const ident = identEl ? identEl.value.trim() : '';
+  const pass = passEl ? passEl.value : '';
+
+  if (!ident) {
+    showToast('Please enter your User ID, Email address, or Mobile number.', 'warning');
+    setFieldValidationState('loginIdentifier', false, 'Please enter your User ID, Email, or Mobile number.');
+    if (identEl) identEl.focus();
     return;
   }
+  setFieldValidationState('loginIdentifier', true);
+
+  if (!pass) {
+    showToast('Please enter your account password.', 'warning');
+    setFieldValidationState('loginPassword', false, 'Password is required.');
+    if (passEl) passEl.focus();
+    return;
+  }
+  setFieldValidationState('loginPassword', true);
 
   const btn = document.getElementById('btnLoginSubmit');
-  const originalText = btn.innerHTML;
-  btn.disabled = true;
-  btn.classList.add('btn-loading');
-  btn.innerHTML = '<span class="pulse-dot"></span> Authenticating...';
-
-  // 1. Firebase Authentication Hybrid Check (if email is used)
-  if (ident.includes('@') && typeof firebase !== 'undefined' && firebase.auth) {
-    try {
-      if (typeof initFirebase === 'function') initFirebase();
-      if (typeof firebaseAuth !== 'undefined' && firebaseAuth) {
-        try {
-          const fbCred = await firebaseAuth.signInWithEmailAndPassword(ident, pass);
-          const idToken = await fbCred.user.getIdToken();
-          const syncData = await apiRequest('/api/auth/firebase-login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id_token: idToken, email: ident })
-          });
-          if (syncData && syncData.token) {
-            localStorage.setItem('tc_token', syncData.token);
-            localStorage.setItem('tc_user', JSON.stringify(syncData.user));
-            showToast(`Authentication verified! Welcome, ${syncData.user.company_name || syncData.user.contact_person}`, 'success');
-            setTimeout(() => {
-              if (syncData.user.role === 'dealer') window.location.href = '/dealer';
-              else if (syncData.user.role === 'transporter') window.location.href = '/transporter';
-              else if (syncData.user.role === 'admin') window.location.href = '/admin';
-              else window.location.reload();
-            }, 400);
-            return;
-          }
-        } catch (fbErr) {
-          // If not in Firebase yet, continue to primary backend login seamlessly
-          console.warn('Firebase email auth fallback:', fbErr.message);
-        }
-      }
-    } catch (e) {
-      console.warn('Firebase auth attempt:', e);
-    }
+  const originalText = btn ? btn.innerHTML : '<span class="btn-text">Sign In to Dashboard ➔</span>';
+  if (btn) {
+    btn.disabled = true;
+    btn.classList.add('btn-loading');
+    btn.innerHTML = '<span class="pulse-dot"></span> Authenticating with TranceConnect...';
   }
 
-  // 2. Primary Backend Authentication (supports mobile, email, seeded accounts)
+  isLoginSubmitting = true;
+
   try {
     const data = await apiRequest('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: ident, password: pass })
+      body: JSON.stringify({ email: ident, identifier: ident, password: pass })
     });
+
+    if (!data || !data.token) {
+      throw new Error(data && data.error ? data.error : 'Invalid response from authentication server.');
+    }
 
     localStorage.setItem('tc_token', data.token);
     localStorage.setItem('tc_user', JSON.stringify(data.user));
 
-    showToast(`Authentication verified! Welcome, ${data.user.company_name || data.user.contact_person || 'User'}`, 'success');
+    // Optional background Firebase Auth session synchronization
+    if (typeof firebase !== 'undefined' && firebase.auth) {
+      try {
+        if (typeof initFirebase === 'function') initFirebase();
+        const fbAuth = window.firebaseAuth || firebase.auth();
+        if (fbAuth && data.user && data.user.email) {
+          fbAuth.signInWithEmailAndPassword(data.user.email, pass).catch(() => {});
+        }
+      } catch (fbSyncErr) {}
+    }
 
+    showToast(`Authentication verified! Welcome back, ${data.user.company_name || data.user.contact_person || 'User'}!`, 'success');
+
+    const targetUrl = data.redirect || (data.user.role === 'dealer' ? '/dealer' : (data.user.role === 'transporter' ? '/transporter' : '/admin'));
     setTimeout(() => {
-      if (data.user.role === 'dealer') window.location.href = '/dealer';
-      else if (data.user.role === 'transporter') window.location.href = '/transporter';
-      else if (data.user.role === 'admin') window.location.href = '/admin';
-      else window.location.reload();
-    }, 400);
+      window.location.href = targetUrl;
+    }, 350);
+
   } catch (err) {
     let errMsg = err.message || 'Authentication failed. Please verify credentials.';
     if (err.status === 401) {
-      errMsg = 'The email or password is incorrect.';
+      errMsg = 'The User ID, Email, or Password is incorrect.';
     } else if (err.status === 403) {
-      errMsg = 'This account is disabled. Please contact support.';
+      errMsg = 'This account is suspended or inactive. Please contact support.';
     }
     showToast(errMsg, 'error');
     setFieldValidationState('loginPassword', false, errMsg);
-    btn.disabled = false;
-    btn.classList.remove('btn-loading');
-    btn.innerHTML = originalText;
+    if (btn) {
+      btn.disabled = false;
+      btn.classList.remove('btn-loading');
+      btn.innerHTML = originalText;
+    }
+  } finally {
+    isLoginSubmitting = false;
   }
 }
+window.handleLoginSubmit = handleLoginSubmit;
 
 async function handleFirebasePasswordReset() {
   const emailInput = document.getElementById('forgotEmail');
@@ -872,6 +889,7 @@ async function handleDealerRegisterSubmit(e) {
   const validConf = validateDealerConfirmPassword();
 
   if (!validComp || !validOwner || !validMob || !validEmail || !validGst || !validPass || !validConf) {
+    showToast('Please fill all required registration fields correctly.', 'warning');
     focusFirstInvalidField([
       'dealerCompany', 'dealerOwner', 'dealerMobile', 'dealerEmail', 'dealerGst', 'dealerPassword', 'dealerConfirmPassword'
     ]);
@@ -957,6 +975,7 @@ async function handleDealerRegisterSubmit(e) {
     }
   }
 }
+window.handleDealerRegisterSubmit = handleDealerRegisterSubmit;
 
 // -------------------------------------------------------------
 // SUBMISSION: TRANSPORTER REGISTRATION (WITH KYC ATTACHMENTS)
@@ -973,6 +992,7 @@ async function handleTransporterRegisterSubmit(e) {
   const validConf = validateTransConfirmPassword();
 
   if (!validComp || !validOwner || !validMob || !validEmail || !validGst || !validPass || !validConf) {
+    showToast('Please fill all required registration fields correctly.', 'warning');
     focusFirstInvalidField([
       'transCompany', 'transOwner', 'transMobile', 'transEmail', 'transGst', 'transPassword', 'transConfirmPassword'
     ]);
@@ -1091,6 +1111,7 @@ async function handleTransporterRegisterSubmit(e) {
     }
   }
 }
+window.handleTransporterRegisterSubmit = handleTransporterRegisterSubmit;
 
 // -------------------------------------------------------------
 // FORGOT PASSWORD: STEP 1 (REQUEST OTP)
