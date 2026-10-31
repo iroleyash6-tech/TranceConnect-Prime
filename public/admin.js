@@ -23,11 +23,18 @@ let liveFleetData = [];
 let allAdminInvoices = [];
 let allAdminDeliveryOrders = [];
 
-// Auth Guard: Only Admins allowed
-if (!authToken || !currentUser || currentUser.role !== 'admin') {
-  localStorage.removeItem('tc_token');
-  localStorage.removeItem('tc_user');
+// Auth Guard: Only Admins allowed (Resilient Role Routing)
+if (!authToken || !currentUser) {
+  try { sessionStorage.clear(); localStorage.removeItem('tc_token'); localStorage.removeItem('tc_user'); } catch(e){}
   window.location.href = '/?session_expired=1';
+} else {
+  const userRole = (currentUser.role || '').toLowerCase().trim();
+  if (userRole !== 'admin') {
+    console.warn(`[Auth Guard] User role '${userRole}' redirected from admin control to appropriate view.`);
+    if (userRole === 'dealer') window.location.href = '/dealer';
+    else if (userRole === 'transporter') window.location.href = '/transporter';
+    else window.location.href = '/';
+  }
 }
 
 document.addEventListener('DOMContentLoaded', () => {

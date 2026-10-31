@@ -30,11 +30,18 @@ let typingDebounceTimeout = null;
 let gpsWatchId = null;
 let isGpsBroadcasting = false;
 
-// Auth Guard: Only Transporters allowed
-if (!authToken || !currentUser || currentUser.role !== 'transporter') {
-  localStorage.removeItem('tc_token');
-  localStorage.removeItem('tc_user');
+// Auth Guard: Only Transporters allowed (Resilient Role Routing)
+if (!authToken || !currentUser) {
+  try { sessionStorage.clear(); localStorage.removeItem('tc_token'); localStorage.removeItem('tc_user'); } catch(e){}
   window.location.href = '/?session_expired=1';
+} else {
+  const userRole = (currentUser.role || '').toLowerCase().trim();
+  if (userRole !== 'transporter') {
+    console.warn(`[Auth Guard] User role '${userRole}' redirected from transporter portal to appropriate view.`);
+    if (userRole === 'admin') window.location.href = '/admin';
+    else if (userRole === 'dealer') window.location.href = '/dealer';
+    else window.location.href = '/';
+  }
 }
 
 document.addEventListener('DOMContentLoaded', () => {

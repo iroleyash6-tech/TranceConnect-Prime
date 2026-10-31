@@ -322,3 +322,34 @@ if (document.readyState === 'loading') {
 } else {
   initFirebase();
 }
+
+/**
+ * Signs in user directly with Firebase Email/Password Auth.
+ */
+async function loginWithFirebaseEmailPassword(email, password) {
+  initFirebase();
+  if (!firebaseAuth) {
+    throw new Error("Firebase Authentication is not ready. Please verify network connectivity.");
+  }
+  return await firebaseAuth.signInWithEmailAndPassword(email, password);
+}
+window.loginWithFirebaseEmailPassword = loginWithFirebaseEmailPassword;
+
+/**
+ * Retrieves user profile directly from Cloud Firestore 'users' collection.
+ */
+async function fetchUserProfileFromFirestore(userIdOrEmail) {
+  initFirebase();
+  if (!firebaseFirestore) return null;
+  try {
+    const docRef = firebaseFirestore.collection('users').doc(String(userIdOrEmail));
+    const docSnap = await docRef.get();
+    if (docSnap.exists) {
+      return docSnap.data();
+    }
+  } catch (err) {
+    console.warn("Firestore profile retrieval notice:", err.message);
+  }
+  return null;
+}
+window.fetchUserProfileFromFirestore = fetchUserProfileFromFirestore;

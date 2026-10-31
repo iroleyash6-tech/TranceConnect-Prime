@@ -775,6 +775,43 @@ function getEnteredOtp() {
   return otp;
 }
 
+function getDashboardUrl(role) {
+  const r = (role || '').toLowerCase().trim();
+  const page = r === 'dealer' ? 'dealer' : (r === 'transporter' ? 'transporter' : (r === 'admin' ? 'admin' : ''));
+  if (!page) return '/';
+
+  // If page is loaded via file:// protocol directly in browser
+  if (typeof window !== 'undefined' && window.location.protocol === 'file:') {
+    const cur = window.location.href;
+    const base = cur.substring(0, cur.lastIndexOf('/') + 1);
+    return base + page + '.html';
+  }
+
+  // If page is loaded from web server (Flask or Vercel)
+  return '/' + page;
+}
+window.getDashboardUrl = getDashboardUrl;
+
+function setLoginBanner(msg, type = 'info') {
+  const banner = document.getElementById('loginFeedbackBanner');
+  if (!banner) return;
+  if (!msg) {
+    banner.style.display = 'none';
+    banner.innerHTML = '';
+    return;
+  }
+  const bg = type === 'error' ? 'rgba(239, 68, 68, 0.15)' : (type === 'success' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(0, 240, 255, 0.12)');
+  const border = type === 'error' ? 'rgba(239, 68, 68, 0.4)' : (type === 'success' ? 'rgba(16, 185, 129, 0.4)' : 'rgba(0, 240, 255, 0.35)');
+  const color = type === 'error' ? '#f87171' : (type === 'success' ? '#34d399' : '#38bdf8');
+  const icon = type === 'error' ? '⚠️' : (type === 'success' ? '✅' : '⚡');
+  banner.style.background = bg;
+  banner.style.border = `1px solid ${border}`;
+  banner.style.color = color;
+  banner.innerHTML = `<div style="display: flex; align-items: center; gap: 0.5rem;"><span>${icon}</span> <span>${escapeHtml(msg)}</span></div>`;
+  banner.style.display = 'block';
+}
+window.setLoginBanner = setLoginBanner;
+
 // -------------------------------------------------------------
 // SUBMISSION: USER LOGIN (EMAIL OR MOBILE)
 // -------------------------------------------------------------
@@ -784,12 +821,15 @@ async function handleLoginSubmit(e) {
   if (e && e.preventDefault) e.preventDefault();
   if (isLoginSubmitting) return;
 
+  setLoginBanner(null);
+
   const identEl = document.getElementById('loginIdentifier');
   const passEl = document.getElementById('loginPassword');
   const ident = identEl ? identEl.value.trim() : '';
   const pass = passEl ? passEl.value : '';
 
   if (!ident) {
+    setLoginBanner('Please enter your User ID, Email address, or Mobile number.', 'error');
     showToast('Please enter your User ID, Email address, or Mobile number.', 'warning');
     setFieldValidationState('loginIdentifier', false, 'Please enter your User ID, Email, or Mobile number.');
     if (identEl) identEl.focus();
@@ -798,6 +838,7 @@ async function handleLoginSubmit(e) {
   setFieldValidationState('loginIdentifier', true);
 
   if (!pass) {
+    setLoginBanner('Account password is required.', 'error');
     showToast('Please enter your account password.', 'warning');
     setFieldValidationState('loginPassword', false, 'Password is required.');
     if (passEl) passEl.focus();
@@ -813,6 +854,7 @@ async function handleLoginSubmit(e) {
     btn.innerHTML = '<span class="pulse-dot"></span> Authenticating with TranceConnect...';
   }
 
+  setLoginBanner('Authenticating credentials with TranceConnect Security Gateway...', 'info');
   isLoginSubmitting = true;
 
   try {
@@ -826,10 +868,17 @@ async function handleLoginSubmit(e) {
       throw new Error(data && data.error ? data.error : 'Invalid response from authentication server.');
     }
 
-    localStorage.setItem('tc_token', data.token);
-    localStorage.setItem('tc_user', JSON.stringify(data.user));
+    // Dual session persistence across storage mechanisms
+    try {
+      localStorage.setItem('tc_token', data.token);
+      localStorage.setItem('tc_user', JSON.stringify(data.user));
+      sessionStorage.setItem('tc_token', data.token);
+      sessionStorage.setItem('tc_user', JSON.stringify(data.user));
+    } catch(storageErr) {
+      console.warn("Storage notice:", storageErr);
+    }
 
-    // Optional background Firebase Auth session synchronization
+    // Background Firebase Auth session synchronization
     if (typeof firebase !== 'undefined' && firebase.auth) {
       try {
         if (typeof initFirebase === 'function') initFirebase();
@@ -840,12 +889,16 @@ async function handleLoginSubmit(e) {
       } catch (fbSyncErr) {}
     }
 
-    showToast(`Authentication verified! Welcome back, ${data.user.company_name || data.user.contact_person || 'User'}!`, 'success');
+    const verifiedRole = (data.role || (data.user && data.user.role) || 'dealer').toLowerCase();
+    const targetUrl = getDashboardUrl(verifiedRole);
 
-    const targetUrl = data.redirect || (data.user.role === 'dealer' ? '/dealer' : (data.user.role === 'transporter' ? '/transporter' : '/admin'));
+    setLoginBanner(`Verified as ${verifiedRole.toUpperCase()}! Opening dashboard...`, 'success');
+    showToast(`Authentication verified! Welcome, ${data.user.company_name || data.user.contact_person || 'User'}!`, 'success');
+
+    console.log(`[TranceConnect Auth] Login successful. Navigating to ${targetUrl}`);
     setTimeout(() => {
       window.location.href = targetUrl;
-    }, 350);
+    }, 280);
 
   } catch (err) {
     let errMsg = err.message || 'Authentication failed. Please verify credentials.';
@@ -854,6 +907,7 @@ async function handleLoginSubmit(e) {
     } else if (err.status === 403) {
       errMsg = 'This account is suspended or inactive. Please contact support.';
     }
+    setLoginBanner(errMsg, 'error');
     showToast(errMsg, 'error');
     setFieldValidationState('loginPassword', false, errMsg);
     if (btn) {

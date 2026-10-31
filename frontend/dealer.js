@@ -30,11 +30,18 @@ let socket = null;
 let dealerConversations = [];
 let typingDebounceTimeout = null;
 
-// Auth Guard: Only Dealers allowed
-if (!authToken || !currentUser || currentUser.role !== 'dealer') {
-  localStorage.removeItem('tc_token');
-  localStorage.removeItem('tc_user');
+// Auth Guard: Only Dealers allowed (Resilient Role Routing)
+if (!authToken || !currentUser) {
+  try { sessionStorage.clear(); localStorage.removeItem('tc_token'); localStorage.removeItem('tc_user'); } catch(e){}
   window.location.href = '/?session_expired=1';
+} else {
+  const userRole = (currentUser.role || '').toLowerCase().trim();
+  if (userRole !== 'dealer') {
+    console.warn(`[Auth Guard] User role '${userRole}' redirected from dealer portal to appropriate view.`);
+    if (userRole === 'admin') window.location.href = '/admin';
+    else if (userRole === 'transporter') window.location.href = '/transporter';
+    else window.location.href = '/';
+  }
 }
 
 document.addEventListener('DOMContentLoaded', () => {

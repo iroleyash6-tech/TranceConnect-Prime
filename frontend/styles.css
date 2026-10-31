@@ -1234,7 +1234,7 @@ input:focus, select:focus, textarea:focus {
   position: fixed;
   top: 1.5rem;
   right: 1.5rem;
-  z-index: 2000;
+  z-index: 999999 !important;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;

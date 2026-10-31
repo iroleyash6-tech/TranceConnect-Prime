@@ -11,7 +11,7 @@
   <!-- Leaflet CSS for Interactive Live GPS Maps -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
   <!-- Main Cyber-Logistics Stylesheet -->
-  <link rel="stylesheet" href="styles.css?v=20261031_03">
+  <link rel="stylesheet" href="styles.css?v=20261031_04">
   <link rel="icon" type="image/svg+xml" href="assets/logo.svg">
   <link rel="manifest" href="manifest.json">
 
@@ -738,6 +738,7 @@
           <a style="color: var(--cyan); cursor: pointer; font-weight: 600;" onclick="setAuthTab('forgot')">Forgot Password?</a>
         </div>
 
+                <div id="loginFeedbackBanner" style="display: none; padding: 0.75rem 1rem; border-radius: var(--radius-sm); margin-bottom: 1rem; font-size: 0.85rem; font-weight: 500;"></div>
         <button type="submit" class="btn btn-primary" style="width: 100%;" id="btnLoginSubmit" onclick="handleLoginSubmit(event)">
           <span class="btn-text">Sign In to Dashboard ➔</span>
         </button>
@@ -1318,10 +1319,10 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
-  <script src="firebase-config.js?v=20261031_03"></script>
+  <script src="firebase-config.js?v=20261031_04"></script>
 
   <!-- Core Interactive Logic & Form Controllers (Loads First for Instant Button Response) -->
-  <script src="app.js?v=20261031_03"></script>
+  <script src="app.js?v=20261031_04"></script>
 
   <!-- Leaflet Map JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
@@ -1334,6 +1335,6 @@
     }
   </script>
   <!-- Futuristic 3D Anti-Gravity Vehicle Engine -->
-  <script src="vehicle-3d.js?v=20261031_03"></script>
+  <script src="vehicle-3d.js?v=20261031_04"></script>
 </body>
 </html>
