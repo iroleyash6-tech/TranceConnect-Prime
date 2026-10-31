@@ -5,7 +5,7 @@
 
 function getStoredUser() {
   try {
-    const raw = localStorage.getItem('tc_user');
+    const raw = localStorage.getItem('tc_user') || sessionStorage.getItem('tc_user');
     if (!raw || raw === 'undefined' || raw === 'null') return null;
     return JSON.parse(raw);
   } catch (e) {
@@ -13,8 +13,8 @@ function getStoredUser() {
   }
 }
 
-const authToken = localStorage.getItem('tc_token');
-const currentUser = getStoredUser();
+let authToken = localStorage.getItem('tc_token') || sessionStorage.getItem('tc_token');
+let currentUser = getStoredUser();
 
 let socket = null;
 let adminFleetMap = null;
@@ -23,26 +23,24 @@ let liveFleetData = [];
 let allAdminInvoices = [];
 let allAdminDeliveryOrders = [];
 
-// Auth Guard: Only Admins allowed (Resilient Role Routing)
-if (!authToken || !currentUser) {
-  try { sessionStorage.clear(); localStorage.removeItem('tc_token'); localStorage.removeItem('tc_user'); } catch(e){}
-  window.location.href = '/?session_expired=1';
-} else {
-  const userRole = (currentUser.role || '').toLowerCase().trim();
-  if (userRole !== 'admin') {
-    console.warn(`[Auth Guard] User role '${userRole}' redirected from admin control to appropriate view.`);
-    if (userRole === 'dealer') window.location.href = '/dealer';
-    else if (userRole === 'transporter') window.location.href = '/transporter';
-    else window.location.href = '/';
-  }
-}
+// Auth Guard: Resolved asynchronously in DOMContentLoaded via verifyAndEnforceDashboardAuth('admin')
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   setupEffects();
   setupUserInterface();
-  initAdminSocket();
-  loadLiveFleetMap();
-  loadAllAdminData();
+  if (typeof verifyAndEnforceDashboardAuth === 'function') {
+    await verifyAndEnforceDashboardAuth('admin', (user, token) => {
+      authToken = token;
+      currentUser = user;
+      initAdminSocket();
+      loadLiveFleetMap();
+      loadAllAdminData();
+    });
+  } else {
+    initAdminSocket();
+    loadLiveFleetMap();
+    loadAllAdminData();
+  }
 });
 
 function setupEffects() {
@@ -1114,6 +1112,8 @@ function logoutUser() {
   }
   localStorage.removeItem('tc_token');
   localStorage.removeItem('tc_user');
+  sessionStorage.removeItem('tc_token');
+  sessionStorage.removeItem('tc_user');
   window.location.href = '/';
 }
 

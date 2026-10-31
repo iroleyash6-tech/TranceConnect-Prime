@@ -229,3 +229,31 @@ def test_firebase_login_new_user_provisioning(client):
     me_res = client.get('/api/auth/me', headers={'Authorization': f'Bearer {token}'})
     assert me_res.status_code == 200
     assert me_res.get_json()['user']['email'] == new_email
+
+
+def test_dashboard_routes_and_aliases(client):
+    """Verifies that all dashboard routes and aliases serve valid HTML."""
+    for path in ['/dealer', '/transporter', '/transport', '/admin']:
+        res = client.get(path)
+        assert res.status_code == 200, f"Route {path} failed with status {res.status_code}"
+        assert b'<!DOCTYPE html>' in res.data or b'<html' in res.data
+
+def test_auth_profile_endpoint_alias(client):
+    """Verifies /api/auth/profile works identically to /api/auth/me."""
+    # Unauthenticated
+    unauth = client.get('/api/auth/profile')
+    assert unauth.status_code == 401
+
+    # Authenticated
+    login_res = client.post('/api/auth/login', json={
+        'identifier': 'admin',
+        'password': 'Admin@123456'
+    })
+    assert login_res.status_code == 200
+    token = login_res.get_json()['token']
+
+    res = client.get('/api/auth/profile', headers={'Authorization': f'Bearer {token}'})
+    assert res.status_code == 200
+    data = res.get_json()
+    assert 'user' in data
+    assert data['user']['role'] == 'admin'

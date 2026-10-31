@@ -155,6 +155,7 @@ def dealer_page():
     return send_from_directory(FRONTEND_DIR, 'dealer.html')
 
 @app.route('/transporter')
+@app.route('/transport')
 def transporter_page():
     """Serves the dedicated live Transporter / Fleet Dashboard."""
     return send_from_directory(FRONTEND_DIR, 'transporter.html')
@@ -618,6 +619,7 @@ def login():
 
 
 @app.get("/api/auth/me")
+@app.get("/api/auth/profile")
 @token_required
 def get_current_user_profile(current_user):
     conn = None

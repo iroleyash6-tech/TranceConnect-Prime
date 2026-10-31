@@ -19,6 +19,10 @@
       "destination": "/transporter.html"
     },
     {
+      "source": "/transport",
+      "destination": "/transporter.html"
+    },
+    {
       "source": "/admin",
       "destination": "/admin.html"
     },

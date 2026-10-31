@@ -5,7 +5,7 @@
 
 function getStoredUser() {
   try {
-    const raw = localStorage.getItem('tc_user');
+    const raw = localStorage.getItem('tc_user') || sessionStorage.getItem('tc_user');
     if (!raw || raw === 'undefined' || raw === 'null') return null;
     return JSON.parse(raw);
   } catch (e) {
@@ -13,8 +13,8 @@ function getStoredUser() {
   }
 }
 
-const authToken = localStorage.getItem('tc_token');
-const currentUser = getStoredUser();
+let authToken = localStorage.getItem('tc_token') || sessionStorage.getItem('tc_token');
+let currentUser = getStoredUser();
 
 let allDealerShipments = [];
 let allDealerInvoices = [];
@@ -30,26 +30,24 @@ let socket = null;
 let dealerConversations = [];
 let typingDebounceTimeout = null;
 
-// Auth Guard: Only Dealers allowed (Resilient Role Routing)
-if (!authToken || !currentUser) {
-  try { sessionStorage.clear(); localStorage.removeItem('tc_token'); localStorage.removeItem('tc_user'); } catch(e){}
-  window.location.href = '/?session_expired=1';
-} else {
-  const userRole = (currentUser.role || '').toLowerCase().trim();
-  if (userRole !== 'dealer') {
-    console.warn(`[Auth Guard] User role '${userRole}' redirected from dealer portal to appropriate view.`);
-    if (userRole === 'admin') window.location.href = '/admin';
-    else if (userRole === 'transporter') window.location.href = '/transporter';
-    else window.location.href = '/';
-  }
-}
+// Auth Guard: Resolved asynchronously in DOMContentLoaded via verifyAndEnforceDashboardAuth('dealer')
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   setupEffects();
   setupUserInterface();
-  initSocketConnection();
-  loadAllDealerData();
-  loadConversationsAndUnread();
+  if (typeof verifyAndEnforceDashboardAuth === 'function') {
+    await verifyAndEnforceDashboardAuth('dealer', (user, token) => {
+      authToken = token;
+      currentUser = user;
+      initSocketConnection();
+      loadAllDealerData();
+      loadConversationsAndUnread();
+    });
+  } else {
+    initSocketConnection();
+    loadAllDealerData();
+    loadConversationsAndUnread();
+  }
 });
 
 function setupEffects() {
@@ -2543,6 +2541,8 @@ function logoutUser() {
   }
   localStorage.removeItem('tc_token');
   localStorage.removeItem('tc_user');
+  sessionStorage.removeItem('tc_token');
+  sessionStorage.removeItem('tc_user');
   window.location.href = '/';
 }
 

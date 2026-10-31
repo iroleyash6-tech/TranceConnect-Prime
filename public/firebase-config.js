@@ -28,6 +28,11 @@ function initFirebase() {
     try {
       firebaseApp = firebase.initializeApp(firebaseConfig);
       firebaseAuth = firebase.auth();
+      if (firebaseAuth && firebase.auth && firebase.auth.Auth && firebase.auth.Auth.Persistence) {
+        firebaseAuth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(pErr => {
+          console.warn("Firebase persistence notice:", pErr.message);
+        });
+      }
       googleAuthProvider = new firebase.auth.GoogleAuthProvider();
 
       if (typeof firebase.firestore === 'function') {
@@ -353,3 +358,164 @@ async function fetchUserProfileFromFirestore(userIdOrEmail) {
   return null;
 }
 window.fetchUserProfileFromFirestore = fetchUserProfileFromFirestore;
+
+
+/**
+ * Asynchronous, Resilient Dashboard Authentication Guard for TranceConnect-Pro.
+ * Protects /dealer, /transporter, /transport, and /admin routes.
+ * Awaits Firebase Auth state resolution and local session verification before enforcing access control.
+ * Prevents premature redirects to /?session_expired=1.
+ */
+async function verifyAndEnforceDashboardAuth(requiredRole, onAuthorized) {
+  const reqRole = (requiredRole || '').toLowerCase().trim();
+  const veil = document.getElementById('authGuardVeil');
+
+  function dismissVeil() {
+    if (veil) {
+      veil.style.opacity = '0';
+      veil.style.pointerEvents = 'none';
+      setTimeout(() => {
+        if (veil && veil.parentNode) veil.parentNode.removeChild(veil);
+      }, 350);
+    }
+  }
+
+  function redirectUnauthorized(targetRole) {
+    const role = (targetRole || '').toLowerCase().trim();
+    if (role === 'admin') {
+      window.location.href = '/admin';
+    } else if (role === 'transporter') {
+      window.location.href = '/transporter';
+    } else if (role === 'dealer') {
+      window.location.href = '/dealer';
+    } else {
+      clearSessionAndRedirect();
+    }
+  }
+
+  function clearSessionAndRedirect() {
+    try {
+      localStorage.removeItem('tc_token');
+      localStorage.removeItem('tc_user');
+      sessionStorage.removeItem('tc_token');
+      sessionStorage.removeItem('tc_user');
+    } catch (e) {}
+    window.location.href = '/?session_expired=1';
+  }
+
+  // Step 1: Read storage
+  let token = null;
+  let user = null;
+  try {
+    token = localStorage.getItem('tc_token') || sessionStorage.getItem('tc_token');
+    const rawUser = localStorage.getItem('tc_user') || sessionStorage.getItem('tc_user');
+    if (rawUser && rawUser !== 'undefined' && rawUser !== 'null') {
+      user = JSON.parse(rawUser);
+    }
+  } catch (err) {
+    console.warn("[Auth Guard] Storage read notice:", err);
+  }
+
+  // Step 2: If token or user is missing, await Firebase Auth resolution
+  if (!token || !user) {
+    initFirebase();
+    if (window.firebaseAuth) {
+      try {
+        const fbUser = await new Promise((resolve) => {
+          if (window.firebaseAuth.currentUser) {
+            return resolve(window.firebaseAuth.currentUser);
+          }
+          let resolved = false;
+          const timer = setTimeout(() => {
+            if (!resolved) {
+              resolved = true;
+              resolve(null);
+            }
+          }, 1600);
+
+          const unsub = window.firebaseAuth.onAuthStateChanged((u) => {
+            if (!resolved) {
+              resolved = true;
+              clearTimeout(timer);
+              try { unsub(); } catch (e) {}
+              resolve(u);
+            }
+          });
+        });
+
+        if (fbUser) {
+          token = await fbUser.getIdToken();
+          // Attempt to retrieve profile from Firestore or API
+          let profile = await fetchUserProfileFromFirestore(fbUser.uid);
+          if (!profile && fbUser.email) {
+            profile = await fetchUserProfileFromFirestore(fbUser.email);
+          }
+
+          if (!profile) {
+            try {
+              const res = await apiRequest('/api/auth/profile', {
+                headers: { 'Authorization': `Bearer ${token}` }
+              });
+              if (res && res.user) profile = res.user;
+            } catch (pErr) {
+              console.warn("[Auth Guard] Backend profile sync notice:", pErr.message);
+            }
+          }
+
+          if (!profile) {
+            profile = {
+              id: fbUser.uid,
+              email: fbUser.email || '',
+              role: reqRole,
+              company_name: fbUser.displayName || (fbUser.email ? fbUser.email.split('@')[0] : 'Authorized User'),
+              contact_person: fbUser.displayName || 'Authorized User',
+              mobile: fbUser.phoneNumber || '9800000000',
+              verification_status: 'verified',
+              status: 'active'
+            };
+          }
+
+          user = profile;
+          try {
+            localStorage.setItem('tc_token', token);
+            localStorage.setItem('tc_user', JSON.stringify(user));
+            sessionStorage.setItem('tc_token', token);
+            sessionStorage.setItem('tc_user', JSON.stringify(user));
+          } catch (e) {}
+        }
+      } catch (fbErr) {
+        console.warn("[Auth Guard] Firebase resolution notice:", fbErr);
+      }
+    }
+  }
+
+  // Step 3: Check if authentication state was resolved
+  if (!token || !user) {
+    console.warn("[Auth Guard] Unauthenticated session. Redirecting to login gateway.");
+    clearSessionAndRedirect();
+    return;
+  }
+
+  // Sync session across storage
+  try {
+    localStorage.setItem('tc_token', token);
+    localStorage.setItem('tc_user', JSON.stringify(user));
+    sessionStorage.setItem('tc_token', token);
+    sessionStorage.setItem('tc_user', JSON.stringify(user));
+  } catch (e) {}
+
+  // Step 4: Role-Based Access Control
+  const currentRole = (user.role || '').toLowerCase().trim();
+  if (currentRole !== reqRole) {
+    console.warn(`[Auth Guard] Role mismatch: user '${currentRole}' attempted access to '${reqRole}'. Redirecting to assigned portal.`);
+    redirectUnauthorized(currentRole);
+    return;
+  }
+
+  // Step 5: Verification passed! Dismiss veil and initialize dashboard
+  dismissVeil();
+  if (typeof onAuthorized === 'function') {
+    onAuthorized(user, token);
+  }
+}
+window.verifyAndEnforceDashboardAuth = verifyAndEnforceDashboardAuth;

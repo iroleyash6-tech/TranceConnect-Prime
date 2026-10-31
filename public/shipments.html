@@ -18,6 +18,13 @@
 </head>
 <body>
 
+  <!-- Secure Session Auth Guard Veil -->
+  <div class="auth-guard-veil" id="authGuardVeil">
+    <div class="auth-guard-spinner"></div>
+    <div style="font-weight: 600; font-size: 1.05rem; letter-spacing: 0.5px;">Authenticating Secure Session...</div>
+    <div style="font-size: 0.82rem; color: #94a3b8; margin-top: 0.35rem;">Verifying credentials &amp; permissions</div>
+  </div>
+
   <!-- Parallax Background & Glowing Spotlight -->
   <div class="cursor-glow" id="cursorGlow"></div>
   <div class="parallax-bg" id="parallaxBg"></div>
@@ -1362,6 +1369,13 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
   <!-- Socket.IO Real-Time Engine -->
   <script src="socket.io.min.js"></script>
+  <!-- Dedicated Dealer Page Script -->
+    <!-- Firebase App, Auth, Firestore & Database SDK (v10) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+  <script src="firebase-config.js"></script>
   <!-- Dedicated Dealer Page Script -->
   <script src="dealer.js"></script>
 </body>
