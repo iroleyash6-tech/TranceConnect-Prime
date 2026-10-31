@@ -400,7 +400,7 @@ async function verifyAndEnforceDashboardAuth(requiredRole, onAuthorized) {
       sessionStorage.removeItem('tc_token');
       sessionStorage.removeItem('tc_user');
     } catch (e) {}
-    window.location.href = '/?session_expired=1';
+    window.location.href = '/?auth_required=1';
   }
 
   // Step 1: Read storage
@@ -491,8 +491,8 @@ async function verifyAndEnforceDashboardAuth(requiredRole, onAuthorized) {
 
   // Step 3: Check if authentication state was resolved
   if (!token || !user) {
-    console.warn("[Auth Guard] Unauthenticated session. Redirecting to login gateway.");
-    clearSessionAndRedirect();
+    console.warn("[Auth Guard] Unauthenticated session. Presenting in-portal sign-in overlay.");
+    showInPortalAuthModal(reqRole, onAuthorized);
     return;
   }
 
@@ -518,4 +518,137 @@ async function verifyAndEnforceDashboardAuth(requiredRole, onAuthorized) {
     onAuthorized(user, token);
   }
 }
+
+  function showInPortalAuthModal(role, onAuthSuccess) {
+    if (!veil) return;
+    const roleCapitalized = role.charAt(0).toUpperCase() + role.slice(1);
+    const roleIcon = role === 'admin' ? '👑' : (role === 'transporter' ? '🚛' : '🏢');
+    const demoCreds = role === 'admin' 
+      ? { id: 'admin', pass: 'Admin@123456' }
+      : (role === 'transporter' 
+          ? { id: 'transporter', pass: 'Pass@123456' }
+          : { id: 'dealer', pass: 'Pass@123456' });
+
+    veil.innerHTML = `
+      <div style="background: rgba(15, 23, 42, 0.96); border: 1px solid rgba(59, 130, 246, 0.35); border-radius: 16px; padding: 2.2rem 1.8rem; max-width: 440px; width: 92%; text-align: center; box-shadow: 0 25px 60px -15px rgba(0,0,0,0.85); backdrop-filter: blur(16px); color: #f1f5f9; position: relative;">
+        <div style="font-size: 2.2rem; margin-bottom: 0.4rem;">${roleIcon}</div>
+        <div style="font-weight: 700; font-size: 1.25rem; letter-spacing: 0.5px; color: #f8fafc; margin-bottom: 0.25rem;">
+          ${roleCapitalized} Portal Access
+        </div>
+        <div style="font-size: 0.82rem; color: #94a3b8; margin-bottom: 1.25rem;">
+          Authentication required to view this operational command center
+        </div>
+
+        <!-- 1-Click Quick Demo Sign In -->
+        <button id="inPortalQuickBtn" type="button" style="width: 100%; padding: 0.75rem 1rem; border-radius: 8px; background: linear-gradient(135deg, #2563eb, #1d4ed8); border: none; color: white; font-weight: 600; font-size: 0.9rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin-bottom: 0.9rem; transition: transform 0.15s ease, filter 0.15s ease;" onmouseover="this.style.filter='brightness(1.1)'" onmouseout="this.style.filter='none'">
+          ⚡ One-Click Sign In as ${roleCapitalized}
+        </button>
+
+        <div style="display: flex; align-items: center; margin: 0.8rem 0; gap: 0.6rem;">
+          <div style="flex: 1; height: 1px; background: rgba(255,255,255,0.12);"></div>
+          <span style="font-size: 0.72rem; color: #64748b; text-transform: uppercase;">or enter credentials</span>
+          <div style="flex: 1; height: 1px; background: rgba(255,255,255,0.12);"></div>
+        </div>
+
+        <div id="inPortalBanner" style="display: none; padding: 0.5rem 0.75rem; border-radius: 6px; font-size: 0.8rem; margin-bottom: 0.75rem;"></div>
+
+        <form id="inPortalForm" style="text-align: left;">
+          <div style="margin-bottom: 0.75rem;">
+            <label style="font-size: 0.75rem; font-weight: 600; color: #cbd5e1; display: block; margin-bottom: 0.3rem;">User ID, Email, or Mobile</label>
+            <input type="text" id="inPortalIdent" placeholder="Enter ${role} ID or email" value="${demoCreds.id}" style="width: 100%; box-sizing: border-box; padding: 0.65rem 0.85rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.18); background: rgba(30, 41, 59, 0.8); color: white; font-size: 0.88rem; outline: none;">
+          </div>
+          <div style="margin-bottom: 1.1rem;">
+            <label style="font-size: 0.75rem; font-weight: 600; color: #cbd5e1; display: block; margin-bottom: 0.3rem;">Password</label>
+            <input type="password" id="inPortalPass" placeholder="Enter password" value="${demoCreds.pass}" style="width: 100%; box-sizing: border-box; padding: 0.65rem 0.85rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.18); background: rgba(30, 41, 59, 0.8); color: white; font-size: 0.88rem; outline: none;">
+          </div>
+          <button id="inPortalSubmitBtn" type="submit" style="width: 100%; padding: 0.7rem 1rem; border-radius: 8px; background: #3b82f6; border: none; color: white; font-weight: 600; font-size: 0.88rem; cursor: pointer; margin-bottom: 0.75rem;">
+            Sign In to Dashboard ➔
+          </button>
+        </form>
+
+        <a href="/" style="display: inline-block; font-size: 0.8rem; color: #38bdf8; text-decoration: none; margin-top: 0.25rem;">
+          ← Return to Main Homepage
+        </a>
+      </div>
+    `;
+
+    async function executeInPortalLogin(identifier, password) {
+      const banner = document.getElementById('inPortalBanner');
+      const submitBtn = document.getElementById('inPortalSubmitBtn');
+      const quickBtn = document.getElementById('inPortalQuickBtn');
+      if (banner) {
+        banner.style.display = 'block';
+        banner.style.background = 'rgba(59, 130, 246, 0.2)';
+        banner.style.color = '#93c5fd';
+        banner.textContent = 'Authenticating with TranceConnect...';
+      }
+      if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Verifying...'; }
+      if (quickBtn) quickBtn.disabled = true;
+
+      try {
+        const data = await apiRequest('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: identifier, identifier: identifier, password: password })
+        });
+
+        if (!data || !data.token) {
+          throw new Error((data && data.error) || 'Invalid authentication response.');
+        }
+
+        // Save session in storage
+        localStorage.setItem('tc_token', data.token);
+        localStorage.setItem('tc_user', JSON.stringify(data.user));
+        sessionStorage.setItem('tc_token', data.token);
+        sessionStorage.setItem('tc_user', JSON.stringify(data.user));
+
+        const userRole = (data.user.role || data.role || '').toLowerCase().trim();
+        if (userRole !== role) {
+          if (userRole === 'admin') window.location.href = '/admin';
+          else if (userRole === 'transporter') window.location.href = '/transporter';
+          else if (userRole === 'dealer') window.location.href = '/dealer';
+          return;
+        }
+
+        if (banner) {
+          banner.style.background = 'rgba(16, 185, 129, 0.2)';
+          banner.style.color = '#6ee7b7';
+          banner.textContent = `Welcome, ${data.user.company_name || data.user.contact_person || 'User'}! Opening portal...`;
+        }
+
+        setTimeout(() => {
+          dismissVeil();
+          if (typeof onAuthSuccess === 'function') {
+            onAuthSuccess(data.user, data.token);
+          }
+        }, 350);
+
+      } catch (err) {
+        if (banner) {
+          banner.style.display = 'block';
+          banner.style.background = 'rgba(239, 68, 68, 0.2)';
+          banner.style.color = '#fca5a5';
+          banner.textContent = err.message || 'Authentication failed. Please verify credentials.';
+        }
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Sign In to Dashboard ➔'; }
+        if (quickBtn) quickBtn.disabled = false;
+      }
+    }
+
+    const qBtn = document.getElementById('inPortalQuickBtn');
+    if (qBtn) {
+      qBtn.onclick = () => executeInPortalLogin(demoCreds.id, demoCreds.pass);
+    }
+
+    const form = document.getElementById('inPortalForm');
+    if (form) {
+      form.onsubmit = (e) => {
+        if (e && e.preventDefault) e.preventDefault();
+        const ident = (document.getElementById('inPortalIdent').value || '').trim();
+        const pass = (document.getElementById('inPortalPass').value || '').trim();
+        executeInPortalLogin(ident, pass);
+      };
+    }
+  }
+
 window.verifyAndEnforceDashboardAuth = verifyAndEnforceDashboardAuth;

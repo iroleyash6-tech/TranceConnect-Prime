@@ -35,9 +35,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Auto-open modal or alert if navigated with hash, path or params
   const urlParams = new URLSearchParams(window.location.search);
-  if (urlParams.get('session_expired')) {
-    showToast('Your session has expired. Please sign in again.', 'warning');
+  if (urlParams.get('session_expired') || urlParams.get('auth_required') || urlParams.get('login_required')) {
+    const isExplicitExpiry = urlParams.get('session_expired') === '2';
+    const msg = isExplicitExpiry 
+      ? 'Your session has expired. Please sign in again.'
+      : 'Please sign in to access your commercial portal.';
+    showToast(msg, isExplicitExpiry ? 'warning' : 'info');
     openAuthModal('login');
+    try {
+      if (window.history && window.history.replaceState) {
+        const cleanUrl = window.location.pathname + (window.location.hash || '');
+        window.history.replaceState({}, document.title, cleanUrl);
+      }
+    } catch (e) {}
   } else if (urlParams.get('tab') === 'transporter') {
     openAuthModal('transporter');
   } else if (urlParams.get('tab') === 'dealer') {
@@ -1824,3 +1834,30 @@ function animateFloat(elementId, start, end, duration, prefix = '', suffix = '')
   requestAnimationFrame(update);
 }
 
+
+function quickFillAndLogin(role) {
+  const identEl = document.getElementById('loginIdentifier');
+  const passEl = document.getElementById('loginPassword');
+  if (!identEl || !passEl) return;
+
+  const r = (role || '').toLowerCase();
+  if (r === 'admin') {
+    identEl.value = 'admin';
+    passEl.value = 'Admin@123456';
+  } else if (r === 'transporter') {
+    identEl.value = 'transporter';
+    passEl.value = 'Pass@123456';
+  } else {
+    identEl.value = 'dealer';
+    passEl.value = 'Pass@123456';
+  }
+
+  setFieldValidationState('loginIdentifier', true);
+  setFieldValidationState('loginPassword', true);
+
+  const form = document.getElementById('formLogin');
+  if (form) {
+    handleLoginSubmit(new Event('submit'));
+  }
+}
+window.quickFillAndLogin = quickFillAndLogin;

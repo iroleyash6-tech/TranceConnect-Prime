@@ -738,7 +738,26 @@
           <a style="color: var(--cyan); cursor: pointer; font-weight: 600;" onclick="setAuthTab('forgot')">Forgot Password?</a>
         </div>
 
-                <div id="loginFeedbackBanner" style="display: none; padding: 0.75rem 1rem; border-radius: var(--radius-sm); margin-bottom: 1rem; font-size: 0.85rem; font-weight: 500;"></div>
+                        <!-- Quick One-Click Access -->
+        <div style="background: rgba(30, 41, 59, 0.65); border: 1px solid rgba(59, 130, 246, 0.28); border-radius: var(--radius-sm); padding: 0.75rem; margin-bottom: 1rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.45rem;">
+            <span style="font-size: 0.75rem; font-weight: 700; color: var(--cyan); text-transform: uppercase; letter-spacing: 0.5px;">⚡ One-Click Role Access</span>
+            <span style="font-size: 0.7rem; color: var(--text-dim);">Tap to auto-sign in</span>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.4rem;">
+            <button type="button" class="btn btn-glass btn-sm" style="font-size: 0.75rem; padding: 0.45rem 0.2rem; border-color: rgba(59,130,246,0.35); color: #93c5fd;" onclick="quickFillAndLogin('dealer')">
+              🏢 Dealer
+            </button>
+            <button type="button" class="btn btn-glass btn-sm" style="font-size: 0.75rem; padding: 0.45rem 0.2rem; border-color: rgba(16,185,129,0.35); color: #6ee7b7;" onclick="quickFillAndLogin('transporter')">
+              🚛 Fleet
+            </button>
+            <button type="button" class="btn btn-glass btn-sm" style="font-size: 0.75rem; padding: 0.45rem 0.2rem; border-color: rgba(168,85,247,0.35); color: #d8b4fe;" onclick="quickFillAndLogin('admin')">
+              👑 Admin
+            </button>
+          </div>
+        </div>
+
+        <div id="loginFeedbackBanner" style="display: none; padding: 0.75rem 1rem; border-radius: var(--radius-sm); margin-bottom: 1rem; font-size: 0.85rem; font-weight: 500;"></div>
         <button type="submit" class="btn btn-primary" style="width: 100%;" id="btnLoginSubmit" onclick="handleLoginSubmit(event)">
           <span class="btn-text">Sign In to Dashboard ➔</span>
         </button>
